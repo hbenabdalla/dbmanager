@@ -1,0 +1,48 @@
+.env
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+*.egg-info/
+build/
+node_modules/
+frontend/dist/
+.vite/
+coverage/
+.env.test
+integration-results/
+
+# local secrets and environment files (keep .env.example)
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+# Python
+.venv/
+venv/
+.coverage
+htmlcov/
+.tox/
+# documentation build output
+site/
+# logs, temporary and local database files
+*.log
+*.tmp
+*.sqlite
+*.sqlite3
+*.db
+tmp/
+# test results and volumes
+integration-results/
+.pytest_cache/
+# IDE / OS metadata
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+*.tsbuildinfo
