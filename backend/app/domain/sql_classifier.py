@@ -100,6 +100,10 @@ COMMAND_RULES: dict[str, tuple[str, RiskClass]] = {
     "KILL": ("ADMIN", RiskClass.PRIVILEGED_CHANGE),
     "RUNSTATS": ("MAINTENANCE", RiskClass.LOW_RISK_CHANGE),
     "REORG": ("MAINTENANCE", RiskClass.PRIVILEGED_CHANGE),
+    # SQL Server / Db2 native backup and restore: a backup writes files on the database host,
+    # a restore replaces a database
+    "BACKUP": ("BACKUP", RiskClass.PRIVILEGED_CHANGE),
+    "RESTORE": ("RESTORE", RiskClass.DESTRUCTIVE),
 }
 
 PRIVILEGE_DDL = re.compile(r"^\s*(CREATE|ALTER|DROP)\s+(ROLE|USER|GROUP|LOGIN)\b", re.I)

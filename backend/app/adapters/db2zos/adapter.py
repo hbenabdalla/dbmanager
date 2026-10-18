@@ -164,7 +164,9 @@ class Db2zOSAdapter(Db2Base):
         C.OBJECTS: cap(FULL, "tables, views, aliases, indexes, routines, triggers, sequences"),
         C.OBJECT_DDL: cap(PARTIAL, "column list from SYSIBM.SYSCOLUMNS; full DDL needs ADB2GEN/DB2 Admin Tool"),
         C.USERS: cap(
-            REQUIRES_EXTERNAL_MONITORING, "identities live in RACF/ACF2/Top Secret; catalog grantees are shown"
+            PARTIAL,
+            "authorization IDs that hold catalog grants (SYSIBM.SYS*AUTH); the identities themselves "
+            "live in RACF/ACF2/Top Secret and are not visible to Db2",
         ),
         C.ROLES: cap(PARTIAL, "trusted-context roles (SYSIBM.SYSROLES)"),
         C.PRIVILEGES: cap(FULL, "SYSIBM.SYSUSERAUTH / SYSDBAUTH / SYSTABAUTH"),

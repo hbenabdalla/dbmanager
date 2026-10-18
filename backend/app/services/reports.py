@@ -380,7 +380,9 @@ REPORTS: dict[str, ReportDef] = {
             "server.view",
             inventory,
         ),
-        ReportDef("capacity", "Capacity", "Database size and 7-day growth", "performance.view", capacity),
+        ReportDef(
+            "capacity", "Capacity", "Database size, 30-day growth and days until full", "performance.view", capacity
+        ),
         ReportDef(
             "performance",
             "Performance snapshot",

@@ -1,6 +1,8 @@
-"""Adapters scheduled for later implementation phases.
+"""Scaffolding for adapters of engines that are not implemented yet.
 
-Each class declares:
+All shipped adapters (PostgreSQL, MySQL, MariaDB, SQL Server, Oracle, Db2 LUW, Db2 for z/OS) are
+implemented; this module keeps the helpers used to describe an engine before its adapter
+exists. Such a class declares:
 
 * ``engine_capabilities`` — an honest description of what the *engine* offers to a
   management tool (including licensing / extension prerequisites). This drives the

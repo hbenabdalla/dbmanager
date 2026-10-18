@@ -160,7 +160,10 @@ def test_connection_string_tls_and_credentials_quoting() -> None:
     cs = a.connection_string()
     assert "SECURITY=SSL" in cs and "SSLServerCertificate=" in cs and "DATABASE=SAMPLE" in cs
     assert "PWD" not in cs and "Secret" not in cs
+    assert "SSLClientHostnameValidation=Basic" in cs  # verify-full also checks the host name
     asyncio.run(a.close())
+    ca_only = Db2Adapter(SPEC.model_copy(update={"tls_mode": "verify-ca"})).connection_string()
+    assert "SECURITY=SSL" in ca_only and "SSLClientHostnameValidation" not in ca_only
     plain = Db2Adapter(SPEC.model_copy(update={"tls_mode": "prefer"})).connection_string()
     assert "SECURITY" not in plain
     with pytest.raises(AdapterConnectionError):

@@ -112,6 +112,9 @@ class Db2Base(SyncDBAPIAdapter):
                 parts.append(f"SSLServerCertificate={_cli_value(self._ca.path or '')}")
             elif o.get("ssl_server_certificate"):
                 parts.append(f"SSLServerCertificate={_cli_value(str(o['ssl_server_certificate']))}")
+            if mode == "verify-full":
+                # the certificate must also name the host (Db2 CLI 11.5.6+); verify-ca checks the chain only
+                parts.append("SSLClientHostnameValidation=Basic")
         if o.get("authentication"):
             parts.append(f"AUTHENTICATION={o['authentication']}")
         if o.get("current_schema"):

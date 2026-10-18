@@ -78,3 +78,10 @@ def test_unknown_statement_fails_safe() -> None:
 
 def test_empty() -> None:
     assert classify_sql("  -- nothing\n").statement_count == 0
+
+
+def test_native_backup_and_restore_statements_are_not_unknown() -> None:
+    b = classify_sql("BACKUP DATABASE [Sales] TO DISK = N'/var/opt/mssql/backup/sales.bak' WITH COPY_ONLY", "mssql")
+    assert b.statement_type == "BACKUP" and b.risk == RiskClass.PRIVILEGED_CHANGE
+    r = classify_sql("RESTORE DATABASE [Sales] FROM DISK = N'/var/opt/mssql/backup/sales.bak' WITH REPLACE", "mssql")
+    assert r.statement_type == "RESTORE" and r.risk == RiskClass.DESTRUCTIVE

@@ -384,6 +384,12 @@ VALIDATION_COLUMNS = {
     "Recommendations": "recommendations",
     "Administration": "administration",
 }
+#: what the real-engine test behind a cell does NOT cover (shown with the validation badge)
+VALIDATION_SCOPE = {
+    "Replication": "validated on a standalone server only; replicas, HADR, Data Guard and availability "
+    "groups are not part of the test environment",
+    "Configuration": "validated by reading the configuration (part of the storage test)",
+}
 
 
 def real_engine_validation() -> dict[str, Any]:
@@ -452,6 +458,7 @@ async def engine_support(p: CurrentPrincipal) -> dict[str, Any]:
                 "engine_level": eng[Capability(key)].level.value,
                 # real-engine evidence for this cell: validated | failed | skipped | not_tested | None
                 "validated": (val["capabilities"].get(VALIDATION_COLUMNS[label]) if val else None),
+                "validation_scope": VALIDATION_SCOPE.get(label),
             }
         engines.append(
             {
