@@ -1,0 +1,52 @@
+name: Bug report
+description: Something in DB Manager does not work as documented.
+labels: [bug, triage]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. **Do not include passwords, connection strings, master keys or
+        customer data.** Security problems go to the Security tab, not here.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What you did, what you expected, and what happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Go to …
+        2. Click …
+        3. See error …
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: DB Manager version
+      description: Platform → About, or the image tag / commit.
+    validations:
+      required: true
+  - type: dropdown
+    id: deployment
+    attributes:
+      label: Deployment
+      options: [Docker Compose, Kubernetes, OpenShift, Local development, Other]
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      multiple: true
+      options: [Dashboard / UI, Fleet & onboarding, Monitoring & metrics, Queries & plans, Recommendations, Security findings, Administration actions, Authentication (local / LDAP / OIDC), RBAC, Audit, Simulation, Installation / upgrade, API, Other]
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs and screenshots
+      description: Relevant backend log lines (`docker compose logs backend`) with secrets removed, the request ID from the error, and screenshots for UI problems.
+      render: shell

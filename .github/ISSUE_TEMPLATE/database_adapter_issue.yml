@@ -1,0 +1,46 @@
+name: Database engine / adapter issue
+description: Wrong, missing or failing data for a specific database engine or version.
+labels: [adapter, triage]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Include the engine version and what the monitoring account is allowed to do. Never paste
+        passwords or connection strings.
+  - type: dropdown
+    id: engine
+    attributes:
+      label: Engine
+      options: [PostgreSQL, MySQL, MariaDB, Microsoft SQL Server / Azure SQL, Oracle Database, IBM Db2 LUW, IBM Db2 for z/OS, Other]
+    validations:
+      required: true
+  - type: input
+    id: engine_version
+    attributes:
+      label: Engine version and edition
+      placeholder: e.g. SQL Server 2019 CU22 Standard, Oracle 19.21 EE (CDB), Db2 11.5.8
+    validations:
+      required: true
+  - type: dropdown
+    id: deployment
+    attributes:
+      label: Hosting
+      options: [Self-managed, AWS RDS / Aurora, Azure, Google Cloud, Oracle Cloud, IBM Cloud, Other]
+  - type: dropdown
+    id: capability
+    attributes:
+      label: Capability
+      multiple: true
+      options: [Connection / TLS, Inventory (databases, schemas, objects), Users / roles / privileges, Sessions / locks, Metrics, Query statistics, Execution plans, Replication, Configuration, Storage, Security findings, Recommendations, Administration actions]
+  - type: textarea
+    id: privileges
+    attributes:
+      label: Monitoring account privileges
+      description: The grants of the account DB Manager uses (compare with the engine page under docs/database-engines/).
+  - type: textarea
+    id: details
+    attributes:
+      label: What is wrong
+      description: Expected vs actual, the error code shown (e.g. REQUIRES_PRIVILEGE, DRIVER_NOT_INSTALLED) and the SQL error if any.
+    validations:
+      required: true

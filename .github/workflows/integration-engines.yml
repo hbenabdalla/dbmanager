@@ -1,0 +1,31 @@
+name: Real-engine integration
+
+# Heavy: pulls vendor images (SQL Server Developer, Oracle XE, Db2 Community) under their licenses.
+# Run on demand or before a release, not on every pull request.
+on:
+  workflow_dispatch:
+    inputs:
+      engines:
+        description: "Space-separated: postgresql mysql mariadb mssql oracle db2 timeseries"
+        required: true
+        default: "postgresql mysql mariadb mssql timeseries"
+
+permissions:
+  contents: read
+
+jobs:
+  engines:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run the real-engine suite
+        run: ./scripts/integration-test.sh ${{ inputs.engines }}
+      - name: Results
+        if: always()
+        run: cat integration-results/real-engine-matrix.md || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: real-engine-matrix
+          path: integration-results/
