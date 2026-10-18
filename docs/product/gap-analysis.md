@@ -1,0 +1,117 @@
+# Gap analysis
+
+Each gap found by the [capability audit](capability-matrix.md) is assessed for whether it
+belongs in the product at all, then classified. Gaps that do not belong are kept in the table
+with the reasoning so the question does not have to be re-argued.
+
+## Priority model
+
+| Priority | Meaning |
+|---|---|
+| **P0** | Release blocker: the project cannot be published or released responsibly without it |
+| **P1** | Critical product capability expected of a database operations platform |
+| **P2** | Important enhancement |
+| **P3** | Future enhancement |
+| **P4** | Experimental / long-term |
+
+Scales: business value, technical importance, security impact and operational impact are
+**H / M / L**; complexity is **S** (days), **M** (one sprint), **L** (several sprints).
+
+## Status after the current release work
+
+The tables below keep each gap as originally assessed. Progress since the audit:
+
+| Gap | Status | Where |
+|---|---|---|
+| G-01 Git repository | Prepared locally with logical commits; push to `hbenabdalla/dbmanager` pending (no GitHub credentials in the build environment) | [release checklist](release-checklist.md) |
+| G-02 License | **BLOCKED** on the owner's decision (recommendation: Apache-2.0) | — |
+| G-03 CI | Closed — workflows in `.github/workflows/` (first run happens on push) | sprint 0.9.2 |
+| G-04 Version metadata | Closed — `0.9.0-dev`, `/api/v1/version`, `/api/v1/about`, Platform → About | sprint 0.9.4 |
+| G-05 Policies | Closed — CONTRIBUTING, SECURITY, CODE_OF_CONDUCT, issue forms, PR template | sprint 0.9.1 |
+| G-06 Publishable documentation | Closed — MkDocs Material, `.readthedocs.yaml`, strict build passes; Read the Docs import pending | sprint 0.9.3 |
+| G-07 Secret scan / ignore rules | Closed — tree scanned (only documented development/test placeholders), `.gitignore` hardened, gitleaks in CI | sprint 0.9.1 |
+| G-10 … G-15 Alerting, lifecycle, notifications, SMTP, webhooks, maintenance windows | Closed | sprints 0.10.1–0.10.3 |
+| G-18 API tokens | Closed — personal tokens (service accounts later) | sprint 0.11.1 |
+| G-20 Backup/restore verification | Closed — `scripts/backup.sh`, `scripts/restore.sh`, automated round-trip test | sprint 0.9.5 |
+| G-22 Upgrade & migration testing | Closed for migrations (step-by-step upgrade, downgrade, model parity in CI); release-to-release upgrade test follows the first tagged release | sprint 0.9.5 |
+
+## Release blockers (P0)
+
+| ID | Gap | Value | Tech. | Security | Ops | Complexity | Dependencies | Risk if left |
+|---|---|---|---|---|---|---|---|---|
+| G-01 | No Git repository / remote; nothing is published | H | H | M | H | S | GitHub access for `hbenabdalla/dbmanager` | Work cannot be shared, reviewed or released |
+| G-02 | No license chosen (`LICENSE` missing) | H | L | L | L | S | **Owner decision** (Apache-2.0 recommended: patent grant, permissive, common for infrastructure tools) | Code is "all rights reserved"; nobody may legally use or contribute — BLOCKED until decided |
+| G-03 | No CI (tests, build, lint, docs) | H | H | M | H | S | G-01 | Regressions reach `main` unnoticed |
+| G-04 | Version metadata wrong/absent (`1.0.0` hard-coded for a pre-release; no build, commit or schema version shown) | M | M | L | M | S | — | Users cannot tell what they run; support and upgrades guess |
+| G-05 | No contribution, security disclosure or conduct policy | M | L | M | L | S | G-01 | Vulnerabilities reported publicly; contributors without guidance |
+| G-06 | Documentation not publishable (no MkDocs / Read the Docs config, docs organized by history rather than audience) | H | M | L | H | M | — | New users cannot install or operate without reading source |
+| G-07 | No pre-publication secret scan / `.gitignore` gaps (e.g. `.env.test`, integration volumes, coverage) | M | L | **H** | L | S | — | Credentials pushed to a public repository |
+
+## Product capability gaps
+
+| ID | Gap | Belongs in product? | Priority | Value | Tech. | Security | Ops | Complexity | Dependencies | Risk |
+|---|---|---|---|---|---|---|---|---|---|---|
+| G-10 | **Alerting engine** (threshold rules on normalized metrics and health, sustained-for windows, severities) | Yes — core expectation; monitoring without alerts requires humans watching dashboards | **P1** | H | H | L | H | M | Time-series query API (exists) | Outages noticed late |
+| G-11 | **Alert lifecycle** (firing → acknowledged → resolved, history, de-duplication) | Yes | **P1** | H | H | L | H | M | G-10 | Alert floods, no accountability |
+| G-12 | **Notification framework** (channels, routing, retries, test send) | Yes | **P1** | H | H | M (outbound secrets) | H | M | G-10 | Alerts invisible outside the UI |
+| G-13 | **SMTP** channel | Yes | **P1** | H | M | M | M | S | G-12 | — |
+| G-14 | **Webhooks** (generic JSON, HMAC signature) | Yes; also the integration path for Teams/Slack/PagerDuty | **P1** | H | M | M | M | S | G-12 | — |
+| G-15 | **Maintenance windows / alert suppression** | Yes | **P1** | M | M | L | H | S | G-10 | Alert fatigue during planned work |
+| G-16 | Teams / Slack native formatting | Yes, as channel presets over webhooks | P2 | M | L | L | M | S | G-14 | — |
+| G-17 | Escalation policies (re-notify, on-call chains) | Partly — simple re-notify yes; on-call scheduling belongs to PagerDuty/Opsgenie | P3 | M | M | L | M | M | G-12 | — |
+| G-18 | **API tokens** for automation (scoped, hashed, expiring, audited) | Yes | **P1** | H | H | **H** | M | M | RBAC (exists) | Automation shares human passwords |
+| G-19 | API rate limiting beyond login | Yes | P2 | M | M | M | M | S | — | Abuse of expensive endpoints |
+| G-20 | **Backup/restore verified procedure** (scripted, tested restore of PostgreSQL + master key) | Yes — as a tested runbook and script, not as an in-app feature | **P1** | H | M | M | **H** | S | — | Unrecoverable platform after loss |
+| G-21 | Configuration backup / export (settings, inventory, roles as JSON) | Yes | P2 | M | M | M | M | M | — | Re-creating estates by hand |
+| G-22 | **Upgrade path & migration testing** (alembic upgrade from previous release in CI, upgrade docs) | Yes | **P1** | H | H | L | H | S | G-03 | Broken upgrades in the field |
+| G-23 | Collector diagnostics bundle (per-server last errors, timings, capability snapshot, redacted) | Yes | P2 | M | M | L | H | S | — | Slow support |
+| G-24 | Performance baselines used by rules/alerts | Yes (endpoint exists; integrate) | P2 | M | M | L | M | M | G-10 | — |
+| G-25 | Capacity forecasting beyond linear trend | Yes (seasonality-aware later) | P2 | M | M | L | M | M | History in TSDB | — |
+| G-26 | Anomaly detection | Maybe — only after baselines prove useful | P3 | M | M | L | M | L | G-24 | False positives erode trust |
+| G-27 | Query regression detection (per-fingerprint latency/plan change) | Yes | P2 | H | M | L | M | M | Fingerprint history (exists) | — |
+| G-28 | Query comparison (period vs period) | Yes | P3 | M | L | L | L | S | G-27 | — |
+| G-29 | Recommendation outcome validation (before/after) | Yes | P3 | M | M | L | L | M | Baselines | — |
+| G-30 | Scheduled reports (email delivery) | Yes | P2 | M | L | L | M | M | G-13 | — |
+| G-31 | PDF export | Yes, after scheduling | P3 | M | L | L | L | M | — | — |
+| G-32 | Security and query-statistics report definitions | Yes | P2 | M | L | M | L | S | — | — |
+| G-33 | SIEM integration (syslog/CEF or webhook stream of audit events) | Yes | P2 | M | M | **H** | M | M | G-14 | Audit trail isolated from the SOC |
+| G-34 | Prometheus re-export of managed-database metrics | Partly — VictoriaMetrics already offers a Prometheus-compatible API; document federation instead of duplicating | P3 | M | L | L | M | S | — | — |
+| G-35 | OpenTelemetry traces (OTLP) | Maybe | P4 | L | M | L | M | M | — | — |
+| G-36 | External secret managers (HashiCorp Vault, cloud KMS/secret stores) | Yes (`vault` provider reserved) | P2 | H | M | **H** | M | M | — | Credentials only in the app DB/env |
+| G-37 | Credential rotation for target databases (scheduled / on demand) | Yes | P3 | M | M | H | M | M | G-36 | — |
+| G-38 | MFA | Readiness yes (delegate to OIDC); native TOTP later | P2 (TOTP P3) | M | M | **H** | L | M | — | Local admin accounts with password only |
+| G-39 | Configurable password policy (length, history, expiry) | Yes | P3 | L | L | M | L | S | — | — |
+| G-40 | Real LDAP / AD / OIDC validation (test IdPs in the integration environment: OpenLDAP, Keycloak) | Yes | P2 | H | M | **H** | L | M | `docker-compose.test.yml` | Identity bugs found by customers |
+| G-41 | Helm chart | Yes | P2 | M | M | L | H | M | Container images published | — |
+| G-42 | Kubernetes/OpenShift manifests validated in CI (kubeconform, kind) | Yes | P2 | M | M | L | M | S | G-03 | Manifests rot |
+| G-43 | Operator | No for now — Helm covers the need; reconsider at scale | P4 | L | M | L | M | L | G-41 | — |
+| G-44 | High availability reference architecture (2+ API replicas, worker leader election, external HA PostgreSQL/VM) | Yes, documentation + tests of leader failover | P2 | M | M | L | H | M | — | — |
+| G-45 | TLS for platform components / reverse proxy guidance (HTTPS termination, HSTS, internal TLS to PostgreSQL/VM) | Yes | P2 | M | M | **H** | M | S | — | Cleartext sessions on untrusted networks |
+| G-46 | Certificate management (ACME) | No — leave to ingress / reverse proxy | NOT APPLICABLE | | | | | | | |
+| G-47 | Network database discovery | Maybe (cloud APIs first) | P4 | M | M | M | L | L | — | — |
+| G-48 | Plugin / extension framework | Not before 1.0; adapter + rule interfaces are already extension points | P4 | M | M | M | L | L | — | — |
+| G-49 | Custom recommendation rules (user-defined, declarative) | Yes, after the rule DSL stabilizes | P3 | M | M | M | L | M | — | — |
+| G-50 | Custom metrics (user SQL collectors) | Risky (arbitrary SQL against production) — later, read-only and reviewed | P4 | M | M | H | M | M | — | — |
+| G-51 | Custom dashboards | Yes, later | P3 | M | L | L | L | L | — | — |
+| G-52 | Data export (full platform data, GDPR-style) | Partly (audit + reports exist) | P3 | L | L | M | L | S | G-21 | — |
+| G-53 | Data purge (per-server telemetry deletion) | Yes | P3 | L | L | M | L | S | — | — |
+| G-54 | Accessibility audit (axe in CI, WCAG 2.1 AA review) | Yes | P2 | M | L | L | L | S | G-03 | — |
+| G-55 | Oracle TCPS real validation | Yes | P2 | M | L | M | L | S | TCPS listener (wallet) in the test environment | — |
+| G-56 | Db2 for z/OS real validation and thread/lock monitoring | Yes, partial support is honest today | P3 | M | M | L | M | L | **BLOCKED**: a z/OS subsystem + Db2 Connect | — |
+| G-57 | Database logs (alert log, error log) | Yes | P3 | M | M | L | M | M | Engine-specific access paths | — |
+| G-58 | Load / scale testing (1,000+ servers) | Yes before 1.0 | P2 | M | H | L | H | M | Simulation profiles (exist) | Unknown limits |
+
+## Already covered (no gap)
+
+External PostgreSQL (`DBM_DATABASE_URL`) and external time-series database
+(`DBM_TIMESERIES_URL`); data retention policies (monitoring-storage retention API); licensing
+policy for Oracle packs; Prometheus metrics of the platform itself; bulk registration.
+
+## Summary
+
+* **P0:** G-01 … G-07 — repository, license (owner decision), CI, version metadata, policies,
+  publishable documentation, secret hygiene.
+* **P1:** alerting (G-10, G-11), notifications with SMTP and webhooks (G-12 … G-14), maintenance
+  windows (G-15), API tokens (G-18), verified backup/restore (G-20), upgrade testing (G-22).
+* The [roadmap](roadmap.md) schedules these; [traceability](roadmap-traceability.md) links each gap
+  to its sprint, code and tests.
