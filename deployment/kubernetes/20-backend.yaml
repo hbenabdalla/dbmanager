@@ -1,0 +1,60 @@
+# API replicas (stateless; sessions live in PostgreSQL) and independently scaled collector workers.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dbmanager-api
+spec:
+  replicas: 2
+  selector: { matchLabels: { app: dbmanager-api } }
+  template:
+    metadata: { labels: { app: dbmanager-api } }
+    spec:
+      securityContext: { runAsNonRoot: true, seccompProfile: { type: RuntimeDefault } }
+      containers:
+        - name: api
+          image: registry.example.com/database-manager-backend:1.0.0
+          env: [{ name: DBM_PROCESS_ROLE, value: api }]
+          envFrom:
+            - configMapRef: { name: dbmanager-config }
+            - secretRef: { name: dbmanager-secrets }
+          ports: [{ containerPort: 8000, name: http }]
+          readinessProbe: { httpGet: { path: /readyz, port: http }, periodSeconds: 10 }
+          livenessProbe: { httpGet: { path: /healthz, port: http }, periodSeconds: 20 }
+          resources: { requests: { cpu: 200m, memory: 256Mi }, limits: { memory: 768Mi } }
+          securityContext: { allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: { drop: [ALL] } }
+          volumeMounts: [{ name: tmp, mountPath: /tmp }]
+      volumes: [{ name: tmp, emptyDir: {} }]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dbmanager-worker
+spec:
+  replicas: 2   # any number: one holds the scheduler advisory lock, all claim jobs with SKIP LOCKED
+  selector: { matchLabels: { app: dbmanager-worker } }
+  template:
+    metadata: { labels: { app: dbmanager-worker } }
+    spec:
+      securityContext: { runAsNonRoot: true, seccompProfile: { type: RuntimeDefault } }
+      containers:
+        - name: worker
+          image: registry.example.com/database-manager-backend:1.0.0
+          command: ["python", "-m", "app.worker"]
+          env: [{ name: DBM_PROCESS_ROLE, value: worker }]
+          envFrom:
+            - configMapRef: { name: dbmanager-config }
+            - secretRef: { name: dbmanager-secrets }
+          ports: [{ containerPort: 8001, name: probe }]
+          readinessProbe: { httpGet: { path: /readyz, port: probe }, periodSeconds: 15 }
+          livenessProbe: { httpGet: { path: /healthz, port: probe }, periodSeconds: 30 }
+          resources: { requests: { cpu: 250m, memory: 256Mi }, limits: { memory: 1Gi } }
+          securityContext: { allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: { drop: [ALL] } }
+          volumeMounts: [{ name: tmp, mountPath: /tmp }]
+      volumes: [{ name: tmp, emptyDir: {} }]
+---
+apiVersion: v1
+kind: Service
+metadata: { name: backend }
+spec:
+  selector: { app: dbmanager-api }
+  ports: [{ port: 8000, targetPort: http, name: http }]

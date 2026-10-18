@@ -1,0 +1,223 @@
+# Database adapter integration-test environment — separate from the application deployment
+# (docker-compose.yml stays: frontend, backend, PostgreSQL, VictoriaMetrics).
+#
+# Use the wrapper, which generates .env.test (random passwords, never committed), starts the
+# engines you ask for, waits until each one is really ready (health checks run SQL, not just a
+# TCP probe), runs the real-engine suite inside the backend image (all drivers included) and
+# writes the validation matrix:
+#
+#   scripts/integration-test.sh  [postgresql mysql mariadb mssql oracle db2]      # Linux / macOS
+#   scripts/integration-test.ps1 [postgresql mysql mariadb mssql oracle db2]      # Windows
+#
+# Registries (official vendor images only):
+#   Docker Hub                       postgres, mysql, mariadb
+#   Microsoft Container Registry     mcr.microsoft.com/mssql/server        (Developer edition, EULA)
+#   Oracle Container Registry        container-registry.oracle.com/database/express:21.3.0-xe
+#                                    (oracle-ee profile: database/enterprise:21.3.0.0 needs
+#                                    `docker login container-registry.oracle.com` after accepting
+#                                    the license on the registry web site)
+#   IBM Container Registry           icr.io/db2_community/db2              (Community Edition)
+# Starting a vendor image means accepting that vendor's license (see each service).
+name: database-manager-it
+
+x-limits: &limits
+  restart: "no"
+
+services:
+  pg16:
+    <<: *limits
+    image: postgres:16-alpine
+    command: ["postgres", "-c", "shared_preload_libraries=pg_stat_statements", "-c", "track_io_timing=on"]
+    environment: { POSTGRES_PASSWORD: "${IT_PG_PASSWORD:?run scripts/integration-test to create .env.test}" }
+    ports: ["127.0.0.1:15432:5432"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres && psql -U postgres -tAc 'SELECT 1' >/dev/null"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+    profiles: [postgresql, all]
+
+  mysql:
+    <<: *limits
+    image: mysql:8.4
+    command: ["--performance-schema=ON"]
+    environment: { MYSQL_ROOT_PASSWORD: "${IT_MYSQL_PASSWORD:?run scripts/integration-test to create .env.test}" }
+    ports: ["127.0.0.1:13306:3306"]
+    healthcheck:
+      test: ["CMD-SHELL", "mysql -uroot -p\"$$MYSQL_ROOT_PASSWORD\" -e 'SELECT 1' >/dev/null 2>&1"]
+      interval: 5s
+      timeout: 5s
+      retries: 60
+      start_period: 20s
+    profiles: [mysql, all]
+
+  mariadb:
+    <<: *limits
+    image: mariadb:11.4
+    command: ["--performance-schema=ON"]
+    environment: { MARIADB_ROOT_PASSWORD: "${IT_MARIADB_PASSWORD:?run scripts/integration-test to create .env.test}" }
+    ports: ["127.0.0.1:13307:3306"]
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 60
+      start_period: 20s
+    profiles: [mariadb, all]
+
+  mssql:
+    <<: *limits
+    # SQL Server 2022 Developer edition. ACCEPT_EULA=Y accepts the Microsoft EULA.
+    image: ${IT_MSSQL_IMAGE:-mcr.microsoft.com/mssql/server:2022-latest}
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: Developer
+      MSSQL_SA_PASSWORD: "${IT_MSSQL_SA_PASSWORD:?run scripts/integration-test to create .env.test}"
+      MSSQL_AGENT_ENABLED: "false"
+    ports: ["127.0.0.1:11433:1433"]
+    volumes: [mssqldata:/var/opt/mssql]
+    healthcheck:
+      # ready = the engine answers a query (tools moved to mssql-tools18 in recent images)
+      test: ["CMD-SHELL", "for t in /opt/mssql-tools18/bin/sqlcmd /opt/mssql-tools/bin/sqlcmd; do [ -x $$t ] && $$t -C -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -Q 'SELECT 1' -b -l 5 >/dev/null && exit 0; done; exit 1"]
+      interval: 10s
+      timeout: 15s
+      retries: 30
+      start_period: 30s
+    profiles: [mssql, all]
+
+  oracle:
+    <<: *limits
+    # Oracle Database 21c Express Edition (CDB "XE" with PDB "XEPDB1"), official image.
+    image: ${IT_ORACLE_IMAGE:-container-registry.oracle.com/database/express:21.3.0-xe}
+    environment:
+      ORACLE_PWD: "${IT_ORACLE_PASSWORD:?run scripts/integration-test to create .env.test}"
+      ORACLE_CHARACTERSET: AL32UTF8
+    ports: ["127.0.0.1:11521:1521"]
+    volumes: [oradata:/opt/oracle/oradata]
+    shm_size: 1g
+    healthcheck:
+      # the image's own check: the database is OPEN (first start creates it: 10–20 minutes)
+      test: ["CMD", "/opt/oracle/checkDBStatus.sh"]
+      interval: 30s
+      timeout: 30s
+      retries: 80
+      start_period: 5m
+    profiles: [oracle, all]
+
+  oracle-ee:
+    <<: *limits
+    # Oracle Database 21c Enterprise Edition (CDB ORCLCDB, PDB ORCLPDB1). Requires
+    # `docker login container-registry.oracle.com` and accepting the license on the registry.
+    # DB Manager's licensing policy is unchanged: Diagnostics/Tuning Pack features stay off.
+    image: container-registry.oracle.com/database/enterprise:21.3.0.0
+    environment:
+      ORACLE_SID: ORCLCDB
+      ORACLE_PDB: ORCLPDB1
+      ORACLE_PWD: "${IT_ORACLE_PASSWORD:?run scripts/integration-test to create .env.test}"
+      ORACLE_EDITION: enterprise
+    ports: ["127.0.0.1:11522:1521"]
+    volumes: [oradata-ee:/opt/oracle/oradata]
+    shm_size: 2g
+    healthcheck:
+      test: ["CMD", "/opt/oracle/checkDBStatus.sh"]
+      interval: 30s
+      timeout: 30s
+      retries: 100
+      start_period: 10m
+    profiles: [oracle-ee]
+
+  db2:
+    <<: *limits
+    # IBM Db2 Community Edition from the IBM Container Registry. LICENSE=accept accepts IBM's
+    # license. Needs a privileged container; the first start creates the database (5–10 min).
+    image: ${IT_DB2_IMAGE:-icr.io/db2_community/db2:11.5.9.0}
+    privileged: true
+    environment:
+      LICENSE: accept
+      DB2INSTANCE: db2inst1
+      DB2INST1_PASSWORD: "${IT_DB2_PASSWORD:?run scripts/integration-test to create .env.test}"
+      DBNAME: TESTDB
+      ARCHIVE_LOGS: "false"
+      AUTOCONFIG: "false"
+      BLU: "false"
+      HADR_ENABLED: "false"
+      PERSISTENT_HOME: "true"
+      UPDATEAVAIL: "NO"
+      TO_CREATE_SAMPLEDB: "false"
+      # operating-system identities for the least-privilege tests (Db2 authenticates externally)
+      DBM_IT_DB2_MON_PASSWORD: "${IT_DB2_MON_PASSWORD:?run scripts/integration-test}"
+      DBM_IT_DB2_ADM_PASSWORD: "${IT_DB2_ADM_PASSWORD:?run scripts/integration-test}"
+      DBM_IT_DB2_RO_PASSWORD: "${IT_DB2_RO_PASSWORD:?run scripts/integration-test}"
+    ports: ["127.0.0.1:15000:50000"]
+    volumes:
+      - db2data:/database
+      # run by the image after it creates the database, and again by the wrapper
+      - ./backend/tests/integration/db2/custom:/var/custom:ro
+    healthcheck:
+      # ready = the instance owner can connect to TESTDB (the wrapper then runs
+      # /var/custom/dbm-it-users.sh, which is idempotent, to create the test identities)
+      test: ["CMD-SHELL", "su - db2inst1 -c 'db2 connect to TESTDB >/dev/null && db2 terminate >/dev/null'"]
+      interval: 30s
+      timeout: 60s
+      retries: 60
+      start_period: 3m
+    profiles: [db2, all]
+
+  victoriametrics:
+    <<: *limits
+    image: victoriametrics/victoria-metrics:v1.122.0
+    command: ["-retentionPeriod=1d", "-search.latencyOffset=0s"]
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8428/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+    profiles: [timeseries, all]
+
+  # Runs the real-engine suite inside the backend image (pyodbc + ODBC Driver 18, python-oracledb,
+  # ibm_db, PyMySQL, asyncpg). The wrapper sets DBM_IT_<ENGINE>_HOST only for engines it started.
+  it-runner:
+    build:
+      context: ./backend
+      target: it
+      args:
+        MSODBC_OPTIONAL: "false"
+    image: database-manager-backend:it
+    profiles: [runner]
+    volumes:
+      - ./backend/tests:/app/tests:ro
+      - ./backend/pyproject.toml:/app/pyproject.toml:ro
+      - ./integration-results:/results
+      - ./backend/app/data:/merge
+    environment:
+      DBM_IT_MERGE_INTO: /merge/real_engine_validation.json
+      DBM_IT_PG_PORT: "5432"
+      DBM_IT_PG_USER: postgres
+      DBM_IT_PG_PASSWORD: "${IT_PG_PASSWORD:-}"
+      DBM_IT_MYSQL_PORT: "3306"
+      DBM_IT_MYSQL_USER: root
+      DBM_IT_MYSQL_PASSWORD: "${IT_MYSQL_PASSWORD:-}"
+      DBM_IT_MARIADB_PORT: "3306"
+      DBM_IT_MARIADB_USER: root
+      DBM_IT_MARIADB_PASSWORD: "${IT_MARIADB_PASSWORD:-}"
+      DBM_IT_MSSQL_PORT: "1433"
+      DBM_IT_MSSQL_USER: sa
+      DBM_IT_MSSQL_PASSWORD: "${IT_MSSQL_SA_PASSWORD:-}"
+      DBM_IT_ORACLE_PORT: "1521"
+      DBM_IT_ORACLE_USER: system
+      DBM_IT_ORACLE_PASSWORD: "${IT_ORACLE_PASSWORD:-}"
+      DBM_IT_ORACLE_SERVICE: "${IT_ORACLE_PDB_SERVICE:-XEPDB1}"
+      DBM_IT_ORACLE_CDB_SERVICE: "${IT_ORACLE_CDB_SERVICE:-XE}"
+      DBM_IT_DB2_PORT: "50000"
+      DBM_IT_DB2_DB: TESTDB
+      DBM_IT_DB2_USER: db2inst1
+      DBM_IT_DB2_PASSWORD: "${IT_DB2_PASSWORD:-}"
+      DBM_IT_DB2_MON_PASSWORD: "${IT_DB2_MON_PASSWORD:-}"
+      DBM_IT_DB2_ADM_PASSWORD: "${IT_DB2_ADM_PASSWORD:-}"
+      DBM_IT_DB2_RO_PASSWORD: "${IT_DB2_RO_PASSWORD:-}"
+
+volumes:
+  mssqldata: {}
+  oradata: {}
+  oradata-ee: {}
+  db2data: {}

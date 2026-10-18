@@ -1,0 +1,185 @@
+# DB Manager — base deployment: frontend, backend, application PostgreSQL and the
+# time-series database for monitoring telemetry (VictoriaMetrics).
+#   scripts\init-env.ps1 (Windows) or ./scripts/init-env.sh   # creates .env with generated secrets
+#   docker compose up --build
+# Open http://localhost:8080 (or the port in DBM_HTTP_PORT).
+
+name: database-manager
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: database-manager-postgres
+    restart: unless-stopped
+    command:
+      - postgres
+      - -c
+      - shared_preload_libraries=pg_stat_statements
+      - -c
+      - pg_stat_statements.track=all
+      - -c
+      - password_encryption=scram-sha-256
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-dbmanager}
+      POSTGRES_USER: ${POSTGRES_USER:-dbmanager}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256"
+      DBM_SAMPLE_MONITOR_PASSWORD: ${DBM_SAMPLE_MONITOR_PASSWORD:-}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./deployment/postgres/initdb:/docker-entrypoint-initdb.d:ro
+    networks: [data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    # Not published on the host by default. Uncomment for local tooling:
+    # ports: ["127.0.0.1:5432:5432"]
+
+  timeseries:
+    # Monitoring telemetry (metrics history). PostgreSQL keeps inventory, configuration,
+    # findings, audit and jobs. See docs/monitoring/timeseries-storage.md.
+    image: victoriametrics/victoria-metrics:${DBM_TIMESERIES_IMAGE_TAG:-v1.122.0}
+    container_name: database-manager-timeseries
+    restart: unless-stopped
+    command:
+      - -storageDataPath=/storage
+      - -retentionPeriod=${DBM_TIMESERIES_RETENTION:-90d}
+      # identical (series, timestamp) samples are stored once: retries and re-migration are idempotent
+      - -dedup.minScrapeInterval=1ms
+      # samples become queryable ~5 s after ingestion (default 30 s)
+      - -search.latencyOffset=5s
+      # fleet-wide queries list many server ids
+      - -search.maxQueryLen=1MB
+      - -search.maxUniqueTimeseries=${DBM_TIMESERIES_MAX_UNIQUE_SERIES:-1000000}
+      - -memory.allowedPercent=60
+      # read httpAuth.* from the environment below (keeps the password out of the process list)
+      - -envflag.enable
+      - -loggerFormat=json
+    environment:
+      httpAuth_username: ${DBM_TIMESERIES_USERNAME:-dbm}
+      httpAuth_password: ${DBM_TIMESERIES_PASSWORD:?set DBM_TIMESERIES_PASSWORD in .env (re-run scripts/init-env to add it)}
+    volumes:
+      - tsdata:/storage
+    networks: [data]
+    healthcheck:
+      # /health needs no credentials; every data endpoint does
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8428/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          cpus: "${DBM_TIMESERIES_CPUS:-2}"
+          memory: ${DBM_TIMESERIES_MEMORY:-2g}
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: [ALL]
+    # Not published on the host: only the backend (data network) talks to it.
+    # For local troubleshooting only: ports: ["127.0.0.1:8428:8428"]
+
+  backend:
+    build:
+      context: ./backend
+      target: runtime
+      args:
+        # true = build without Microsoft ODBC Driver 18 when packages.microsoft.com is unreachable
+        # (SQL Server servers then report the driver as MISSING). Default: fail the build.
+        MSODBC_OPTIONAL: ${DBM_MSODBC_OPTIONAL:-false}
+        DBM_BUILD_VERSION: ${DBM_BUILD_VERSION:-}
+        DBM_GIT_COMMIT: ${DBM_GIT_COMMIT:-}
+        DBM_BUILD_DATE: ${DBM_BUILD_DATE:-}
+    image: database-manager-backend:latest
+    container_name: database-manager-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      timeseries:
+        condition: service_healthy
+    environment:
+      DBM_ENV: ${DBM_ENV:-production}
+      DBM_PROCESS_ROLE: ${DBM_PROCESS_ROLE:-all}
+      DBM_DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-dbmanager}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-dbmanager}
+      DBM_MASTER_KEY: ${DBM_MASTER_KEY:?set DBM_MASTER_KEY in .env (python -c "import os,base64;print(base64.b64encode(os.urandom(32)).decode())")}
+      DBM_MASTER_KEY_ID: ${DBM_MASTER_KEY_ID:-k1}
+      DBM_PREVIOUS_MASTER_KEYS: ${DBM_PREVIOUS_MASTER_KEYS:-}
+      DBM_BOOTSTRAP_ADMIN_USERNAME: ${DBM_BOOTSTRAP_ADMIN_USERNAME:-admin}
+      DBM_BOOTSTRAP_ADMIN_PASSWORD: ${DBM_BOOTSTRAP_ADMIN_PASSWORD:-}
+      DBM_PUBLIC_BASE_URL: ${DBM_PUBLIC_BASE_URL:-http://localhost:8080}
+      DBM_COOKIE_SECURE: ${DBM_COOKIE_SECURE:-true}
+      DBM_TRUSTED_PROXIES: ${DBM_TRUSTED_PROXIES:-172.16.0.0/12,10.0.0.0/8,192.168.0.0/16,127.0.0.1}
+      FORWARDED_ALLOW_IPS: "*"
+      DBM_COLLECTOR_CONCURRENCY: ${DBM_COLLECTOR_CONCURRENCY:-16}
+      DBM_METRICS_RETENTION_DAYS: ${DBM_METRICS_RETENTION_DAYS:-35}
+      DBM_TIMESERIES_ENABLED: ${DBM_TIMESERIES_ENABLED:-true}
+      DBM_TIMESERIES_URL: http://timeseries:8428
+      DBM_TIMESERIES_USERNAME: ${DBM_TIMESERIES_USERNAME:-dbm}
+      DBM_TIMESERIES_PASSWORD: ${DBM_TIMESERIES_PASSWORD}
+      DBM_TIMESERIES_RETENTION: ${DBM_TIMESERIES_RETENTION:-90d}
+      DBM_TIMESERIES_TIMEOUT_SECONDS: ${DBM_TIMESERIES_TIMEOUT_SECONDS:-10}
+      DBM_METRIC_BATCH_SIZE: ${DBM_METRIC_BATCH_SIZE:-2000}
+      DBM_METRIC_FLUSH_INTERVAL: ${DBM_METRIC_FLUSH_INTERVAL:-5}
+      DBM_METRIC_BUFFER_MAX: ${DBM_METRIC_BUFFER_MAX:-200000}
+      DBM_METRICS_PG_DUAL_WRITE: ${DBM_METRICS_PG_DUAL_WRITE:-false}
+      DBM_LOG_LEVEL: ${DBM_LOG_LEVEL:-INFO}
+      # product links (Platform -> About, Help menu); empty documentation URL hides the entry
+      DBM_DOCUMENTATION_URL: ${DBM_DOCUMENTATION_URL:-}
+      DBM_GITHUB_URL: ${DBM_GITHUB_URL:-https://github.com/hbenabdalla/dbmanager}
+      DBM_ROADMAP_URL: ${DBM_ROADMAP_URL:-}
+      DBM_LICENSE: ${DBM_LICENSE:-}
+      # alerting & notifications
+      DBM_ALERT_EVALUATION_SECONDS: ${DBM_ALERT_EVALUATION_SECONDS:-60}
+      DBM_WEBHOOK_ALLOW_PRIVATE: ${DBM_WEBHOOK_ALLOW_PRIVATE:-false}
+      DBM_SMTP_HOST: ${DBM_SMTP_HOST:-}
+      DBM_SMTP_PORT: ${DBM_SMTP_PORT:-587}
+      DBM_SMTP_USER: ${DBM_SMTP_USER:-}
+      DBM_SMTP_PASSWORD: ${DBM_SMTP_PASSWORD:-}
+      DBM_SMTP_FROM: ${DBM_SMTP_FROM:-}
+      DBM_SMTP_STARTTLS: ${DBM_SMTP_STARTTLS:-true}
+    networks: [data, app]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/readyz', timeout=4).status == 200 else 1)"]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 40s
+    read_only: true
+    tmpfs: [/tmp]
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: [ALL]
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_BUILD_VERSION: ${DBM_BUILD_VERSION:-}
+    image: database-manager-frontend:latest
+    container_name: database-manager-frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    environment:
+      BACKEND_URL: http://backend:8000
+    ports:
+      - "${DBM_HTTP_BIND:-127.0.0.1}:${DBM_HTTP_PORT:-8080}:8080"
+    networks: [app]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8080/nginx-health || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: [ALL]
+
+networks:
+  app: {}
+  data:
+    internal: true   # the application database is not reachable from outside the stack
+
+volumes:
+  pgdata: {}
+  tsdata: {}

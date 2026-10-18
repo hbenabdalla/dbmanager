@@ -1,0 +1,15 @@
+# OpenShift: use the Kubernetes manifests for workloads (images run with arbitrary UIDs in group 0)
+# and expose the frontend with an edge-terminated Route instead of the Ingress.
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: dbmanager
+  annotations:
+    haproxy.router.openshift.io/timeout: 180s
+spec:
+  host: dbmanager.apps.example.com
+  to: { kind: Service, name: frontend }
+  port: { targetPort: http }
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect

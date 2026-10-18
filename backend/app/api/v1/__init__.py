@@ -1,0 +1,53 @@
+from fastapi import APIRouter
+
+from app.api.v1 import (
+    about,
+    admin_actions,
+    advisor,
+    alerting,
+    audit,
+    auth,
+    dashboard,
+    idp_wizard,
+    inventory,
+    metrics,
+    onboarding,
+    platform,
+    queries,
+    rbac,
+    reports,
+    server_data,
+    servers,
+    setup,
+    simulation,
+    tokens,
+    users,
+    workspace,
+)
+
+api_router = APIRouter(prefix="/api/v1")
+for module in (
+    auth,
+    tokens,
+    users,
+    rbac,
+    inventory,
+    onboarding,
+    servers,
+    server_data,
+    admin_actions,
+    queries,
+    metrics,
+    workspace,
+    advisor,
+    dashboard,
+    audit,
+    reports,
+    alerting,
+    about,
+    idp_wizard,
+    platform,
+    setup,
+    simulation,
+):
+    api_router.include_router(module.router)

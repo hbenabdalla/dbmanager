@@ -1,0 +1,617 @@
+{
+  "capabilities": [
+    "connection",
+    "inventory",
+    "users",
+    "privileges",
+    "sessions",
+    "locks",
+    "metrics",
+    "queries",
+    "explain",
+    "storage",
+    "security",
+    "recommendations",
+    "administration"
+  ],
+  "engines": {
+    "db2": {
+      "version": "DB2 v11.5.9.0",
+      "capabilities": {
+        "connection": {
+          "status": "validated",
+          "passed": 3,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "inventory": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "users": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "privileges": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "sessions": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "locks": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "metrics": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "queries": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "explain": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "storage": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "security": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "recommendations": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "administration": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        }
+      },
+      "result": "passed",
+      "validated_at": "2026-10-18T08:02:08.725237+00:00"
+    },
+    "mssql": {
+      "version": "16.0.4305.5",
+      "capabilities": {
+        "connection": {
+          "status": "validated",
+          "passed": 3,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "inventory": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "users": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "privileges": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "sessions": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "locks": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "metrics": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "queries": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "explain": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "storage": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "security": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "recommendations": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "administration": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        }
+      },
+      "result": "passed",
+      "validated_at": "2026-10-18T08:02:08.725237+00:00"
+    },
+    "mysql": {
+      "version": "8.4.11",
+      "capabilities": {
+        "connection": {
+          "status": "validated",
+          "passed": 2,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "inventory": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "users": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "privileges": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "sessions": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "locks": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "metrics": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "queries": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "explain": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "storage": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "security": {
+          "status": "validated",
+          "passed": 2,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "recommendations": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "administration": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        }
+      },
+      "result": "passed",
+      "validated_at": "2026-10-18T08:02:08.725237+00:00"
+    },
+    "mariadb": {
+      "version": "11.4.13-MariaDB-ubu2404",
+      "capabilities": {
+        "connection": {
+          "status": "validated",
+          "passed": 2,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "inventory": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "users": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "privileges": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "sessions": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "locks": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "metrics": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "queries": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "explain": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "storage": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "security": {
+          "status": "validated",
+          "passed": 2,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "recommendations": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "administration": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        }
+      },
+      "result": "passed",
+      "validated_at": "2026-10-18T08:02:08.725237+00:00"
+    },
+    "oracle": {
+      "version": "21.3.0.0.0",
+      "capabilities": {
+        "connection": {
+          "status": "validated",
+          "passed": 3,
+          "failed": 0,
+          "skipped": 1,
+          "skip_reasons": [
+            "TCPS listener not configured: the Oracle XE image listens on TCP only; set DBM_IT_ORACLE_TCPS_PORT (and DBM_IT_ORACLE_TCPS_CA) after adding a TCPS endpoint with a wallet"
+          ]
+        },
+        "inventory": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "users": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "privileges": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "sessions": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "locks": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "metrics": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "queries": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "explain": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "storage": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "security": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "recommendations": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "administration": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        }
+      },
+      "result": "passed",
+      "validated_at": "2026-10-18T08:02:08.725237+00:00"
+    },
+    "postgresql": {
+      "version": "16.15",
+      "capabilities": {
+        "connection": {
+          "status": "validated",
+          "passed": 2,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "inventory": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "users": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "privileges": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "sessions": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "locks": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "metrics": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "queries": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "explain": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "storage": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "security": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "recommendations": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "administration": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        }
+      },
+      "result": "passed",
+      "validated_at": "2026-10-18T08:02:08.725237+00:00"
+    }
+  },
+  "generated_at": "2026-10-18T08:02:08.725237+00:00",
+  "environment": "docker-compose.test.yml via scripts/integration-test.ps1 (Docker Desktop / WSL 2): vendor images from Docker Hub, mcr.microsoft.com, container-registry.oracle.com, icr.io; backend image with Microsoft ODBC Driver 18.7",
+  "pending": {
+    "db2zos": "External validation required: Db2 for z/OS cannot run in a container; validate against a z/OS subsystem through Db2 Connect."
+  },
+  "notes": {
+    "oracle": "TCPS not exercised: the Oracle XE image listens on TCP only (set DBM_IT_ORACLE_TCPS_PORT to test a TCPS listener)."
+  }
+}

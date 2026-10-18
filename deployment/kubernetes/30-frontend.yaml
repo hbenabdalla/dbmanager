@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dbmanager-frontend
+spec:
+  replicas: 2
+  selector: { matchLabels: { app: dbmanager-frontend } }
+  template:
+    metadata: { labels: { app: dbmanager-frontend } }
+    spec:
+      securityContext: { runAsNonRoot: true, seccompProfile: { type: RuntimeDefault } }
+      containers:
+        - name: web
+          image: registry.example.com/database-manager-frontend:1.0.0
+          env: [{ name: BACKEND_URL, value: "http://backend:8000" }]
+          ports: [{ containerPort: 8080, name: http }]
+          readinessProbe: { httpGet: { path: /nginx-health, port: http } }
+          resources: { requests: { cpu: 50m, memory: 64Mi }, limits: { memory: 128Mi } }
+          securityContext: { allowPrivilegeEscalation: false, capabilities: { drop: [ALL] } }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: frontend }
+spec:
+  selector: { app: dbmanager-frontend }
+  ports: [{ port: 8080, targetPort: http, name: http }]
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: dbmanager
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "180"
+spec:
+  tls: [{ hosts: [dbmanager.example.com], secretName: dbmanager-tls }]
+  rules:
+    - host: dbmanager.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend: { service: { name: frontend, port: { name: http } } }

@@ -1,0 +1,65 @@
+# Monitoring telemetry storage: VictoriaMetrics single node (StatefulSet + PVC).
+# Only the backend reaches it (ClusterIP service + NetworkPolicy); it is never exposed via an
+# Ingress/Route. Credentials come from the "dbmanager-secrets" Secret:
+#   DBM_TIMESERIES_USERNAME, DBM_TIMESERIES_PASSWORD (also read by the backend).
+# OpenShift: runs as an arbitrary non-root UID (no fixed runAsUser), restricted SCC compatible.
+# For > ~1,000 servers or HA, use the VictoriaMetrics cluster version / operator (docs/deployment/scaling.md).
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: dbmanager-timeseries
+spec:
+  serviceName: timeseries
+  replicas: 1
+  selector: { matchLabels: { app: dbmanager-timeseries } }
+  template:
+    metadata: { labels: { app: dbmanager-timeseries } }
+    spec:
+      securityContext: { runAsNonRoot: true, seccompProfile: { type: RuntimeDefault } }
+      containers:
+        - name: victoriametrics
+          image: victoriametrics/victoria-metrics:v1.122.0
+          args:
+            - -storageDataPath=/storage
+            - -retentionPeriod=$(DBM_TIMESERIES_RETENTION)
+            - -dedup.minScrapeInterval=1ms
+            - -search.latencyOffset=5s
+            - -search.maxQueryLen=1MB
+            - -memory.allowedPercent=60
+            - -envflag.enable
+            - -loggerFormat=json
+          env:
+            - { name: DBM_TIMESERIES_RETENTION, valueFrom: { configMapKeyRef: { name: dbmanager-config, key: DBM_TIMESERIES_RETENTION } } }
+            - { name: httpAuth_username, valueFrom: { secretKeyRef: { name: dbmanager-secrets, key: DBM_TIMESERIES_USERNAME } } }
+            - { name: httpAuth_password, valueFrom: { secretKeyRef: { name: dbmanager-secrets, key: DBM_TIMESERIES_PASSWORD } } }
+          ports: [{ containerPort: 8428, name: http }]
+          readinessProbe: { httpGet: { path: /health, port: http }, periodSeconds: 10 }
+          livenessProbe: { httpGet: { path: /health, port: http }, periodSeconds: 30, failureThreshold: 6 }
+          resources: { requests: { cpu: 500m, memory: 1Gi }, limits: { memory: 4Gi } }
+          securityContext: { allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: { drop: [ALL] } }
+          volumeMounts: [{ name: data, mountPath: /storage }]
+  volumeClaimTemplates:
+    - metadata: { name: data }
+      spec:
+        accessModes: [ReadWriteOnce]
+        resources: { requests: { storage: 50Gi } }   # see docs/deployment/scaling.md for sizing
+---
+apiVersion: v1
+kind: Service
+metadata: { name: timeseries }
+spec:
+  selector: { app: dbmanager-timeseries }
+  ports: [{ port: 8428, targetPort: http, name: http }]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: { name: dbmanager-timeseries-ingress }
+spec:
+  podSelector: { matchLabels: { app: dbmanager-timeseries } }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector: { matchLabels: { app: dbmanager-api } }
+        - podSelector: { matchLabels: { app: dbmanager-worker } }
+        - podSelector: { matchLabels: { app: dbmanager-migrate } }
+      ports: [{ port: 8428 }]

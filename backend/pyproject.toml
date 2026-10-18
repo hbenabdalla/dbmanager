@@ -1,0 +1,75 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "database-manager-backend"
+version = "0.9.0.dev0"
+description = "DB Manager — unified administration, monitoring and security for heterogeneous relational databases"
+requires-python = ">=3.12"
+dependencies = [
+  "fastapi>=0.115,<1.0",
+  "uvicorn[standard]>=0.30",
+  "pydantic>=2.7,<3",
+  "pydantic-settings>=2.3",
+  "email-validator>=2.1",
+  "sqlalchemy[asyncio]>=2.0.30,<2.2",
+  "alembic>=1.13",
+  "asyncpg>=0.29",
+  "argon2-cffi>=23.1",
+  "cryptography>=42",
+  "ldap3>=2.9",
+  "joserfc>=1.0",
+  "httpx>=0.27",
+  "sqlglot>=25",
+  "prometheus-client>=0.20",
+  # database drivers (see app/adapters/drivers.py; Platform → Database Drivers shows their state)
+  "PyMySQL>=1.1",          # MySQL / MariaDB
+  "pyodbc>=5.1",           # SQL Server (needs the Microsoft ODBC Driver 18 in the image)
+  "oracledb>=2.2",         # Oracle (thin mode, no Oracle Client)
+  "ibm_db>=3.2",           # Db2 LUW / Db2 for z/OS (bundled IBM clidriver)
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "pytest-asyncio>=0.23", "ruff>=0.5", "mypy>=1.10"]
+
+[tool.setuptools.packages.find]
+include = ["app*"]
+
+[tool.setuptools.package-data]
+app = ["data/*.json"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "session"
+asyncio_default_test_loop_scope = "session"
+testpaths = ["tests"]
+filterwarnings = ["ignore::DeprecationWarning"]
+markers = [
+    "unit: fast tests without external services",
+    "api: API tests against the application PostgreSQL database (DBM_TEST_DATABASE_URL)",
+    "integration: tests against real external services",
+    "real_database: tests against a real managed database engine",
+    "postgresql: PostgreSQL target", "mysql: MySQL target", "mariadb: MariaDB target",
+    "sqlserver: Microsoft SQL Server target", "oracle: Oracle Database target", "db2: Db2 LUW target",
+    "db2zos: Db2 for z/OS target", "timeseries: VictoriaMetrics",
+    "engine(name): engine a test validates (validation matrix)",
+    "capability(*names): capabilities a test validates (validation matrix)",
+]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "S", "ASYNC"]
+ignore = ["S101", "S608", "B008", "E501", "UP046"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S105", "S106"]
+"app/adapters/**" = ["S104", "S105"]
+
+[tool.mypy]
+python_version = "3.12"
+plugins = ["pydantic.mypy"]
+ignore_missing_imports = true
