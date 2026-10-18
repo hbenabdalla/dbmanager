@@ -1,19 +1,39 @@
 version: 2
+# Minor and patch updates are grouped into one pull request per ecosystem. Major versions of
+# application and documentation dependencies (React tooling, Vite, Recharts, MkDocs plugins, …)
+# usually need code changes, so they are upgraded deliberately in a roadmap sprint instead.
 updates:
   - package-ecosystem: pip
     directory: /backend
     schedule: { interval: weekly }
     open-pull-requests-limit: 5
+    groups:
+      backend-minor-and-patch: { update-types: [minor, patch] }
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: npm
     directory: /frontend
     schedule: { interval: weekly }
     open-pull-requests-limit: 5
+    groups:
+      frontend-minor-and-patch: { update-types: [minor, patch] }
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: pip
     directory: /docs
     schedule: { interval: monthly }
+    groups:
+      docs-minor-and-patch: { update-types: [minor, patch] }
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: github-actions
     directory: /
     schedule: { interval: monthly }
+    groups:
+      github-actions: { patterns: ["*"] }
   - package-ecosystem: docker
     directory: /backend
     schedule: { interval: monthly }

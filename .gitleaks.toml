@@ -1,0 +1,11 @@
+# gitleaks configuration: the default rules plus allowlists for test fixtures that look like
+# credentials but are not. Keep entries narrow (path AND exact value) so real secrets still fail.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "test fixture password in the simulation API test (not a credential)"
+condition = "AND"
+paths = ['''^backend/tests/api/test_simulation\.py$''']
+regexTarget = "line"
+regexes = ['''"password": "Pw-123456789"''']
