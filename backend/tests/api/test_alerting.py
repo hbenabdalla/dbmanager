@@ -222,7 +222,7 @@ async def test_channel_test_endpoint_and_simulated_policy(admin, monkeypatch) ->
     assert r.status_code == 201 and "Mail-Secret-9" not in r.text and r.json()["has_smtp_password"] is True
     ch = r.json()
     t = (await admin.post(f"/api/v1/notification-channels/{ch['id']}/test")).json()
-    assert t["status"] == "failed" and t["attempts"] == 2 and "503" in t["error"]
+    assert t["status"] == "failed" and t["attempts"] == 1 and "503" in t["error"]  # test sends report at once
     # keep the stored password when it is omitted on update
     r = await admin.put(
         f"/api/v1/notification-channels/{ch['id']}",

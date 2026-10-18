@@ -14,6 +14,7 @@ from app.api.deps import DB, CurrentPrincipal, rate_limit
 from app.core.errors import Conflict, NotFound, PermissionDenied, ValidationFailed
 from app.models import (
     Alert,
+    AlertComment,
     AlertRule,
     Environment,
     MaintenanceWindow,
@@ -29,16 +30,37 @@ from app.services.authz import server_ref
 router = APIRouter(tags=["alerting"])
 
 Severity = Literal["critical", "high", "medium", "low", "info"]
-ScopeT = Literal["all", "environment", "server"]
+ScopeT = Literal["all", "environment", "server", "tag"]
+TAG_SPEC = r"^[A-Za-z0-9_.:/-]{1,64}(=[^\x00-\x1f]{0,64})?$"
 SEVERITY_RANK = case({"critical": 0, "high": 1, "medium": 2, "low": 3, "info": 4}, value=Alert.severity, else_=5)
 
 
 # ---- helpers ------------------------------------------------------------------------------------
+async def _visible_servers(db: DB, p: CurrentPrincipal) -> list[Server] | None:
+    """Servers the caller may see alerts of; ``None`` = all (platform-wide permission)."""
+    flt = p.authz.server_filter("alerts.view")
+    if flt is None:
+        return None
+    return list((await db.execute(select(Server).where(flt))).scalars())
+
+
+def _scope_visible(scope_type: str, scope_id: str | None, visible: list[Server] | None) -> bool:
+    if visible is None or scope_type == "all":
+        return True
+    return any(alerting.in_scope(scope_type, scope_id, s) for s in visible)
+
+
 async def _check_scope(db: DB, scope_type: str, scope_id: str | None) -> None:
+    import re
+
     if scope_type == "all":
         return
     if not scope_id:
         raise ValidationFailed(f"scope_id is required for scope {scope_type}")
+    if scope_type == "tag":
+        if not re.match(TAG_SPEC, scope_id):
+            raise ValidationFailed("tag scope must be 'key' or 'key=value' (key: letters, digits, _ . : / -)")
+        return
     try:
         sid = uuid.UUID(scope_id)
     except ValueError as exc:
@@ -70,8 +92,11 @@ def _rule_out(r: AlertRule) -> dict[str, Any]:
         "severity": r.severity,
         "scope_type": r.scope_type,
         "scope_id": r.scope_id,
+        "aggregation": r.aggregation,
+        "window_seconds": r.window_seconds,
         "channel_ids": r.channel_ids,
         "notify_on_resolve": r.notify_on_resolve,
+        "renotify_minutes": r.renotify_minutes,
         "created_by": r.created_by,
         "created_at": r.created_at,
         "updated_at": r.updated_at,
@@ -106,6 +131,8 @@ def _alert_out(a: Alert, r: AlertRule, s: Server) -> dict[str, Any]:
         "resolved_at": a.resolved_at,
         "resolved_by": a.resolved_by,
         "last_evaluated_at": a.last_evaluated_at,
+        "notified_at": a.notified_at,
+        "notify_count": a.notify_count,
     }
 
 
@@ -160,10 +187,10 @@ async def list_alerts(
     )
 
 
-@router.get("/alerts/summary", summary="Active alert counts for the top bar and dashboard")
-async def alert_summary(db: DB, p: CurrentPrincipal) -> dict[str, Any]:
+@router.get("/alerts/summary", summary="Active alert counts for the top bar, dashboard and server badges")
+async def alert_summary(db: DB, p: CurrentPrincipal, by_server: bool = False) -> dict[str, Any]:
     if not p.authz.has_anywhere("alerts.view"):
-        return {"active": 0, "by_severity": {}, "visible": False}
+        return {"active": 0, "by_severity": {}, "visible": False, **({"by_server": {}} if by_server else {})}
     stmt = (
         select(Alert.severity, func.count())
         .join(Server, Server.id == Alert.server_id)
@@ -182,12 +209,30 @@ async def alert_summary(db: DB, p: CurrentPrincipal) -> dict[str, Any]:
     )
     if flt is not None:
         unacked = unacked.where(flt)
-    return {
+    out: dict[str, Any] = {
         "active": sum(by.values()),
         "unacknowledged": (await db.execute(unacked)).scalar_one(),
         "by_severity": by,
         "visible": True,
     }
+    if by_server:
+        per = (
+            select(Alert.server_id, Alert.severity, Alert.status, func.count())
+            .join(Server, Server.id == Alert.server_id)
+            .where(Alert.status.in_(["firing", "acknowledged"]))
+            .group_by(Alert.server_id, Alert.severity, Alert.status)
+        )
+        if flt is not None:
+            per = per.where(flt)
+        servers: dict[str, dict[str, Any]] = {}
+        for sid, sev, st, n in (await db.execute(per)).all():
+            e = servers.setdefault(str(sid), {"active": 0, "unacknowledged": 0, "top_severity": sev})
+            e["active"] += n
+            e["unacknowledged"] += n if st == "firing" else 0
+            if notify.SEVERITY_ORDER.get(sev, 0) > notify.SEVERITY_ORDER.get(e["top_severity"], 0):
+                e["top_severity"] = sev
+        out["by_server"] = servers
+    return out
 
 
 class AckIn(BaseModel):
@@ -212,6 +257,58 @@ async def _load_alert(db: DB, p: CurrentPrincipal, alert_id: uuid.UUID, perm: st
     if not p.authz.has(perm, ref):
         raise PermissionDenied(f"Missing permission '{perm}' for this server", details={"permission": perm})
     return a, r, s
+
+
+class CommentIn(BaseModel):
+    body: str = Field(..., min_length=1, max_length=4000)
+
+
+def _comment_out(c: AlertComment) -> dict[str, Any]:
+    return {"id": str(c.id), "author": c.author, "body": c.body, "created_at": c.created_at}
+
+
+@router.get("/alerts/{alert_id}", summary="One alert with its comments and notification history")
+async def get_alert(alert_id: uuid.UUID, db: DB, p: CurrentPrincipal) -> dict[str, Any]:
+    a, r, s = await _load_alert(db, p, alert_id, "alerts.view")
+    comments = (
+        await db.execute(select(AlertComment).where(AlertComment.alert_id == a.id).order_by(AlertComment.created_at))
+    ).scalars()
+    deliveries = (
+        await db.execute(
+            select(NotificationDelivery, NotificationChannel.name)
+            .join(NotificationChannel, NotificationChannel.id == NotificationDelivery.channel_id)
+            .where(NotificationDelivery.alert_id == a.id)
+            .order_by(NotificationDelivery.created_at)
+        )
+    ).all()
+    return {
+        **_alert_out(a, r, s),
+        "comments": [_comment_out(c) for c in comments],
+        "notifications": [
+            {
+                "channel": name,
+                "event": d.event,
+                "status": d.status,
+                "attempts": d.attempts,
+                "error": d.error,
+                "created_at": d.created_at,
+                "next_attempt_at": d.next_attempt_at,
+            }
+            for d, name in deliveries
+        ],
+    }
+
+
+@router.post("/alerts/{alert_id}/comments", status_code=201, summary="Comment on an alert")
+async def comment_alert(alert_id: uuid.UUID, body: CommentIn, db: DB, p: CurrentPrincipal) -> dict[str, Any]:
+    a, _r, s = await _load_alert(db, p, alert_id, "alerts.acknowledge")
+    c = AlertComment(id=uuid.uuid4(), alert_id=a.id, author=p.username, body=body.body, created_at=datetime.now(UTC))
+    db.add(c)
+    await db.flush()
+    await audit.record(
+        "alert.comment", actor=p, category="alerting", server=s, object_name=a.title, details={"comment": body.body}
+    )
+    return _comment_out(c)
 
 
 @router.post("/alerts/{alert_id}/acknowledge", summary="Acknowledge a firing alert")
@@ -272,16 +369,26 @@ class RuleIn(BaseModel):
     severity: Severity
     scope_type: ScopeT = "all"
     scope_id: str | None = None
+    #: metric rules: latest collected value, or avg/min/max over window_seconds of history
+    aggregation: Literal["latest", "avg", "min", "max"] = "latest"
+    window_seconds: int = Field(0, ge=0, le=7 * 86400)
     channel_ids: list[uuid.UUID] = Field(default_factory=list, max_length=20)
     notify_on_resolve: bool = True
+    renotify_minutes: int = Field(0, ge=0, le=7 * 24 * 60)
 
     @model_validator(mode="after")
     def _kind_fields(self) -> RuleIn:
         if self.kind == "metric":
             if not self.metric or self.operator is None or self.threshold is None:
                 raise ValueError("metric rules need metric, operator and threshold")
-        elif self.kind == "health" and not self.health_states:
-            self.health_states = ["unavailable"]
+            if self.aggregation != "latest" and self.window_seconds < 60:
+                raise ValueError("avg/min/max rules need window_seconds of at least 60")
+            if self.aggregation == "latest":
+                self.window_seconds = 0
+        else:
+            self.aggregation, self.window_seconds = "latest", 0
+            if self.kind == "health" and not self.health_states:
+                self.health_states = ["unavailable"]
         return self
 
 
@@ -316,16 +423,17 @@ def _apply_rule(r: AlertRule, body: RuleIn) -> None:
         setattr(r, k, v)
 
 
-@router.get("/alert-rules", summary="Alert rules")
+@router.get("/alert-rules", summary="Alert rules (scoped viewers see rules that can apply to their servers)")
 async def list_rules(db: DB, p: CurrentPrincipal, params: PageParams = Depends()) -> Page[dict[str, Any]]:
     p.authz.require_anywhere("alerts.view")
     stmt = select(AlertRule)
     if params.q:
         stmt = stmt.where(func.lower(AlertRule.name).like(f"%{params.q.lower()}%"))
     stmt = apply_sort(stmt, params.sort, {"name": AlertRule.name, "severity": AlertRule.severity}, AlertRule.name)
-    total = (await db.execute(select(func.count()).select_from(stmt.order_by(None).subquery()))).scalar_one()
-    rows = (await db.execute(stmt.limit(params.page_size).offset((params.page - 1) * params.page_size))).scalars()
-    return Page(items=[_rule_out(r) for r in rows], total=total, page=params.page, page_size=params.page_size)
+    visible = await _visible_servers(db, p)
+    rows = [r for r in (await db.execute(stmt)).scalars() if _scope_visible(r.scope_type, r.scope_id, visible)]
+    page = rows[(params.page - 1) * params.page_size : params.page * params.page_size]
+    return Page(items=[_rule_out(r) for r in page], total=len(rows), page=params.page, page_size=params.page_size)
 
 
 @router.post("/alert-rules", status_code=201, summary="Create an alert rule")
@@ -389,21 +497,49 @@ class WindowIn(BaseModel):
     reason: str | None = Field(None, max_length=2000)
     scope_type: ScopeT = "all"
     scope_id: str | None = None
+    #: first (or only) occurrence, ISO 8601 with offset
     starts_at: datetime
     ends_at: datetime
+    recurrence: Literal["none", "daily", "weekly"] = "none"
+    #: weekly: ISO weekdays 1 = Monday … 7 = Sunday (default: the weekday of starts_at)
+    weekdays: list[int] = Field(default_factory=list, max_length=7)
+    #: IANA time zone the recurrence follows (e.g. Europe/Berlin), default UTC
+    time_zone: str = Field("UTC", max_length=64)
+    repeat_until: datetime | None = None
 
     @model_validator(mode="after")
     def _order(self) -> WindowIn:
+        from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+
         if self.starts_at.tzinfo is None or self.ends_at.tzinfo is None:
             raise ValueError("starts_at and ends_at need a time zone (ISO 8601 with offset)")
         if self.ends_at <= self.starts_at:
             raise ValueError("ends_at must be after starts_at")
+        try:
+            tz = ZoneInfo(self.time_zone)
+        except (ZoneInfoNotFoundError, ValueError) as exc:
+            raise ValueError(f"unknown time zone {self.time_zone!r}") from exc
+        if self.recurrence == "none":
+            self.weekdays, self.repeat_until = [], None
+            return self
+        if self.ends_at - self.starts_at > alerting.MAX_RECURRING_DURATION:
+            raise ValueError("an occurrence of a recurring window can last at most 24 hours")
+        if self.repeat_until is not None:
+            if self.repeat_until.tzinfo is None:
+                raise ValueError("repeat_until needs a time zone")
+            if self.repeat_until <= self.starts_at:
+                raise ValueError("repeat_until must be after starts_at")
+        if self.recurrence == "weekly":
+            if any(d < 1 or d > 7 for d in self.weekdays):
+                raise ValueError("weekdays are ISO weekday numbers 1 (Monday) … 7 (Sunday)")
+            self.weekdays = sorted(set(self.weekdays)) or [self.starts_at.astimezone(tz).isoweekday()]
+        else:
+            self.weekdays = []
         return self
 
 
-def _window_out(w: MaintenanceWindow) -> dict[str, Any]:
-    now = datetime.now(UTC)
-    state = "active" if w.starts_at <= now < w.ends_at else ("scheduled" if w.starts_at > now else "ended")
+def _window_out(w: MaintenanceWindow, now: datetime | None = None) -> dict[str, Any]:
+    state, start, end = alerting.window_state(w, now or datetime.now(UTC))
     return {
         "id": str(w.id),
         "name": w.name,
@@ -412,38 +548,80 @@ def _window_out(w: MaintenanceWindow) -> dict[str, Any]:
         "scope_id": w.scope_id,
         "starts_at": w.starts_at,
         "ends_at": w.ends_at,
+        "recurrence": w.recurrence,
+        "weekdays": w.weekdays,
+        "time_zone": w.time_zone,
+        "repeat_until": w.repeat_until,
         "state": state,
+        "current_or_next_start": start,
+        "current_or_next_end": end,
         "created_by": w.created_by,
     }
 
 
 @router.get("/maintenance-windows", summary="Maintenance windows")
 async def list_windows(
-    db: DB, p: CurrentPrincipal, params: PageParams = Depends(), include_ended: bool = False
+    db: DB,
+    p: CurrentPrincipal,
+    params: PageParams = Depends(),
+    include_ended: bool = False,
+    server_id: uuid.UUID | None = Query(None, description="only windows that apply to this server"),
 ) -> Page[dict[str, Any]]:
     p.authz.require_anywhere("alerts.view")
-    stmt = select(MaintenanceWindow)
-    if not include_ended:
-        stmt = stmt.where(MaintenanceWindow.ends_at > datetime.now(UTC))
-    stmt = apply_sort(stmt, params.sort, {"starts_at": MaintenanceWindow.starts_at}, MaintenanceWindow.starts_at)
-    total = (await db.execute(select(func.count()).select_from(stmt.order_by(None).subquery()))).scalar_one()
-    rows = (await db.execute(stmt.limit(params.page_size).offset((params.page - 1) * params.page_size))).scalars()
-    return Page(items=[_window_out(w) for w in rows], total=total, page=params.page, page_size=params.page_size)
+    stmt = apply_sort(
+        select(MaintenanceWindow), params.sort, {"starts_at": MaintenanceWindow.starts_at}, MaintenanceWindow.starts_at
+    )
+    now = datetime.now(UTC)
+    visible = await _visible_servers(db, p)
+    target: Server | None = None
+    if server_id is not None:
+        target = await db.get(Server, server_id)
+        if target is None or (visible is not None and target.id not in {s.id for s in visible}):
+            raise NotFound("Server not found")
+    rows = []
+    for w in (await db.execute(stmt)).scalars():
+        if not include_ended and alerting.window_state(w, now)[0] == "ended":
+            continue
+        if not _scope_visible(w.scope_type, w.scope_id, visible):
+            continue
+        if target is not None and not alerting.in_scope(w.scope_type, w.scope_id, target):
+            continue
+        rows.append(w)
+    page = rows[(params.page - 1) * params.page_size : params.page * params.page_size]
+    return Page(
+        items=[_window_out(w, now) for w in page], total=len(rows), page=params.page, page_size=params.page_size
+    )
+
+
+def _window_values(body: WindowIn) -> dict[str, Any]:
+    return {**body.model_dump(), "scope_id": None if body.scope_type == "all" else body.scope_id}
 
 
 @router.post("/maintenance-windows", status_code=201, summary="Schedule a maintenance window")
 async def create_window(body: WindowIn, db: DB, p: CurrentPrincipal) -> dict[str, Any]:
     p.authz.require("alerts.manage")
     await _check_scope(db, body.scope_type, body.scope_id)
-    w = MaintenanceWindow(
-        id=uuid.uuid4(),
-        created_by=p.username,
-        **{**body.model_dump(), "scope_id": None if body.scope_type == "all" else body.scope_id},
-    )
+    w = MaintenanceWindow(id=uuid.uuid4(), created_by=p.username, **_window_values(body))
     db.add(w)
     await db.flush()
     await audit.record(
         "maintenance_window.create", actor=p, category="alerting", object_name=w.name, details=_window_out(w)
+    )
+    return _window_out(w)
+
+
+@router.put("/maintenance-windows/{window_id}", summary="Change a maintenance window")
+async def update_window(window_id: uuid.UUID, body: WindowIn, db: DB, p: CurrentPrincipal) -> dict[str, Any]:
+    p.authz.require("alerts.manage")
+    w = await db.get(MaintenanceWindow, window_id)
+    if w is None:
+        raise NotFound("Maintenance window not found")
+    await _check_scope(db, body.scope_type, body.scope_id)
+    for k, v in _window_values(body).items():
+        setattr(w, k, v)
+    await db.flush()
+    await audit.record(
+        "maintenance_window.update", actor=p, category="alerting", object_name=w.name, details=_window_out(w)
     )
     return _window_out(w)
 
@@ -461,13 +639,43 @@ async def delete_window(window_id: uuid.UUID, db: DB, p: CurrentPrincipal) -> Me
 
 
 # ---- notification channels --------------------------------------------------------------------------
+class RoutesIn(BaseModel):
+    #: also receive alerts of rules that do not list this channel
+    subscribe_all: bool = False
+    environment_ids: list[uuid.UUID] = Field(default_factory=list, max_length=50)
+    tags: list[str] = Field(default_factory=list, max_length=50)
+    engines: list[str] = Field(default_factory=list, max_length=20)
+
+    @field_validator("tags")
+    @classmethod
+    def _tags(cls, v: list[str]) -> list[str]:
+        import re
+
+        bad = [x for x in v if not re.match(TAG_SPEC, x)]
+        if bad:
+            raise ValueError(f"tag filters must be 'key' or 'key=value': {', '.join(bad)}")
+        return v
+
+    def stored(self) -> dict[str, Any]:
+        return {
+            "subscribe_all": self.subscribe_all,
+            "environment_ids": [str(e) for e in self.environment_ids],
+            "tags": self.tags,
+            "engines": self.engines,
+        }
+
+
 class ChannelIn(BaseModel):
     name: str = Field(..., min_length=1, max_length=128)
     kind: Literal["webhook", "email"]
     enabled: bool = True
     min_severity: Severity = "info"
     send_for_simulated: bool = False
-    #: webhook: url, headers{}; email: recipients[], optional smtp_host/smtp_port/smtp_user/from/starttls
+    #: webhook payload format
+    preset: Literal["generic", "slack", "teams"] = "generic"
+    #: routing filters (see app.services.alerting.channel_accepts)
+    routes: RoutesIn = Field(default_factory=lambda: RoutesIn())
+    #: webhook: url, headers{}; email: recipients[], optional smtp_host/smtp_port/smtp_user/from/security
     config: dict[str, Any] = Field(default_factory=dict)
     #: write-only: webhook signing_secret / email smtp_password. Omit to keep the stored value,
     #: send an empty string to clear it.
@@ -500,6 +708,8 @@ def _channel_out(c: NotificationChannel) -> dict[str, Any]:
         "enabled": c.enabled,
         "min_severity": c.min_severity,
         "send_for_simulated": c.send_for_simulated,
+        "preset": c.preset,
+        "routes": c.routes or {},
         "config": c.config,
         # only which secrets are stored, never their values
         "has_signing_secret": "signing_secret" in stored,
@@ -523,8 +733,10 @@ def _validate_channel(body: ChannelIn) -> dict[str, Any]:
             raise ValidationFailed("email channels need at least one valid recipient")
         cfg = {
             "recipients": recipients,
-            **{k: cfg[k] for k in ("smtp_host", "smtp_port", "smtp_user", "from", "starttls") if k in cfg},
+            **{k: cfg[k] for k in ("smtp_host", "smtp_port", "smtp_user", "from", "starttls", "security") if k in cfg},
         }
+        if "security" in cfg and cfg["security"] not in notify.SMTP_SECURITY:
+            raise ValidationFailed("security must be starttls, tls or none")
     return cfg
 
 
@@ -559,6 +771,8 @@ async def create_channel(body: ChannelIn, db: DB, p: CurrentPrincipal) -> dict[s
         enabled=body.enabled,
         min_severity=body.min_severity,
         send_for_simulated=body.send_for_simulated,
+        preset=body.preset if body.kind == "webhook" else "generic",
+        routes=body.routes.stored(),
         config=cfg,
         secret=notify.seal_secret(cid, _secret_values(body, {})),
         created_by=p.username,
@@ -570,7 +784,7 @@ async def create_channel(body: ChannelIn, db: DB, p: CurrentPrincipal) -> dict[s
         actor=p,
         category="alerting",
         object_name=c.name,
-        details={"kind": c.kind, "config": cfg},
+        details={"kind": c.kind, "preset": c.preset, "routes": c.routes, "config": cfg},
     )
     return _channel_out(c)
 
@@ -591,6 +805,8 @@ async def update_channel(channel_id: uuid.UUID, body: ChannelIn, db: DB, p: Curr
         body.send_for_simulated,
         cfg,
     )
+    c.preset = body.preset if body.kind == "webhook" else "generic"
+    c.routes = body.routes.stored()
     c.secret = notify.seal_secret(c.id, _secret_values(body, notify.open_secret(c)))
     await audit.record(
         "notification_channel.update",
@@ -599,6 +815,8 @@ async def update_channel(channel_id: uuid.UUID, body: ChannelIn, db: DB, p: Curr
         object_name=c.name,
         details={
             "config": cfg,
+            "preset": c.preset,
+            "routes": c.routes,
             "secrets_changed": [k for k in ("signing_secret", "smtp_password") if getattr(body, k) is not None],
         },
     )
@@ -630,7 +848,7 @@ async def test_channel(channel_id: uuid.UUID, db: DB, p: CurrentPrincipal) -> di
     c = await db.get(NotificationChannel, channel_id)
     if c is None:
         raise NotFound("Notification channel not found")
-    d = await alerting.deliver(db, c, "test", None, None)
+    d = await alerting.deliver(db, c, "test", None, None, retries=False)
     await audit.record(
         "notification_channel.test",
         actor=p,
@@ -665,6 +883,7 @@ async def channel_deliveries(
             "response_code": d.response_code,
             "error": d.error,
             "created_at": d.created_at,
+            "next_attempt_at": d.next_attempt_at,
         }
         for d in rows
     ]

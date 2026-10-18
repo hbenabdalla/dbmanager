@@ -44,6 +44,8 @@ GLOBAL_JOBS: dict[str, int] = {
     "timeseries_deletes": 60,
     # alert rules against the collectors' latest values (app.services.alerting)
     "evaluate_alerts": max(get_settings().alert_evaluation_seconds, 15),
+    # failed notification deliveries whose backoff has elapsed (app.services.alerting.retry_due)
+    "notification_retries": 60,
 }
 
 

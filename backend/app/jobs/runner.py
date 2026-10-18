@@ -242,6 +242,10 @@ async def run_job(job_id: uuid.UUID) -> None:
                     from app.services import alerting
 
                     result = await alerting.evaluate(db)
+                elif job.kind == "notification_retries":
+                    from app.services import alerting
+
+                    result = await alerting.retry_due(db)
                 else:
                     status, error = "skipped", f"unknown global job {job.kind}"
             else:

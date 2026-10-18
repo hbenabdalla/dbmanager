@@ -153,13 +153,24 @@ class Settings(BaseSettings):
     smtp_user: str = ""
     smtp_password: SecretStr = Field(default=SecretStr(""))
     smtp_from: str = ""
+    #: deprecated alias of smtp_security=starttls|none (kept for existing installations)
     smtp_starttls: bool = True
+    #: starttls (submission, port 587) | tls (implicit TLS, SMTPS port 465) | none (plain, internal relays)
+    #: empty = derived from smtp_starttls
+    smtp_security: Literal["", "starttls", "tls", "none"] = ""
+    #: CA bundle to verify the SMTP server certificate (internal CAs); empty = system trust store
+    smtp_ca_file: str = ""
     smtp_timeout_seconds: float = 15.0
+    #: delivery attempts per notification (first try + retries with backoff), and the backoff steps
+    notify_max_attempts: int = Field(default=5, ge=1, le=20)
+    notify_retry_backoff_seconds: CsvList = Field(default_factory=lambda: ["60", "300", "900", "3600"])
 
     # --- AI insights (architected, disabled) ---------------------------------------------
     ai_insights_enabled: bool = False
 
-    @field_validator("cors_origins", "trusted_proxies", "secret_file_dirs", mode="before")
+    @field_validator(
+        "cors_origins", "trusted_proxies", "secret_file_dirs", "notify_retry_backoff_seconds", mode="before"
+    )
     @classmethod
     def _split_csv(cls, v: object) -> object:
         if isinstance(v, str):

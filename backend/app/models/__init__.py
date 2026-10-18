@@ -1,5 +1,12 @@
 from app.models.advisor import Recommendation, SecurityFinding
-from app.models.alerting import Alert, AlertRule, MaintenanceWindow, NotificationChannel, NotificationDelivery
+from app.models.alerting import (
+    Alert,
+    AlertComment,
+    AlertRule,
+    MaintenanceWindow,
+    NotificationChannel,
+    NotificationDelivery,
+)
 from app.models.audit import AppSetting, AuditEvent, QueryHistory, RateLimitWindow
 from app.models.identity import (
     ApiToken,
@@ -32,6 +39,7 @@ from app.models.telemetry import CollectorJob, MetricSample, QueryFingerprint, Q
 __all__ = [
     "ApiToken",
     "Alert",
+    "AlertComment",
     "AlertRule",
     "MaintenanceWindow",
     "NotificationChannel",

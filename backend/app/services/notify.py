@@ -31,6 +31,10 @@ from app.models import NotificationChannel
 
 SEVERITY_ORDER = {"info": 0, "low": 1, "medium": 2, "high": 3, "critical": 4}
 KINDS = ("webhook", "email")
+#: webhook payload formats: DB Manager JSON, Slack incoming webhook, Microsoft Teams workflow
+#: (Adaptive Card message, as accepted by Teams "Post to a channel when a webhook request is received")
+PRESETS = ("generic", "slack", "teams")
+SMTP_SECURITY = ("starttls", "tls", "none")
 SIGNATURE_HEADER = "X-DBM-Signature"
 
 
@@ -115,11 +119,71 @@ def payload(event: str, alert: dict[str, Any] | None) -> dict[str, Any]:
     }
 
 
+_SEVERITY_COLOR = {"critical": "#b42318", "high": "#d9480f", "medium": "#b7791f", "low": "#2563eb", "info": "#64748b"}
+
+
+def preset_payload(preset: str, event: str, alert: dict[str, Any] | None) -> dict[str, Any]:
+    """Body for the channel's preset. ``generic`` is the documented DB Manager JSON payload."""
+    if preset == "generic":
+        return payload(event, alert)
+    subject = _subject(event, alert).removeprefix("[DB Manager] ")
+    text = _text(event, alert)
+    url = (alert or {}).get("url")
+    facts = []
+    if alert:
+        facts = [
+            ("Server", f"{alert.get('server_name')} ({alert.get('engine')})"),
+            ("Environment", alert.get("environment") or "—"),
+            ("Severity", str(alert.get("severity"))),
+            ("Status", "renotification" if alert.get("renotify") else event),
+        ]
+        if alert.get("value") is not None:
+            facts.append(("Value", f"{alert['value']:g} ({alert.get('operator') or ''} {alert.get('threshold')})"))
+    if preset == "slack":
+        blocks: list[dict[str, Any]] = [
+            {"type": "header", "text": {"type": "plain_text", "text": subject[:150]}},
+            {"type": "section", "text": {"type": "mrkdwn", "text": (alert or {}).get("message") or text}},
+        ]
+        if facts:
+            blocks.append({"type": "section", "fields": [{"type": "mrkdwn", "text": f"*{k}*\n{v}"} for k, v in facts]})
+        if url:
+            blocks.append(
+                {
+                    "type": "actions",
+                    "elements": [
+                        {"type": "button", "text": {"type": "plain_text", "text": "Open in DB Manager"}, "url": url}
+                    ],
+                }
+            )
+        return {"text": subject, "blocks": blocks}
+    if preset == "teams":
+        body: list[dict[str, Any]] = [
+            {"type": "TextBlock", "size": "Medium", "weight": "Bolder", "wrap": True, "text": subject},
+            {"type": "TextBlock", "wrap": True, "text": (alert or {}).get("message") or text},
+        ]
+        if facts:
+            body.append({"type": "FactSet", "facts": [{"title": k, "value": v} for k, v in facts]})
+        card: dict[str, Any] = {
+            "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+            "type": "AdaptiveCard",
+            "version": "1.4",
+            "body": body,
+        }
+        if url:
+            card["actions"] = [{"type": "Action.OpenUrl", "title": "Open in DB Manager", "url": url}]
+        return {
+            "type": "message",
+            "attachments": [{"contentType": "application/vnd.microsoft.card.adaptive", "content": card}],
+        }
+    raise DeliveryError(f"unknown webhook preset {preset!r}")
+
+
 def _subject(event: str, alert: dict[str, Any] | None) -> str:
     if not alert:
         return "[DB Manager] Test notification"
     state = "RESOLVED" if event == "resolved" else alert.get("severity", "").upper()
-    return f"[DB Manager] {state}: {alert.get('title')}"
+    again = " (still firing)" if alert.get("renotify") else ""
+    return f"[DB Manager] {state}: {alert.get('title')}{again}"
 
 
 def _text(event: str, alert: dict[str, Any] | None) -> str:
@@ -174,9 +238,26 @@ def _smtp_settings(channel: NotificationChannel) -> dict[str, Any]:
         "user": c.get("smtp_user") or s.smtp_user,
         "password": secret.get("smtp_password") or s.smtp_password.get_secret_value(),
         "sender": c.get("from") or s.smtp_from,
-        "starttls": bool(c["starttls"]) if "starttls" in c else s.smtp_starttls,
+        "security": smtp_security(c),
+        "ca_file": s.smtp_ca_file,
         "timeout": s.smtp_timeout_seconds,
     }
+
+
+def smtp_security(config: dict[str, Any]) -> str:
+    """Channel setting ``security`` (or legacy ``starttls``) over the platform default."""
+    s = get_settings()
+    if config.get("security") in SMTP_SECURITY:
+        return str(config["security"])
+    if "starttls" in config:
+        return "starttls" if config["starttls"] else "none"
+    if s.smtp_security:
+        return s.smtp_security
+    return "starttls" if s.smtp_starttls else "none"
+
+
+def _tls_context(ca_file: str) -> ssl.SSLContext:
+    return ssl.create_default_context(cafile=ca_file or None)
 
 
 def _send_mail_sync(cfg: dict[str, Any], recipients: list[str], subject: str, text: str) -> None:
@@ -185,9 +266,15 @@ def _send_mail_sync(cfg: dict[str, Any], recipients: list[str], subject: str, te
     msg["To"] = ", ".join(recipients)
     msg["Subject"] = subject
     msg.set_content(text)
-    with smtplib.SMTP(cfg["host"], cfg["port"], timeout=cfg["timeout"]) as smtp:
-        if cfg["starttls"]:
-            smtp.starttls(context=ssl.create_default_context())
+    if cfg["security"] == "tls":  # implicit TLS (SMTPS)
+        client: smtplib.SMTP = smtplib.SMTP_SSL(
+            cfg["host"], cfg["port"], timeout=cfg["timeout"], context=_tls_context(cfg["ca_file"])
+        )
+    else:
+        client = smtplib.SMTP(cfg["host"], cfg["port"], timeout=cfg["timeout"])
+    with client as smtp:
+        if cfg["security"] == "starttls":
+            smtp.starttls(context=_tls_context(cfg["ca_file"]))
         if cfg["user"]:
             smtp.login(cfg["user"], cfg["password"])
         smtp.send_message(msg)
@@ -209,7 +296,7 @@ async def send_email(channel: NotificationChannel, event: str, alert: dict[str, 
 
 async def send(channel: NotificationChannel, event: str, alert: dict[str, Any] | None) -> int | None:
     if channel.kind == "webhook":
-        return await send_webhook(channel, payload(event, alert))
+        return await send_webhook(channel, preset_payload(channel.preset or "generic", event, alert))
     if channel.kind == "email":
         return await send_email(channel, event, alert)
     raise DeliveryError(f"unknown channel kind {channel.kind!r}")

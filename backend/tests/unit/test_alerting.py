@@ -42,6 +42,8 @@ def rule(**kw):  # type: ignore[no-untyped-def]
         health_states=[],
         scope_type="all",
         scope_id=None,
+        aggregation="latest",
+        window_seconds=0,
     )
     base.update(kw)
     return SimpleNamespace(**base)
@@ -82,16 +84,25 @@ def test_scopes_and_maintenance_windows() -> None:
     assert not alerting.in_scope("environment", str(uuid.uuid4()), s)
     assert alerting.in_scope("server", str(s.id), s)
     w_active = SimpleNamespace(
-        starts_at=NOW - timedelta(hours=1), ends_at=NOW + timedelta(hours=1), scope_type="server", scope_id=str(s.id)
+        starts_at=NOW - timedelta(hours=1),
+        ends_at=NOW + timedelta(hours=1),
+        scope_type="server",
+        scope_id=str(s.id),
+        recurrence="none",
     )
     w_other = SimpleNamespace(
         starts_at=NOW - timedelta(hours=1),
         ends_at=NOW + timedelta(hours=1),
         scope_type="server",
         scope_id=str(uuid.uuid4()),
+        recurrence="none",
     )
     w_past = SimpleNamespace(
-        starts_at=NOW - timedelta(hours=3), ends_at=NOW - timedelta(hours=2), scope_type="all", scope_id=None
+        starts_at=NOW - timedelta(hours=3),
+        ends_at=NOW - timedelta(hours=2),
+        scope_type="all",
+        scope_id=None,
+        recurrence="none",
     )
     assert alerting.active_window([w_other, w_past, w_active], s, NOW) is w_active
     assert alerting.active_window([w_other, w_past], s, NOW) is None
@@ -158,6 +169,7 @@ async def test_webhook_send_signs_body(monkeypatch: pytest.MonkeyPatch) -> None:
     ch = SimpleNamespace(
         id=uuid.uuid4(),
         kind="webhook",
+        preset="generic",
         config={"url": "http://127.0.0.1/hook", "headers": {"X-Team": "dba"}},
         secret=None,
     )
@@ -178,7 +190,9 @@ async def test_webhook_http_error_is_delivery_error(monkeypatch: pytest.MonkeyPa
     real = httpx.AsyncClient
     transport = httpx.MockTransport(lambda r: httpx.Response(500))
     monkeypatch.setattr(notify.httpx, "AsyncClient", lambda **kw: real(transport=transport, **kw))
-    ch = SimpleNamespace(id=uuid.uuid4(), kind="webhook", config={"url": "http://127.0.0.1/hook"}, secret=None)
+    ch = SimpleNamespace(
+        id=uuid.uuid4(), kind="webhook", preset="generic", config={"url": "http://127.0.0.1/hook"}, secret=None
+    )
     with pytest.raises(notify.DeliveryError) as e:
         await notify.send(ch, "firing", {"title": "x"})
     assert e.value.code == 500
