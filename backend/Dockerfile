@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.7
 # ---------- build stage: resolve and compile dependencies ----------
 # Debian 12 is pinned because the Microsoft ODBC repository below is versioned per Debian release.
-FROM python:3.12-slim-bookworm AS build
+FROM python:3.14-slim-bookworm AS build
 ENV PIP_NO_CACHE_DIR=1 PIP_DISABLE_PIP_VERSION_CHECK=1 PYTHONDONTWRITEBYTECODE=1
 # unixodbc-dev: headers for pyodbc when no binary wheel matches the platform
 RUN apt-get update && apt-get install -y --no-install-recommends build-essential unixodbc-dev \
@@ -12,7 +12,7 @@ COPY app ./app
 RUN python -m venv /opt/venv && /opt/venv/bin/pip install --upgrade pip && /opt/venv/bin/pip install .
 
 # ---------- runtime stage ----------
-FROM python:3.12-slim-bookworm AS runtime
+FROM python:3.14-slim-bookworm AS runtime
 LABEL org.opencontainers.image.title="database-manager-backend" \
       org.opencontainers.image.description="DB Manager API, scheduler and collector workers"
 # build metadata shown on Platform -> About (pass with --build-arg; nothing else is recorded)
