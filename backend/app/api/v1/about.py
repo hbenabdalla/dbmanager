@@ -13,7 +13,7 @@ from typing import Any
 from fastapi import APIRouter
 from sqlalchemy import text
 
-from app import __license__, __version__
+from app import DOCUMENTATION_URL, __license__, __version__
 from app.api.deps import DB, CurrentPrincipal
 from app.core.config import get_settings
 
@@ -31,11 +31,17 @@ def _clean(value: str, limit: int = 64) -> str | None:
     return v or None
 
 
+_HIDDEN = {"off", "none", "false", "-"}
+
+
 def links() -> dict[str, str | None]:
     s = get_settings()
     github = s.github_url.strip() or None
     roadmap = s.roadmap_url.strip() or (f"{github.rstrip('/')}/blob/main/ROADMAP.md" if github else None)
-    return {"documentation": s.documentation_url.strip() or None, "github": github, "roadmap": roadmap}
+    docs: str | None = s.documentation_url.strip() or DOCUMENTATION_URL
+    if docs.lower() in _HIDDEN:
+        docs = None
+    return {"documentation": docs, "github": github, "roadmap": roadmap}
 
 
 def version_info(schema_version: str | None = None) -> dict[str, Any]:

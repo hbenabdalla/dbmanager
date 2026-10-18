@@ -87,6 +87,8 @@ passes.
 **Project**
 - Licensed under the Apache License 2.0 (`LICENSE`); SPDX identifier in `backend/pyproject.toml`,
   `frontend/package.json` and on the About page.
+- Documentation published on Read the Docs (https://db-manager.readthedocs.io/en/latest/); the Help menu and About page link to it
+  by default (`DBM_DOCUMENTATION_URL` overrides it, `off` hides it).
 - Documentation site for Read the Docs (MkDocs Material), product capability matrix, gap
   analysis and roadmap, contribution guide, security policy, GitHub issue forms and CI workflows.
 

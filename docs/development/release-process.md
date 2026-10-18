@@ -38,6 +38,7 @@ Read the Docs builds the site from `.readthedocs.yaml`:
 | `stable` | the highest `vX.Y.Z` tag — documentation of the current release |
 | `vX.Y.Z` | each release tag, once activated in the Read the Docs project settings |
 
-Pull-request previews can be enabled in the Read the Docs project. Until the first tag exists,
-`stable` points to `latest`. The published URL is configured in the application with
-`DBM_DOCUMENTATION_URL`.
+The project is `db-manager` on Read the Docs: [https://db-manager.readthedocs.io/en/latest/](https://db-manager.readthedocs.io/en/latest/). Pull-request previews can
+be enabled in the project settings. Until the first tag exists, `stable` points to `latest`. The
+application links to `latest` by default; installations can point `DBM_DOCUMENTATION_URL` at
+another copy or set it to `off`.

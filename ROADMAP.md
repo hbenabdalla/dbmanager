@@ -9,7 +9,7 @@ evidence behind it is in the [capability matrix](docs/product/capability-matrix.
 | Milestone | Theme | Status |
 |---|---|---|
 | Baseline | Seven engine adapters (six real-engine validated), telemetry on VictoriaMetrics, query analysis, 114 advisor rules, scoped RBAC, audit, guarded administration, simulation, topology, wizards | DONE |
-| **0.9** | **Release foundation** — repository & governance, CI, Read the Docs site, version metadata & About page, upgrade and backup/restore verification | IN PROGRESS — all sprints done except publishing (push, Read the Docs import) |
+| **0.9** | **Release foundation** — repository & governance, CI, Read the Docs site, version metadata & About page, upgrade and backup/restore verification | IN PROGRESS — all sprints done; repository and documentation published; remaining: green CI on `main`, tag `v0.9.0` |
 | **0.10** | **Operations & alerting** — alert engine, SMTP/webhook notifications, maintenance windows, alert UX, collector diagnostics | IN PROGRESS — engine, SMTP/webhook channels and maintenance windows DONE; alert UX presets and collector diagnostics PLANNED |
 | 0.11 | Enterprise integration — API tokens, rate limiting, real LDAP/OIDC validation, SIEM export, Vault, MFA readiness | IN PROGRESS — API tokens DONE; next: rate limiting, real LDAP/OIDC validation |
 | 0.12 | Performance intelligence — baselines in alerts, query regression detection, capacity forecasting, comparisons | PLANNED |

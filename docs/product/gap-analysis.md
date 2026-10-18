@@ -23,12 +23,12 @@ The tables below keep each gap as originally assessed. Progress since the audit:
 
 | Gap | Status | Where |
 |---|---|---|
-| G-01 Git repository | Prepared locally with logical commits; push to `hbenabdalla/dbmanager` pending (no GitHub credentials in the build environment) | [release checklist](release-checklist.md) |
+| G-01 Git repository | Closed — published at [hbenabdalla/dbmanager](https://github.com/hbenabdalla/dbmanager) | sprint 0.9.1 |
 | G-02 License | Closed — the owner chose Apache-2.0; `LICENSE` added | sprint 0.9.1 |
-| G-03 CI | Closed — workflows in `.github/workflows/` (first run happens on push) | sprint 0.9.2 |
+| G-03 CI | Closed — workflows run on GitHub; first-run failures (Compose health, gitleaks) fixed | sprint 0.9.2 |
 | G-04 Version metadata | Closed — `0.9.0-dev`, `/api/v1/version`, `/api/v1/about`, Platform → About | sprint 0.9.4 |
 | G-05 Policies | Closed — CONTRIBUTING, SECURITY, CODE_OF_CONDUCT, issue forms, PR template | sprint 0.9.1 |
-| G-06 Publishable documentation | Closed — MkDocs Material, `.readthedocs.yaml`, strict build passes; Read the Docs import pending | sprint 0.9.3 |
+| G-06 Publishable documentation | Closed — published on Read the Docs ([https://db-manager.readthedocs.io/en/latest/](https://db-manager.readthedocs.io/en/latest/)) | sprint 0.9.3 |
 | G-07 Secret scan / ignore rules | Closed — tree scanned (only documented development/test placeholders), `.gitignore` hardened, gitleaks in CI | sprint 0.9.1 |
 | G-10 … G-15 Alerting, lifecycle, notifications, SMTP, webhooks, maintenance windows | Closed | sprints 0.10.1–0.10.3 |
 | G-18 API tokens | Closed — personal tokens (service accounts later) | sprint 0.11.1 |

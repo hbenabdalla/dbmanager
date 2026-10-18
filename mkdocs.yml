@@ -1,5 +1,6 @@
 site_name: DB Manager
 copyright: DB Manager is licensed under the Apache License 2.0
+site_url: !ENV [READTHEDOCS_CANONICAL_URL, "https://db-manager.readthedocs.io/en/latest/"]
 site_description: Monitoring, performance analysis, security posture and safe administration for PostgreSQL, MySQL, MariaDB, SQL Server, Oracle and Db2.
 repo_url: https://github.com/hbenabdalla/dbmanager
 repo_name: hbenabdalla/dbmanager

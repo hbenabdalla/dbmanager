@@ -38,7 +38,7 @@ function AlertBell({ can }: { can: (p: string) => boolean }) {
   );
 }
 
-/** Help menu: documentation (only when DBM_DOCUMENTATION_URL is configured), source code, About. */
+/** Help menu: documentation (unless DBM_DOCUMENTATION_URL=off), source code, About. */
 function HelpMenu() {
   const about = useAbout();
   const navigate = useNavigate();

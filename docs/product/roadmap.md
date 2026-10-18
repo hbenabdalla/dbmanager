@@ -40,7 +40,7 @@ releases.
 
 *Goal: a public, installable, documented, legally usable pre-release.* Closes P0 gaps G-01 … G-07.
 
-### Sprint 0.9.1 — Repository & governance · IN PROGRESS
+### Sprint 0.9.1 — Repository & governance · DONE
 - **Objective:** publishable repository for `hbenabdalla/dbmanager`.
 - **Features:** Git history with logical commits, README, CONTRIBUTING, SECURITY, CODE_OF_CONDUCT, CHANGELOG, issue forms, PR template, `.gitignore` hardening, secret scan.
 - **Technical tasks:** `git init`, `origin` remote, ignore rules for env files, volumes, coverage and results; scan tree for credentials.
@@ -50,7 +50,7 @@ releases.
 - **Acceptance criteria:** clean clone builds and tests; no secrets in history; templates render on GitHub.
 - **Definition of Done:** pushed to `main` (or exact push steps documented if no credentials), Apache-2.0 `LICENSE` committed.
 
-### Sprint 0.9.2 — Continuous integration · DONE (first GitHub run pending)
+### Sprint 0.9.2 — Continuous integration · DONE
 - **Objective:** every pull request validated automatically.
 - **Features:** workflows for backend (ruff + pytest unit/API against a PostgreSQL service), frontend (typecheck, vitest, production build), docs (`mkdocs build --strict`), Docker build, dependency audit.
 - **Technical tasks:** `.github/workflows/ci-*.yml`, caching, PostgreSQL service container, no secrets required.
@@ -60,20 +60,20 @@ releases.
 - **Acceptance criteria:** a failing test blocks merge; real-engine suite stays a manual/dispatch workflow (no Oracle/Db2 z/OS in PR CI).
 - **Definition of Done:** branch protection documented; badges in README.
 
-### Sprint 0.9.3 — Documentation site · DONE (Read the Docs import pending)
+### Sprint 0.9.3 — Documentation site · DONE
 - **Objective:** Read the Docs–ready, audience-organized documentation.
 - **Features:** MkDocs Material, `.readthedocs.yaml` (v2), pinned `docs/requirements.txt`, getting started, user/admin guides, engine pages, monitoring, security, architecture, API, development, operations, troubleshooting, product pages.
 - **Dependencies:** none (RTD import needs the owner's account).
 - **Tests:** `mkdocs build --strict` in CI.
 - **Acceptance criteria:** a new user installs and onboards a database using only the docs.
-- **Definition of Done:** strict build passes; RTD import steps documented.
+- **Definition of Done:** strict build passes; published at [https://db-manager.readthedocs.io/en/latest/](https://db-manager.readthedocs.io/en/latest/).
 
 ### Sprint 0.9.4 — Version & product metadata · DONE
 - **Objective:** users and support know exactly what is running.
 - **Features:** single version source (0.9.0), build/commit and schema version via API, About page (version, engines, backend status, docs/GitHub/roadmap links, license), configurable `DBM_DOCUMENTATION_URL`, `DBM_GITHUB_URL`, `DBM_ROADMAP_URL`, Documentation entry in the app menu.
 - **Dependencies:** none.
 - **Tests:** API test for the version endpoint (no sensitive build details); UI test for the About page and the documentation link.
-- **Acceptance criteria:** no hard-coded guessed Read the Docs URL; links hidden when unset.
+- **Acceptance criteria:** no guessed Read the Docs URL — the link was set once the project `db-manager` existed; installations can override it or hide it (`off`).
 - **Definition of Done:** CHANGELOG entry, capability matrix updated.
 
 ### Sprint 0.9.5 — Upgrade & recovery verification · DONE
@@ -201,9 +201,9 @@ capability matrix + changelog.
 
 ## Known limitations of the current pre-release
 
-- No alerting or notifications yet (in progress).
+- Alerting has no Teams/Slack presets or re-notification escalation yet (sprint 0.10.4).
 - LDAP, Active Directory and OIDC are implemented but not validated against real identity providers.
 - Reports export CSV only and cannot be scheduled.
-- No API tokens: automation has to use a user session.
+- API requests are not yet rate-limited per token or user beyond authentication failures (sprint 0.11.2).
 - Kubernetes/OpenShift manifests are provided but not validated in CI; no Helm chart.
 - Db2 for z/OS support is partial; Oracle TCPS has not been exercised against a real listener.

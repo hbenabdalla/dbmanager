@@ -7,7 +7,10 @@ administration for PostgreSQL, MySQL, MariaDB, Microsoft SQL Server, Oracle Data
 [![Backend](https://github.com/hbenabdalla/dbmanager/actions/workflows/ci-backend.yml/badge.svg)](https://github.com/hbenabdalla/dbmanager/actions/workflows/ci-backend.yml)
 [![Frontend](https://github.com/hbenabdalla/dbmanager/actions/workflows/ci-frontend.yml/badge.svg)](https://github.com/hbenabdalla/dbmanager/actions/workflows/ci-frontend.yml)
 [![Docs](https://github.com/hbenabdalla/dbmanager/actions/workflows/ci-docs.yml/badge.svg)](https://github.com/hbenabdalla/dbmanager/actions/workflows/ci-docs.yml)
+[![Documentation](https://readthedocs.org/projects/db-manager/badge/?version=latest)](https://db-manager.readthedocs.io/en/latest/)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+
+**Documentation: [db-manager.readthedocs.io/en/latest](https://db-manager.readthedocs.io/en/latest/)**
 
 > **Project status: pre-release (0.9.0-dev).** Feature-rich and validated against real engines,
 > but not yet tagged as a stable release. See the [roadmap](ROADMAP.md) for what remains before 1.0.
@@ -111,13 +114,16 @@ No database at hand? **Platform → Simulation** generates a clearly labelled si
 All settings are environment variables prefixed `DBM_` (see [`.env.example`](.env.example)).
 The most important: `DBM_MASTER_KEY`, `DBM_DATABASE_URL`, `DBM_PUBLIC_BASE_URL`,
 `DBM_TIMESERIES_*`, `DBM_COOKIE_SECURE`, `DBM_SMTP_*` for e-mail alerts, and
-`DBM_DOCUMENTATION_URL` (shown in the Help menu once the Read the Docs project exists). LDAP and
+`DBM_DOCUMENTATION_URL` (the Help menu links to the published documentation by default; set your
+own URL for an internal copy or `off` to hide it). LDAP and
 OIDC are configured in the UI. Reference:
 [installation](docs/getting-started/installation.md) and [deployment](docs/deployment/index.md).
 
 ## Documentation
 
-The documentation is written for Read the Docs (MkDocs Material) and lives in [`docs/`](docs/index.md):
+The documentation is published on Read the Docs at **[https://db-manager.readthedocs.io/en/latest/](https://db-manager.readthedocs.io/en/latest/)**
+(`latest` = `main`; a `stable` version follows the first release tag). Its source is
+[`docs/`](docs/index.md) (MkDocs Material):
 getting started, user guide, administration, database engines, monitoring and performance,
 security, deployment, operations, architecture, [API](docs/api/index.md),
 [development](docs/development/index.md) and [troubleshooting](docs/troubleshooting/index.md).

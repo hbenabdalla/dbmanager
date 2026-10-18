@@ -230,9 +230,9 @@ documented skip), 54 frontend tests.
 
 | Capability | Status | Evidence |
 |---|---|---|
-| Source control | PARTIAL | Git repository with logical commits and `origin` = `hbenabdalla/dbmanager`; first push pending |
+| Source control | COMPLETE | Public repository [hbenabdalla/dbmanager](https://github.com/hbenabdalla/dbmanager), `main` branch, logical commits |
 | License | COMPLETE | Apache-2.0 — `LICENSE`, README, `backend/pyproject.toml`, `frontend/package.json`, About page |
-| CI | IMPLEMENTED / NOT REAL-VALIDATED | `.github/workflows/` backend (lint, unit, API, migrations, PostgreSQL real engine), frontend, docs (`mkdocs build --strict`), Docker images + Compose health, security (gitleaks, pip-audit, npm audit), on-demand real-engine workflow; runs once the repository is on GitHub |
+| CI | PARTIAL | `.github/workflows/` backend (lint, unit, API, migrations, PostgreSQL real engine), frontend, docs (`mkdocs build --strict`), Docker images + Compose health, security (gitleaks, pip-audit, npm audit), on-demand real-engine workflow. First run on `main`: backend, frontend, docs and image builds green; the Compose health job (script not executable) and gitleaks (history re-parented) failed and are fixed — awaiting the next run |
 | Contribution / security policy | COMPLETE | `CONTRIBUTING.md`, `SECURITY.md` (private advisories), `CODE_OF_CONDUCT.md`, issue forms, PR template |
 | Changelog / versioning | COMPLETE | `CHANGELOG.md` (Keep a Changelog, SemVer); version `0.9.0-dev` |
-| Published documentation | IMPLEMENTED / NOT REAL-VALIDATED | MkDocs Material (`mkdocs.yml`, `.readthedocs.yaml`, pinned `docs/requirements.txt`), `mkdocs build --strict` passes; Read the Docs project not yet connected |
+| Published documentation | COMPLETE | Read the Docs project `db-manager`: [https://db-manager.readthedocs.io/en/latest/](https://db-manager.readthedocs.io/en/latest/), built from `.readthedocs.yaml` with `mkdocs build --strict`; linked from the app's Help menu and About page |

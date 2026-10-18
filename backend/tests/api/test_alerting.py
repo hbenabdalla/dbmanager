@@ -243,7 +243,10 @@ async def test_about_and_version(admin, make_client) -> None:  # type: ignore[no
     head = _alembic_head()
     assert a["version"]["application"] == __version__ and a["version"]["schema"] == head
     assert a["links"]["github"] == "https://github.com/hbenabdalla/dbmanager"
-    assert a["links"]["roadmap"].endswith("/ROADMAP.md") and a["links"]["documentation"] is None
+    assert (
+        a["links"]["roadmap"].endswith("/ROADMAP.md")
+        and a["links"]["documentation"] == "https://db-manager.readthedocs.io/en/latest/"
+    )
     assert a["license"] == "Apache-2.0" and a["milestone"]["version"] == "v0.9"
     engines = {e["engine"]: e for e in a["engines"]}
     assert "demo" not in engines and engines["postgresql"]["validation"] == "validated"

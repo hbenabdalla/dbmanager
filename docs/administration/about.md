@@ -34,7 +34,7 @@ DBM_BUILD_DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ) docker compose build
 
 | Variable | Default | Effect |
 |---|---|---|
-| `DBM_DOCUMENTATION_URL` | empty | Help → *Documentation*; hidden when empty |
+| `DBM_DOCUMENTATION_URL` | empty | Help → *Documentation*. Empty = the published documentation, [https://db-manager.readthedocs.io/en/latest/](https://db-manager.readthedocs.io/en/latest/); a URL = your own copy (for example an internal mirror); `off` hides the entry |
 | `DBM_GITHUB_URL` | `https://github.com/hbenabdalla/dbmanager` | Help → *Source code on GitHub* |
 | `DBM_ROADMAP_URL` | empty | roadmap link; empty = `ROADMAP.md` in the GitHub repository |
 | `DBM_LICENSE` | empty | license shown on the About page; empty = the project license, `Apache-2.0` |

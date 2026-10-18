@@ -123,7 +123,8 @@ class Settings(BaseSettings):
     build_version: str = ""
     git_commit: str = ""
     build_date: str = ""
-    #: links shown in the UI (About page, Help menu); an empty documentation URL hides the entry
+    #: links shown in the UI (About page, Help menu). Documentation: empty = the published project
+    #: documentation (``app.DOCUMENTATION_URL``), a URL = your own copy, ``off`` = hide the entry
     documentation_url: str = ""
     github_url: str = "https://github.com/hbenabdalla/dbmanager"
     roadmap_url: str = ""
