@@ -22,6 +22,7 @@ import { useAuth } from "@/lib/auth";
 import { HEALTH_LABEL } from "@/lib/engines";
 import { ms, pct, relTime } from "@/lib/format";
 import { OnboardingWizard } from "../onboarding/onboarding-wizard";
+import { AlertCountBadge, useAlertsByServer } from "../alerts/server-alerts";
 
 export function ServersPage() {
   const [params, setParams] = useSearchParams();
@@ -68,6 +69,8 @@ export function ServersPage() {
     placeholderData: (p) => p,
   });
 
+  const alertCounts = useAlertsByServer(can("alerts.view"));
+  const byServer = alertCounts.data ?? {};
   const columns = useMemo<ColumnDef<Server, unknown>[]>(() => [
     {
       header: "Server", accessorKey: "name", cell: ({ row: { original: s } }) => (
@@ -75,6 +78,7 @@ export function ServersPage() {
           <div className="flex items-center gap-2">
             <Link to={`/servers/${s.id}`} className="font-medium hover:underline" onClick={(e) => e.stopPropagation()}>{s.name}</Link>
             {s.is_demo && <SimulatedBadge />}
+            {byServer[s.id] && <AlertCountBadge count={byServer[s.id].active} severity={byServer[s.id].top_severity} />}
             {s.implementation === "planned" && <Badge tone="neutral">No adapter</Badge>}
           </div>
           <div className="text-[12px] text-muted">{s.host}:{s.port}{s.cluster ? `, ${s.cluster.name}${s.cluster_role ? ` (${s.cluster_role})` : ""}` : ""}</div>
@@ -101,7 +105,7 @@ export function ServersPage() {
       ),
     },
     { header: "Collected", accessorKey: "last_collected_at", cell: ({ row: { original: s } }) => <span className="text-[12px] text-muted">{relTime(s.last_collected_at)}</span> },
-  ], []);
+  ], [byServer]);
 
   return (
     <div>

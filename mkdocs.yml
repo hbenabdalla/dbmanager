@@ -184,6 +184,7 @@ nav:
   - Architecture:
       - architecture/index.md
       - Design document: architecture/design-document.md
+      - Alerting: architecture/alerting.md
       - UX audit: architecture/ux-audit.md
   - API:
       - api/index.md

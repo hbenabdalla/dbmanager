@@ -28,6 +28,7 @@ import { PerformanceTab } from "./tabs/performance";
 import { SettingsTab } from "./tabs/settings";
 import { AdministrationTab } from "./tabs/administration";
 import { ServerVitals } from "./vitals";
+import { ServerAlertBadge, ServerAlertsPanel } from "../alerts/server-alerts";
 
 interface TabDef { key: string; label: string; perm?: string; cap?: string; platformPerm?: string; render: (s: ServerDetail, go: (t: string, db?: string) => void, db?: string) => React.ReactNode }
 
@@ -88,7 +89,7 @@ export function ServerPage() {
     <div>
       <PageHeader
         crumbs={[{ label: "Fleet", to: "/fleet/servers" }, { label: s.environment?.name ?? "Unassigned", to: s.environment ? `/fleet/servers?environment_id=${s.environment.id}` : undefined }, { label: s.name }]}
-        title={<span className="flex flex-wrap items-center gap-2.5">{s.name}<HealthBadge health={s.health_status} reasons={s.health_reasons} />{s.is_demo && <SimulatedBadge />}{planned && <Badge tone="neutral">No adapter</Badge>}{!s.is_demo && !planned && (s.management_mode === "administration" ? <Badge tone="warn">Administration enabled</Badge> : <Badge tone="outline">Monitoring only</Badge>)}</span>}
+        title={<span className="flex flex-wrap items-center gap-2.5">{s.name}<HealthBadge health={s.health_status} reasons={s.health_reasons} />{s.is_demo && <SimulatedBadge />}<ServerAlertBadge serverId={s.id} />{planned && <Badge tone="neutral">No adapter</Badge>}{!s.is_demo && !planned && (s.management_mode === "administration" ? <Badge tone="warn">Administration enabled</Badge> : <Badge tone="outline">Monitoring only</Badge>)}</span>}
         description={s.description ?? undefined}
         meta={<>
           <EngineMark engine={s.engine} withLabel />
@@ -113,6 +114,7 @@ export function ServerPage() {
         <div className="mb-4 rounded-md border border-down/30 bg-down-soft px-3 py-2 text-[13px] text-text-2"><span className="font-medium">Unreachable:</span> {s.last_error}</div>
       )}
       {!planned && capUsable(s, "performance_metrics") && (serverCan(s, "performance.view") || can("performance.view")) && <ServerVitals server={s} />}
+      <ServerAlertsPanel serverId={s.id} />
       <Tabs value={active.key} onValueChange={(v) => go(v)}>
         <TabsList className="mb-4">
           {TABS.map((t) => {

@@ -9,7 +9,7 @@ import { ErrorState, SkeletonRows } from "@/components/ui/states";
 import { Tooltip } from "@/components/ui/tooltip";
 import { matrixTone, SUPPORT_LABEL } from "@/lib/capabilities";
 
-interface MatrixCell { status: string; level: string; note: string | null; engine_level: string; validated?: string | null }
+interface MatrixCell { status: string; level: string; note: string | null; engine_level: string; validated?: string | null; validation_scope?: string | null }
 interface Validation {
   status: "validated" | "failed" | "pending" | "external"; version: string | null; validated_at: string | null;
   environment?: string | null; capabilities: Record<string, string>; note: string | null;
@@ -81,7 +81,7 @@ export function EngineSupportPage() {
                         // FULL is only claimed outright when the real-engine suite proved it
                         const unproven = c && e.validation && c.status === "FULL" && c.validated !== "validated";
                         const label = c ? (unproven ? "FULL*" : c.status) : "";
-                        const tip = c ? `${c.note ?? c.status}${unproven ? " — declared by the adapter; not yet validated against a real engine" : c.validated === "validated" ? " — validated against a real engine" : ""}` : "";
+                        const tip = c ? `${c.note ?? c.status}${unproven ? " — declared by the adapter; not yet validated against a real engine" : c.validated === "validated" ? ` — validated against a real engine${c.validation_scope ? ` (${c.validation_scope})` : ""}` : ""}` : "";
                         return (
                           <td key={e.engine} className="px-2 py-1.5">
                             {c ? <Tooltip content={tip}><span><Badge tone={unproven ? "info" : matrixTone(c.status)}>{label}</Badge></span></Tooltip> : <span className="text-muted">—</span>}
