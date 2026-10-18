@@ -1,0 +1,6 @@
+# Documentation build (Read the Docs and local `mkdocs build --strict`). Pinned for reproducible builds.
+mkdocs==1.6.1
+mkdocs-material==9.6.22
+pymdown-extensions==10.21.3
+Markdown==3.11.1
+Pygments==2.21.0

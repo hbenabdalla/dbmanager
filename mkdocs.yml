@@ -1,0 +1,208 @@
+site_name: DB Manager
+site_description: Monitoring, performance analysis, security posture and safe administration for PostgreSQL, MySQL, MariaDB, SQL Server, Oracle and Db2.
+repo_url: https://github.com/hbenabdalla/dbmanager
+repo_name: hbenabdalla/dbmanager
+edit_uri: edit/main/docs/
+docs_dir: docs
+strict: true
+
+theme:
+  name: material
+  language: en
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.indexes
+    - navigation.top
+    - navigation.footer
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.tabs.link
+    - content.action.edit
+    - toc.follow
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+
+plugins:
+  - search
+
+markdown_extensions:
+  - abbr
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+
+validation:
+  nav:
+    omitted_files: warn
+    not_found: warn
+  links:
+    not_found: warn
+    anchors: warn
+    absolute_links: info
+    unrecognized_links: warn
+
+nav:
+  - Home: index.md
+  - Getting Started:
+      - getting-started/index.md
+      - Features: getting-started/features.md
+      - Architecture overview: getting-started/architecture-overview.md
+      - Requirements: getting-started/requirements.md
+      - Installation: getting-started/installation.md
+      - Bootstrap and first sign-in: getting-started/bootstrap.md
+      - Your first database: getting-started/first-database.md
+      - Demo environment: getting-started/demo-environment.md
+      - Next steps: getting-started/next-steps.md
+  - User Guide:
+      - user-guide/index.md
+      - Onboarding:
+          - user-guide/onboarding/index.md
+          - Platform setup: user-guide/onboarding/platform-setup.md
+          - Environments: user-guide/onboarding/environments.md
+          - Database onboarding: user-guide/onboarding/database-onboarding.md
+          - Bulk onboarding: user-guide/onboarding/bulk-onboarding.md
+          - LDAP: user-guide/onboarding/ldap.md
+          - OIDC: user-guide/onboarding/oidc.md
+          - Monitoring profile: user-guide/onboarding/monitoring-profile.md
+          - Retention: user-guide/onboarding/retention.md
+      - Dashboard: user-guide/dashboard.md
+      - Fleet: user-guide/fleet.md
+      - Topology: user-guide/topology.md
+      - Servers: user-guide/servers.md
+      - Databases and objects: user-guide/databases-and-objects.md
+      - Performance: user-guide/performance.md
+      - Queries and plans: user-guide/queries-and-plans.md
+      - Sessions and locks: user-guide/sessions-and-locks.md
+      - Storage: user-guide/storage.md
+      - Replication: user-guide/replication.md
+      - Recommendations: user-guide/recommendations.md
+      - Security: user-guide/security.md
+      - Users and privileges: user-guide/users-and-privileges.md
+      - Alerting: user-guide/alerting.md
+      - Audit: user-guide/audit.md
+      - Reports: user-guide/reports.md
+      - Search and command palette: user-guide/search-and-command-palette.md
+      - Simulation: user-guide/simulation.md
+  - Database Engines:
+      - database-engines/index.md
+      - PostgreSQL: database-engines/postgresql.md
+      - MySQL: database-engines/mysql.md
+      - MariaDB: database-engines/mariadb.md
+      - SQL Server: database-engines/sql-server.md
+      - Oracle: database-engines/oracle.md
+      - Db2 LUW: database-engines/db2-luw.md
+      - Db2 for z/OS: database-engines/db2-zos.md
+      - Least-privilege accounts: database-engines/permissions.md
+      - Adapter gap analysis: database-engines/adapter-gap-analysis.md
+  - Monitoring & Performance:
+      - Monitoring:
+          - monitoring/index.md
+          - Architecture: monitoring/architecture.md
+          - Pipeline: monitoring/pipeline.md
+          - Collectors and intervals: monitoring/collectors.md
+          - Health calculation: monitoring/health.md
+          - Metric catalog: monitoring/metric-catalog.md
+          - Time-series storage: monitoring/timeseries-storage.md
+      - Performance:
+          - performance/index.md
+          - Query statistics: performance/query-statistics.md
+          - Execution plans: performance/execution-plans.md
+          - Waits: performance/waits.md
+          - Locks and blocking: performance/locks-and-blocking.md
+          - Recommendations: performance/recommendations.md
+          - Baselines and capacity: performance/baselines-and-capacity.md
+  - Security:
+      - security/index.md
+  - Administration:
+      - administration/index.md
+      - Users: administration/users.md
+      - API tokens: administration/api-tokens.md
+      - Roles and permissions: administration/rbac.md
+      - Identity providers: administration/identity-providers.md
+      - LDAP / Active Directory: administration/ldap.md
+      - OpenID Connect: administration/oidc.md
+      - Security settings: administration/security.md
+      - Audit: administration/audit.md
+      - Notifications: administration/notifications.md
+      - Monitoring storage: administration/monitoring-storage.md
+      - Retention: administration/retention.md
+      - Database drivers: administration/drivers.md
+      - Engine support: administration/engine-support.md
+      - Simulation: administration/simulation.md
+      - Diagnostics: administration/diagnostics.md
+      - About: administration/about.md
+  - Deployment:
+      - deployment/index.md
+      - Reverse proxy and TLS: deployment/reverse-proxy-tls.md
+      - Scaling: deployment/scaling.md
+  - Operations:
+      - operations/index.md
+      - Health checks, metrics and logs: operations/health-and-logs.md
+      - Upgrade: operations/upgrade.md
+      - Backup and restore: operations/backup-restore.md
+      - Integration tests: operations/integration-tests.md
+  - Architecture:
+      - architecture/index.md
+      - Design document: architecture/design-document.md
+      - UX audit: architecture/ux-audit.md
+  - API:
+      - api/index.md
+  - Development:
+      - development/index.md
+      - Testing: development/testing.md
+      - Adding a new database engine: development/adding-a-database-engine.md
+      - Adding metrics and rules: development/adding-metrics-and-rules.md
+      - Documentation: development/documentation.md
+      - Release process: development/release-process.md
+  - Troubleshooting:
+      - troubleshooting/index.md
+      - Connections: troubleshooting/connections.md
+      - Engine-specific problems: troubleshooting/engines.md
+      - Monitoring: troubleshooting/monitoring.md
+      - Identity providers: troubleshooting/identity.md
+      - Platform: troubleshooting/platform.md
+  - Roadmap:
+      - product/index.md
+      - Capability matrix: product/capability-matrix.md
+      - Engine matrix: product/engine-matrix.md
+      - Gap analysis: product/gap-analysis.md
+      - Roadmap: product/roadmap.md
+      - Roadmap traceability: product/roadmap-traceability.md
+      - Release checklist: product/release-checklist.md
