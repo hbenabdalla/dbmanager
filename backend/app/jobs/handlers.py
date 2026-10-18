@@ -46,6 +46,8 @@ GLOBAL_JOBS: dict[str, int] = {
     "evaluate_alerts": max(get_settings().alert_evaluation_seconds, 15),
     # failed notification deliveries whose backoff has elapsed (app.services.alerting.retry_due)
     "notification_retries": 60,
+    # audit events to the configured SIEM destinations (app.services.siem)
+    "siem_export": 30,
 }
 
 

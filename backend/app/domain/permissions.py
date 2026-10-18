@@ -63,6 +63,7 @@ CATALOG: tuple[PermissionDef, ...] = (
     # platform
     _P("audit.view", "Platform", "View the audit log", platform_only=True),
     _P("audit.export", "Platform", "Export the audit log", platform_only=True),
+    _P("audit.forward", "Platform", "Configure forwarding of audit events to a SIEM", platform_only=True),
     _P("reports.view", "Platform", "Generate and download reports"),
     _P("users.manage", "Platform", "Manage platform users and groups", platform_only=True),
     _P("roles.manage", "Platform", "Create and edit roles", platform_only=True),

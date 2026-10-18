@@ -6,11 +6,11 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import BigInteger, DateTime, Float, ForeignKey, Index, Integer, String, Text
+from sqlalchemy import BigInteger, Boolean, DateTime, Float, ForeignKey, Index, Integer, String, Text, text, true
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.db.base import Base, UUIDPk, utcnow
+from app.db.base import Base, Timestamps, UUIDPk, utcnow
 
 
 class AuditEvent(Base):
@@ -84,3 +84,31 @@ class RateLimitWindow(Base):
     bucket: Mapped[str] = mapped_column(String(200), primary_key=True)
     window_start: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     hits: Mapped[int] = mapped_column(Integer, nullable=False)
+
+
+class SiemDestination(UUIDPk, Timestamps, Base):
+    """Where audit events are forwarded (app.services.siem). ``cursor_id`` is the id of the last
+    audit event delivered: forwarding resumes from there after failures (at-least-once)."""
+
+    __tablename__ = "siem_destinations"
+
+    name: Mapped[str] = mapped_column(String(128), unique=True, nullable=False)
+    kind: Mapped[str] = mapped_column(String(16), nullable=False)  # syslog | webhook
+    enabled: Mapped[bool] = mapped_column(Boolean, default=True, server_default=true(), nullable=False)
+    #: syslog: host, port, transport (udp|tcp|tls), facility, app_name, sd_id, ca_pem
+    #: webhook: url, headers
+    config: Mapped[dict[str, Any]] = mapped_column(
+        JSONB, default=dict, server_default=text("'{}'::jsonb"), nullable=False
+    )
+    #: envelope-encrypted webhook signing secret; never returned
+    secret: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+    #: audit categories to forward (empty = all)
+    categories: Mapped[list[str]] = mapped_column(
+        JSONB, default=list, server_default=text("'[]'::jsonb"), nullable=False
+    )
+    cursor_id: Mapped[int] = mapped_column(BigInteger, default=0, server_default="0", nullable=False)
+    exported_count: Mapped[int] = mapped_column(BigInteger, default=0, server_default="0", nullable=False)
+    last_success_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    last_error: Mapped[str | None] = mapped_column(Text)
+    last_error_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_by: Mapped[str | None] = mapped_column(String(128))

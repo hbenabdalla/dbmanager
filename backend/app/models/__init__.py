@@ -7,7 +7,7 @@ from app.models.alerting import (
     NotificationChannel,
     NotificationDelivery,
 )
-from app.models.audit import AppSetting, AuditEvent, QueryHistory, RateLimitWindow
+from app.models.audit import AppSetting, AuditEvent, QueryHistory, RateLimitWindow, SiemDestination
 from app.models.identity import (
     ApiToken,
     Group,
@@ -64,6 +64,7 @@ __all__ = [
     "QueryFingerprint",
     "QueryHistory",
     "RateLimitWindow",
+    "SiemDestination",
     "QueryStatSnapshot",
     "Recommendation",
     "Role",

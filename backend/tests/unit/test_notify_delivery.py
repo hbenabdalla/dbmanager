@@ -9,9 +9,7 @@ import socket
 import ssl
 import threading
 import uuid
-from datetime import UTC, datetime, timedelta
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -22,59 +20,9 @@ from aiosmtpd.smtp import AuthResult, LoginPassword  # noqa: E402
 
 from app.core.config import get_settings  # noqa: E402
 from app.services import notify  # noqa: E402
+from tests.pki import make_pki  # noqa: E402
 
 pytestmark = pytest.mark.asyncio
-
-
-# ---- test PKI -------------------------------------------------------------------------------------
-def _pki(tmp: Path) -> tuple[Path, Path, Path]:
-    """A CA and a server certificate for localhost / 127.0.0.1 signed by it."""
-    import ipaddress
-
-    from cryptography import x509
-    from cryptography.hazmat.primitives import hashes, serialization
-    from cryptography.hazmat.primitives.asymmetric import ec
-    from cryptography.x509.oid import NameOID
-
-    now = datetime.now(UTC)
-    ca_key = ec.generate_private_key(ec.SECP256R1())
-    ca_name = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, "dbm test CA")])
-    ca = (
-        x509.CertificateBuilder()
-        .subject_name(ca_name)
-        .issuer_name(ca_name)
-        .public_key(ca_key.public_key())
-        .serial_number(x509.random_serial_number())
-        .not_valid_before(now - timedelta(minutes=5))
-        .not_valid_after(now + timedelta(days=1))
-        .add_extension(x509.BasicConstraints(ca=True, path_length=None), critical=True)
-        .add_extension(x509.SubjectKeyIdentifier.from_public_key(ca_key.public_key()), critical=False)
-        .add_extension(x509.KeyUsage(True, False, False, False, False, True, True, False, False), critical=True)
-        .sign(ca_key, hashes.SHA256())
-    )
-    key = ec.generate_private_key(ec.SECP256R1())
-    cert = (
-        x509.CertificateBuilder()
-        .subject_name(x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, "localhost")]))
-        .issuer_name(ca_name)
-        .public_key(key.public_key())
-        .add_extension(x509.AuthorityKeyIdentifier.from_issuer_public_key(ca_key.public_key()), critical=False)
-        .serial_number(x509.random_serial_number())
-        .not_valid_before(now - timedelta(minutes=5))
-        .not_valid_after(now + timedelta(days=1))
-        .add_extension(
-            x509.SubjectAlternativeName([x509.DNSName("localhost"), x509.IPAddress(ipaddress.ip_address("127.0.0.1"))]),
-            critical=False,
-        )
-        .sign(ca_key, hashes.SHA256())
-    )
-    ca_file, cert_file, key_file = tmp / "ca.pem", tmp / "server.pem", tmp / "server.key"
-    ca_file.write_bytes(ca.public_bytes(serialization.Encoding.PEM))
-    cert_file.write_bytes(cert.public_bytes(serialization.Encoding.PEM))
-    key_file.write_bytes(
-        key.private_bytes(serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8, serialization.NoEncryption())
-    )
-    return ca_file, cert_file, key_file
 
 
 def _free_port() -> int:
@@ -127,7 +75,7 @@ ALERT = {
 
 
 async def test_smtp_starttls_with_auth_against_a_local_server(tmp_path, monkeypatch) -> None:  # type: ignore[no-untyped-def]
-    ca, cert, key = _pki(tmp_path)
+    ca, cert, key = make_pki(tmp_path)
     server_ctx = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
     server_ctx.load_cert_chain(cert, key)
     inbox, port = Inbox(), _free_port()
@@ -158,7 +106,7 @@ async def test_smtp_starttls_with_auth_against_a_local_server(tmp_path, monkeypa
 
 
 async def test_smtp_implicit_tls_against_a_local_server(tmp_path, monkeypatch) -> None:  # type: ignore[no-untyped-def]
-    ca, cert, key = _pki(tmp_path)
+    ca, cert, key = make_pki(tmp_path)
     server_ctx = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
     server_ctx.load_cert_chain(cert, key)
     inbox, port = Inbox(), _free_port()

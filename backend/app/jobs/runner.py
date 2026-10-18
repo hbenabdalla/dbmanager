@@ -246,6 +246,10 @@ async def run_job(job_id: uuid.UUID) -> None:
                     from app.services import alerting
 
                     result = await alerting.retry_due(db)
+                elif job.kind == "siem_export":
+                    from app.services import siem
+
+                    result = await siem.export(db)
                 else:
                     status, error = "skipped", f"unknown global job {job.kind}"
             else:

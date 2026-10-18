@@ -20,6 +20,7 @@ from app.api.v1 import (
     server_data,
     servers,
     setup,
+    siem,
     simulation,
     tokens,
     users,
@@ -50,6 +51,7 @@ for module in (
     idp_wizard,
     platform,
     setup,
+    siem,
     simulation,
 ):
     api_router.include_router(module.router)
