@@ -6,6 +6,7 @@ import uuid
 from typing import Literal
 
 from fastapi import APIRouter, Depends, Query
+from fastapi.responses import JSONResponse
 from sqlalchemy import func, or_, select
 
 from app.api import source as fleet_source
@@ -446,3 +447,22 @@ async def credentials_overview(db: DB, p: CurrentPrincipal) -> list[dict[str, ob
         }
         for s in servers
     ]
+
+
+@router.get(
+    "/servers/{server_id}/diagnostics",
+    summary="Download the collector diagnostic bundle of a server (redacted, no credentials)",
+)
+async def diagnostics(server_id: uuid.UUID, db: DB, p: CurrentPrincipal) -> JSONResponse:
+    from datetime import UTC, datetime
+
+    from app.services import diagnostics as diag
+
+    s = await load_server(db, p, server_id)
+    p.authz.require("collectors.view", server_ref(s))
+    data = await diag.bundle(db, s, p.username)
+    await audit.record("server.diagnostics", actor=p, category="operations", server=s, object_name=s.name)
+    stamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
+    return JSONResponse(
+        data, headers={"Content-Disposition": f'attachment; filename="dbm-diagnostics-{s.name}-{stamp}.json"'}
+    )

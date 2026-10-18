@@ -397,7 +397,9 @@ _SECRET_RE = re.compile(r"(?i)(pwd|password|passwd)\s*=\s*[^;\s]+")
 
 def _clean(msg: str) -> str:
     """Strip anything that looks like a credential from driver messages."""
-    return _SECRET_RE.sub(r"\1=***", msg)[:1000]
+    from app.core import redact
+
+    return redact.text(_SECRET_RE.sub(r"\1=***", msg), 1000) or ""
 
 
 clean_message = _clean
