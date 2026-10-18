@@ -85,6 +85,8 @@ passes.
   rate-limited and audited.
 
 **Project**
+- Licensed under the Apache License 2.0 (`LICENSE`); SPDX identifier in `backend/pyproject.toml`,
+  `frontend/package.json` and on the About page.
 - Documentation site for Read the Docs (MkDocs Material), product capability matrix, gap
   analysis and roadmap, contribution guide, security policy, GitHub issue forms and CI workflows.
 

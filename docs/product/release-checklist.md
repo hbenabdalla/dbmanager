@@ -20,7 +20,7 @@ Run before tagging any `v0.x.y` / `v1.x.y` release. Commands are from the reposi
 | 14 | Roadmap updated | `ROADMAP.md`, `docs/product/roadmap.md` statuses | Current |
 | 15 | Changelog updated | `CHANGELOG.md` has an entry for the version | Done (`CHANGELOG.md`, Unreleased — 0.9.0) |
 | 16 | Version updated | One version across `backend/app/__init__.py`, `backend/pyproject.toml`, `frontend/package.json`; matches the tag | Passing — `0.9.0-dev` / `0.9.0.dev0` everywhere; set to `0.9.0` when tagging |
-| 17 | License present | `LICENSE` exists and README states it | **Missing** — owner decision |
+| 17 | License present | `LICENSE` exists and README states it | Passing — Apache-2.0 (`LICENSE`, README, package metadata, About page) |
 
 Release steps once all rows are green: update `CHANGELOG.md`, bump the version, open a pull
 request, merge to `main`, tag `vX.Y.Z`, push the tag (Read the Docs builds the tagged version).

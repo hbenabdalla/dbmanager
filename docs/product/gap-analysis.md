@@ -24,7 +24,7 @@ The tables below keep each gap as originally assessed. Progress since the audit:
 | Gap | Status | Where |
 |---|---|---|
 | G-01 Git repository | Prepared locally with logical commits; push to `hbenabdalla/dbmanager` pending (no GitHub credentials in the build environment) | [release checklist](release-checklist.md) |
-| G-02 License | **BLOCKED** on the owner's decision (recommendation: Apache-2.0) | — |
+| G-02 License | Closed — the owner chose Apache-2.0; `LICENSE` added | sprint 0.9.1 |
 | G-03 CI | Closed — workflows in `.github/workflows/` (first run happens on push) | sprint 0.9.2 |
 | G-04 Version metadata | Closed — `0.9.0-dev`, `/api/v1/version`, `/api/v1/about`, Platform → About | sprint 0.9.4 |
 | G-05 Policies | Closed — CONTRIBUTING, SECURITY, CODE_OF_CONDUCT, issue forms, PR template | sprint 0.9.1 |
@@ -109,7 +109,7 @@ policy for Oracle packs; Prometheus metrics of the platform itself; bulk registr
 
 ## Summary
 
-* **P0:** G-01 … G-07 — repository, license (owner decision), CI, version metadata, policies,
+* **P0:** G-01 … G-07 — repository, license (closed: Apache-2.0), CI, version metadata, policies,
   publishable documentation, secret hygiene.
 * **P1:** alerting (G-10, G-11), notifications with SMTP and webhooks (G-12 … G-14), maintenance
   windows (G-15), API tokens (G-18), verified backup/restore (G-20), upgrade testing (G-22).

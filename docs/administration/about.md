@@ -7,7 +7,7 @@
 - the status of the API, the application database, the time-series store and the collector scheduler;
 - the configured documentation, source code and roadmap links;
 - the support level of each database engine and the result of the real-engine validation suite shipped with the build;
-- the license (shown as *not yet selected* until one is configured) and the current milestone.
+- the license (`Apache-2.0`) and the current milestone.
 
 Every signed-in user can open the page; it never shows host names, file paths or environment contents.
 
@@ -37,7 +37,7 @@ DBM_BUILD_DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ) docker compose build
 | `DBM_DOCUMENTATION_URL` | empty | Help → *Documentation*; hidden when empty |
 | `DBM_GITHUB_URL` | `https://github.com/hbenabdalla/dbmanager` | Help → *Source code on GitHub* |
 | `DBM_ROADMAP_URL` | empty | roadmap link; empty = `ROADMAP.md` in the GitHub repository |
-| `DBM_LICENSE` | empty | license name shown on the About page; empty = *not yet selected* |
+| `DBM_LICENSE` | empty | license shown on the About page; empty = the project license, `Apache-2.0` |
 
 ## API
 

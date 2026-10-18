@@ -230,8 +230,8 @@ documented skip), 54 frontend tests.
 
 | Capability | Status | Evidence |
 |---|---|---|
-| Source control | MISSING | The working tree is not a Git repository; no remote configured |
-| License | MISSING | No `LICENSE` file; license not yet chosen by the owner |
+| Source control | PARTIAL | Git repository with logical commits and `origin` = `hbenabdalla/dbmanager`; first push pending |
+| License | COMPLETE | Apache-2.0 — `LICENSE`, README, `backend/pyproject.toml`, `frontend/package.json`, About page |
 | CI | IMPLEMENTED / NOT REAL-VALIDATED | `.github/workflows/` backend (lint, unit, API, migrations, PostgreSQL real engine), frontend, docs (`mkdocs build --strict`), Docker images + Compose health, security (gitleaks, pip-audit, npm audit), on-demand real-engine workflow; runs once the repository is on GitHub |
 | Contribution / security policy | COMPLETE | `CONTRIBUTING.md`, `SECURITY.md` (private advisories), `CODE_OF_CONDUCT.md`, issue forms, PR template |
 | Changelog / versioning | COMPLETE | `CHANGELOG.md` (Keep a Changelog, SemVer); version `0.9.0-dev` |

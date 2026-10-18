@@ -44,11 +44,11 @@ releases.
 - **Objective:** publishable repository for `hbenabdalla/dbmanager`.
 - **Features:** Git history with logical commits, README, CONTRIBUTING, SECURITY, CODE_OF_CONDUCT, CHANGELOG, issue forms, PR template, `.gitignore` hardening, secret scan.
 - **Technical tasks:** `git init`, `origin` remote, ignore rules for env files, volumes, coverage and results; scan tree for credentials.
-- **Dependencies:** GitHub access (push), **license decision by the owner (BLOCKED part)**.
+- **Dependencies:** GitHub access (push). License decided by the owner: Apache-2.0.
 - **Tests:** secret-scan script exits clean; CI runs on the first push.
 - **Documentation:** README, contribution guide, release process.
 - **Acceptance criteria:** clean clone builds and tests; no secrets in history; templates render on GitHub.
-- **Definition of Done:** pushed to `main` (or exact push steps documented if no credentials), license recorded once chosen.
+- **Definition of Done:** pushed to `main` (or exact push steps documented if no credentials), Apache-2.0 `LICENSE` committed.
 
 ### Sprint 0.9.2 — Continuous integration · DONE (first GitHub run pending)
 - **Objective:** every pull request validated automatically.
@@ -198,7 +198,6 @@ capability matrix + changelog.
 | Plugin framework, operator | FUTURE |
 | Oracle TCPS real validation | PLANNED (needs a TCPS listener in the test environment) |
 | Db2 for z/OS real validation; thread, lock and subsystem monitoring | BLOCKED (z/OS subsystem + Db2 Connect) |
-| License selection | BLOCKED (owner decision) |
 
 ## Known limitations of the current pre-release
 

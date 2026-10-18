@@ -13,7 +13,7 @@ from typing import Any
 from fastapi import APIRouter
 from sqlalchemy import text
 
-from app import __version__
+from app import __license__, __version__
 from app.api.deps import DB, CurrentPrincipal
 from app.core.config import get_settings
 
@@ -91,7 +91,7 @@ async def about(db: DB, p: CurrentPrincipal) -> dict[str, Any]:
         "for heterogeneous relational databases",
         "version": version_info(schema),
         "milestone": CURRENT_MILESTONE,
-        "license": s.license.strip() or None,
+        "license": s.license.strip() or __license__,
         "links": links(),
         "engines": engines,
         "status": {

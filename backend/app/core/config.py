@@ -127,7 +127,7 @@ class Settings(BaseSettings):
     documentation_url: str = ""
     github_url: str = "https://github.com/hbenabdalla/dbmanager"
     roadmap_url: str = ""
-    #: SPDX identifier once the project owner has selected a license (empty = not yet selected)
+    #: license shown on the About page; empty = the project license (``app.__license__``)
     license: str = ""
 
     # --- alerting & notifications ------------------------------------------------------------

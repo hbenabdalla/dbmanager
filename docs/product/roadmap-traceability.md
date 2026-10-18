@@ -23,7 +23,7 @@ the repository root; "—" means not yet created.
 | Capability | Gap | Sprint | Implementation | Tests | Documentation | Status |
 |---|---|---|---|---|---|---|
 | Source control & publication | G-01 | 0.9.1 | Git repository, `origin` → `hbenabdalla/dbmanager` | first CI run | `CONTRIBUTING.md` | IN PROGRESS |
-| License | G-02 | 0.9.1 | `LICENSE` (after owner decision) | — | `README.md` | BLOCKED |
+| License | G-02 | 0.9.1 | `LICENSE` (Apache-2.0), `backend/pyproject.toml`, `frontend/package.json`, About page | `tests/api/test_alerting.py` (About reports Apache-2.0) | `README.md`, `CONTRIBUTING.md` | DONE |
 | Governance files | G-05, G-07 | 0.9.1 | `CONTRIBUTING.md`, `SECURITY.md`, `CODE_OF_CONDUCT.md`, `CHANGELOG.md`, `.github/ISSUE_TEMPLATE/`, `.github/pull_request_template.md`, `.gitignore` | secret scan | same files | IN PROGRESS |
 | CI | G-03 | 0.9.2 | `.github/workflows/` | workflows | `CONTRIBUTING.md` | IN PROGRESS |
 | Documentation site | G-06 | 0.9.3 | `mkdocs.yml`, `.readthedocs.yaml`, `docs/requirements.txt`, `docs/**` | `mkdocs build --strict` | this site | IN PROGRESS |

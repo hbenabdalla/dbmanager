@@ -7,6 +7,7 @@ administration for PostgreSQL, MySQL, MariaDB, Microsoft SQL Server, Oracle Data
 [![Backend](https://github.com/hbenabdalla/dbmanager/actions/workflows/ci-backend.yml/badge.svg)](https://github.com/hbenabdalla/dbmanager/actions/workflows/ci-backend.yml)
 [![Frontend](https://github.com/hbenabdalla/dbmanager/actions/workflows/ci-frontend.yml/badge.svg)](https://github.com/hbenabdalla/dbmanager/actions/workflows/ci-frontend.yml)
 [![Docs](https://github.com/hbenabdalla/dbmanager/actions/workflows/ci-docs.yml/badge.svg)](https://github.com/hbenabdalla/dbmanager/actions/workflows/ci-docs.yml)
+[![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 
 > **Project status: pre-release (0.9.0-dev).** Feature-rich and validated against real engines,
 > but not yet tagged as a stable release. See the [roadmap](ROADMAP.md) for what remains before 1.0.
@@ -139,6 +140,10 @@ public issue.
 
 ## License
 
-**No license has been selected yet.** Until a `LICENSE` file is added, the code is publicly
-visible but no usage rights are granted. The maintainers intend to publish under an OSI-approved
-license (Apache-2.0 is the recommendation — see [docs/product/gap-analysis.md](docs/product/gap-analysis.md)).
+DB Manager is licensed under the [Apache License, Version 2.0](LICENSE) (SPDX: `Apache-2.0`).
+Contributions are accepted under the same license (see [CONTRIBUTING.md](CONTRIBUTING.md)).
+
+The license covers DB Manager's own code only. Database drivers and the vendor database images
+used for integration testing (SQL Server Developer, Oracle Database, IBM Db2 Community Edition)
+are under their vendors' terms, and nothing in DB Manager grants rights to Oracle Diagnostics or
+Tuning Pack features or other separately licensed database options.

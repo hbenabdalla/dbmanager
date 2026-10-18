@@ -126,3 +126,10 @@ summary in the imperative and explain the *why* in the body when it is not obvio
 ## Security issues
 
 Do not report vulnerabilities in public issues — see [SECURITY.md](SECURITY.md).
+
+## License of contributions
+
+DB Manager is licensed under the [Apache License 2.0](LICENSE). By submitting a pull request you
+agree that your contribution is licensed under the same terms (Apache-2.0, section 5). Do not
+submit code you are not entitled to license this way, such as code copied from projects under
+incompatible licenses or vendor material that may not be redistributed.
