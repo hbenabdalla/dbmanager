@@ -40,6 +40,8 @@ INTERACTIVE_ONLY: list[tuple[str, re.Pattern[str]]] = [
     ("*", re.compile(r"^/api/v1/users/[^/]+/tokens(/.*)?$")),
     ("*", re.compile(r"^/api/v1/auth/(change-password|logout)$")),
     ("*", re.compile(r"^/api/v1/users/[^/]+/reset-password$")),
+    ("*", re.compile(r"^/api/v1/me/mfa(/.*)?$")),
+    ("*", re.compile(r"^/api/v1/users/[^/]+/mfa(/.*)?$")),
     ("W", re.compile(r"^/api/v1/(users|groups|roles|role-assignments|identity-providers)(/.*)?$")),
 ]
 WRITE_METHODS = {"POST", "PUT", "PATCH", "DELETE"}

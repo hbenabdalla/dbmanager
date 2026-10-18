@@ -38,6 +38,23 @@ class MeOut(BaseModel):
     platform_permissions: list[str]  # permissions held at platform scope
     grants: list[GrantOut]
     csrf_token: str | None = None
+    #: TOTP enrolled for this (local) account
+    mfa_enabled: bool = False
+    #: the MFA policy requires this account to enroll before it can do anything else
+    mfa_enrollment_required: bool = False
+
+
+class MfaChallenge(BaseModel):
+    """First sign-in step succeeded; send the code with ``mfa_token`` to /auth/login/mfa."""
+
+    mfa_required: bool = True
+    mfa_token: str
+    methods: list[str] = ["totp", "recovery"]
+
+
+class MfaLoginRequest(BaseModel):
+    mfa_token: str = Field(min_length=10, max_length=4096)
+    code: str = Field(min_length=6, max_length=32)
 
 
 class ProviderPublic(BaseModel):

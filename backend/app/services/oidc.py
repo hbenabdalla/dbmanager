@@ -28,6 +28,8 @@ from app.services.identity_sync import provision_external_user
 from app.services.ldap_auth import provider_secret
 
 FLOW_COOKIE = "dbm_oidc"
+#: RFC 8176 authentication method references that prove a second factor
+MFA_AMR_VALUES = ("mfa", "otp", "hwk", "swk", "sc", "fpt", "face", "iris", "retina", "vbm", "pin")
 _metadata_cache: dict[str, tuple[float, dict[str, Any]]] = {}
 
 
@@ -68,6 +70,8 @@ async def start(provider: IdentityProvider) -> tuple[str, str]:
     }
     if cfg.get("prompt"):
         params["prompt"] = cfg["prompt"]
+    if cfg.get("acr_values"):
+        params["acr_values"] = cfg["acr_values"]
     sealed = get_keyring().seal_json(
         {"state": state, "nonce": nonce, "verifier": verifier, "pid": str(provider.id), "ts": time.time()}, "oidc-flow"
     )
@@ -136,6 +140,7 @@ async def callback(db: AsyncSession, provider: IdentityProvider, code: str, stat
     except (JoseError, ValueError) as exc:
         raise NotAuthenticated("The identity provider's ID token could not be validated") from exc
     claims = token.claims
+    check_mfa(cfg, claims)
 
     username = _claim(claims, cfg.get("username_claim", "preferred_username")) or claims.get("email") or claims["sub"]
     email = claims.get("email")
@@ -157,6 +162,21 @@ async def callback(db: AsyncSession, provider: IdentityProvider, code: str, stat
     if user is None:
         raise NotAuthenticated("Your account is not permitted to sign in")
     return user
+
+
+def check_mfa(cfg: dict[str, Any], claims: dict[str, Any]) -> None:
+    """With ``require_mfa`` the ID token must prove a second factor: an ``amr`` value from
+    ``mfa_amr_values`` (default: RFC 8176 multi-factor methods) or an ``acr`` listed in
+    ``required_acr`` (e.g. the provider's MFA level of assurance)."""
+    if not cfg.get("require_mfa"):
+        return
+    amr = claims.get("amr") or []
+    if isinstance(amr, str):
+        amr = [amr]
+    accepted = {str(v).lower() for v in (cfg.get("mfa_amr_values") or MFA_AMR_VALUES)}
+    acr_ok = str(claims.get("acr") or "") in {str(v) for v in cfg.get("required_acr") or []}
+    if not (acr_ok or accepted & {str(v).lower() for v in amr}):
+        raise NotAuthenticated("Your identity provider did not confirm multi-factor authentication for this sign-in")
 
 
 def validate_config(kind: str, cfg: dict[str, Any]) -> None:

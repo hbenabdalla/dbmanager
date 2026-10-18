@@ -6,7 +6,7 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Index, Integer, String, Text, UniqueConstraint
+from sqlalchemy import BigInteger, Boolean, DateTime, ForeignKey, Index, Integer, String, Text, UniqueConstraint, text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -28,6 +28,17 @@ class User(UUIDPk, Timestamps, Base):
     last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     password_changed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     preferences: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict, nullable=False)
+    # --- multi-factor authentication (local accounts, app.services.mfa) -----------------
+    #: TOTP seed, envelope-encrypted (never returned after enrollment)
+    totp_secret: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+    totp_enabled: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false", nullable=False)
+    totp_confirmed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    #: last accepted 30-second step: a code is never accepted twice
+    totp_last_step: Mapped[int | None] = mapped_column(BigInteger)
+    #: SHA-256 hashes of the unused recovery codes
+    mfa_recovery: Mapped[list[str]] = mapped_column(
+        JSONB, default=list, server_default=text("'[]'::jsonb"), nullable=False
+    )
 
     groups: Mapped[list[Group]] = relationship(secondary="group_members", back_populates="members", lazy="selectin")
 

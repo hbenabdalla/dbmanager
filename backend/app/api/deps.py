@@ -157,6 +157,13 @@ async def get_principal(request: Request, db: DB) -> Principal:
             raise PermissionDenied("CSRF token missing or invalid", code="csrf_failed")
     await enforce("api", f"user:{user.id}")
     authz = await Authorizer.load(db, user)
+    from app.services import mfa
+
+    if mfa.enrollment_pending(user, authz.permissions_for()) and not mfa.path_allowed_while_pending(request.url.path):
+        raise PermissionDenied(
+            "Set up multi-factor authentication for your account first (Account → Security)",
+            code="mfa_enrollment_required",
+        )
     user_ctx.set(user.username)
     return Principal(
         user=user,

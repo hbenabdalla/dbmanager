@@ -11,6 +11,7 @@ from app.api.v1 import (
     idp_wizard,
     inventory,
     metrics,
+    mfa,
     onboarding,
     platform,
     queries,
@@ -28,6 +29,7 @@ from app.api.v1 import (
 api_router = APIRouter(prefix="/api/v1")
 for module in (
     auth,
+    mfa,
     tokens,
     users,
     rbac,

@@ -51,6 +51,11 @@ class Settings(BaseSettings):
     cookie_domain: str | None = None
     cors_origins: CsvList = Field(default_factory=list)
     trusted_proxies: CsvList = Field(default_factory=lambda: ["127.0.0.1", "::1"])
+    #: TOTP multi-factor authentication for local accounts: none | admins (any platform-wide
+    #: administrative permission) | all. Users who must use MFA and have not enrolled can only
+    #: reach the enrollment endpoints until they do.
+    mfa_required_for: Literal["none", "admins", "all"] = "none"
+    mfa_issuer: str = "DB Manager"
     login_max_failures: int = 5
     login_lockout_minutes: int = 15
     # --- rate limiting (app.services.ratelimit) -------------------------------------------
