@@ -1,8 +1,9 @@
 name: Frontend
 
 on:
+  # no path filter on pull requests: these checks are required by branch protection and
+  # must always report (see CONTRIBUTING.md, "Branch protection")
   pull_request:
-    paths: ["frontend/**", ".github/workflows/ci-frontend.yml"]
   push:
     branches: [main]
     paths: ["frontend/**", ".github/workflows/ci-frontend.yml"]
@@ -16,6 +17,7 @@ concurrency:
 
 jobs:
   build:
+    name: Frontend build
     runs-on: ubuntu-24.04
     defaults: { run: { working-directory: frontend } }
     steps:

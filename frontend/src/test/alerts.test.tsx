@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
+import { Toaster } from "sonner";
 import { AppRoutes } from "@/App";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/lib/auth";
@@ -22,7 +23,7 @@ const ALERT = {
 };
 const ABOUT = {
   product: "DB Manager", description: "x", version: { application: "0.11.0-dev", backend: "0.11.0-dev", build: null, git_commit: null, build_date: null, schema: "0004" },
-  milestone: { version: "v0.11", name: "First public release" }, license: null,
+  milestone: { version: "v0.11", name: "First public release" }, license: "Apache-2.0",
   links: { documentation: null, github: "https://github.com/hbenabdalla/dbmanager", roadmap: "https://github.com/hbenabdalla/dbmanager/blob/main/ROADMAP.md" },
   engines: [{ engine: "postgresql", display_name: "PostgreSQL", support_level: "supported", validation: "validated", validated_version: "16.4" }],
   status: { api: "ok", database: "ok", timeseries: "ok", background_jobs: "running" },
@@ -67,6 +68,39 @@ describe("alerts", () => {
     await waitFor(() => expect(acked).toEqual({ path: "/api/v1/alerts/a1/acknowledge", body: { comment: "on it" } }));
     expect(await screen.findByText("by dba")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /^Acknowledge$/ })).not.toBeInTheDocument();
+  });
+
+  it("tells the user how long to wait when an action is rate-limited", async () => {
+    mockFetch((url, init) => {
+      if (url.pathname === "/api/v1/auth/me") return { body: ME(["server.view", "alerts.view", "alerts.acknowledge"]) };
+      if (url.pathname === "/api/v1/alerts/summary") return { body: { active: 1, unacknowledged: 1, by_severity: { high: 1 }, visible: true } };
+      if (url.pathname === "/api/v1/alerts") return { body: { items: [ALERT], total: 1, page: 1, page_size: 50 } };
+      if (url.pathname === "/api/v1/alerts/a1/acknowledge" && init.method === "POST")
+        return {
+          status: 429,
+          headers: { "Retry-After": "17" },
+          body: { error: { code: "rate_limited", message: "Too many requests. Try again in 17 s.", details: { policy: "api", retry_after_seconds: 17 } } },
+        };
+      return undefined;
+    });
+    renderApp("/alerts");
+    render(<Toaster />);
+    await userEvent.click(await screen.findByRole("button", { name: /Acknowledge/ }));
+    const dialog = await screen.findByRole("dialog");
+    await userEvent.click(within(dialog).getByRole("button", { name: "Acknowledge" }));
+    expect(await screen.findByText(/Try again in 17 s/)).toBeInTheDocument();
+  });
+
+  it("reaches personal API tokens from the user menu", async () => {
+    mockFetch((url) => {
+      if (url.pathname === "/api/v1/auth/me") return { body: ME(["server.view"]) };
+      if (url.pathname === "/api/v1/me/tokens") return { body: [] };
+      return undefined;
+    });
+    renderApp("/");
+    await userEvent.click(await screen.findByRole("button", { name: /Account menu|dba|Dana/ }));
+    await userEvent.click(await screen.findByRole("menuitem", { name: /API tokens/ }));
+    expect(await screen.findByText("No API tokens")).toBeInTheDocument();
   });
 
   it("hides acknowledge actions, the bell and management without permissions", async () => {
@@ -152,12 +186,28 @@ describe("alerts", () => {
     renderApp("/platform/about");
     expect(await screen.findByRole("heading", { name: "About DB Manager" })).toBeInTheDocument();
     expect(screen.getByText("Milestone v0.11 — First public release")).toBeInTheDocument();
-    expect(screen.getByText("not configured (DBM_DOCUMENTATION_URL)")).toBeInTheDocument();
-    expect(screen.getByText("not yet selected")).toBeInTheDocument();
+    expect(screen.getByText("hidden (DBM_DOCUMENTATION_URL=off)")).toBeInTheDocument();
+    expect(screen.getByText("Apache-2.0")).toBeInTheDocument();
     expect(screen.getByText("Validated")).toBeInTheDocument();
-    // documentation is not configured, so the help menu offers GitHub and About only
+    // documentation is hidden (DBM_DOCUMENTATION_URL=off), so the help menu offers GitHub and About only
     await userEvent.click(screen.getByRole("button", { name: "Help" }));
     expect(await screen.findByRole("menuitem", { name: /Source code on GitHub/ })).toBeInTheDocument();
     expect(screen.queryByRole("menuitem", { name: /Documentation/ })).not.toBeInTheDocument();
+  });
+
+  it("opens the configured documentation from the Help menu", async () => {
+    const docs = "https://db-manager.readthedocs.io/en/latest/";
+    mockFetch((url) => {
+      if (url.pathname === "/api/v1/auth/me") return { body: ME(["server.view"]) };
+      if (url.pathname === "/api/v1/about") return { body: { ...ABOUT, links: { ...ABOUT.links, documentation: docs } } };
+      return undefined;
+    });
+    const open = vi.spyOn(window, "open").mockImplementation(() => null);
+    renderApp("/platform/about");
+    expect(await screen.findByRole("link", { name: docs })).toHaveAttribute("href", docs);
+    await userEvent.click(screen.getByRole("button", { name: "Help" }));
+    await userEvent.click(await screen.findByRole("menuitem", { name: /Documentation/ }));
+    expect(open).toHaveBeenCalledWith(docs, "_blank", "noopener,noreferrer");
+    open.mockRestore();
   });
 });

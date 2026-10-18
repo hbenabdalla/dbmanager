@@ -62,6 +62,9 @@ docker compose up --build
 | Backend lint | `cd backend && ruff check . && ruff format --check app tests` | — |
 | Backend unit | `cd backend && pytest tests/unit` | — |
 | Backend API | `cd backend && pytest tests/api` | scratch PostgreSQL in `DBM_TEST_DATABASE_URL` (its schema is dropped) |
+| Migrations, backup/restore | `cd backend && pytest tests/migrations` | the same scratch PostgreSQL; `pg_dump`/`pg_restore` on the `PATH` |
+| Restore drill (Compose) | `scripts/restore-drill.sh --i-understand-this-wipes-the-stack` | a **throw-away** Compose stack started with `docker compose up -d` (its volumes are deleted) |
+| Secret scan | `scripts/secret-scan.sh` | gitleaks or Docker |
 | Frontend | `cd frontend && npm run typecheck && npm test && npm run build` | — |
 | Documentation | `pip install -r docs/requirements.txt && mkdocs build --strict` | — |
 | Real engines | `scripts/integration-test.sh` (or `.ps1`) | Docker; pulls vendor images under their licenses |
@@ -105,6 +108,22 @@ must pass. Use real screenshots only (`docs/assets/screenshots/`).
 3. Fill in the pull request template (tests, docs, security, migrations, API and database
    compatibility, screenshots for UI changes).
 4. CI must pass. A maintainer reviews and squash-merges.
+
+### Branch protection
+
+`main` is protected. Repository settings → **Branches** → rule for `main`:
+
+* **Require a pull request before merging**, with at least one approval; dismiss stale approvals.
+* **Require status checks to pass**, branch up to date, with these required checks:
+  `Backend lint`, `Backend tests`, `Frontend build`, `Documentation build` and
+  `Secret scan`. These workflows run on every pull request (no path filters), so a
+  required check never stays pending.
+* **Require linear history**; do not allow force pushes or deletions.
+
+`Docker images` (image build, Compose start-up and the restore drill) runs on pull requests that
+touch the backend, frontend, scripts or `docker-compose.yml`, and on every push to `main`; it is
+not a required check because it is path-filtered. The real-engine suite
+(`Real-engine integration`) is started manually.
 
 Database schema changes need an Alembic migration (`alembic revision -m "…"`) that upgrades an
 existing installation without data loss.

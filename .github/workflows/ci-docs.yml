@@ -1,8 +1,9 @@
 name: Documentation
 
 on:
+  # no path filter on pull requests: these checks are required by branch protection and
+  # must always report (see CONTRIBUTING.md, "Branch protection")
   pull_request:
-    paths: ["docs/**", "mkdocs.yml", ".readthedocs.yaml", ".github/workflows/ci-docs.yml", "README.md"]
   push:
     branches: [main]
     paths: ["docs/**", "mkdocs.yml", ".readthedocs.yaml", ".github/workflows/ci-docs.yml"]
@@ -12,6 +13,7 @@ permissions:
 
 jobs:
   build:
+    name: Documentation build
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4

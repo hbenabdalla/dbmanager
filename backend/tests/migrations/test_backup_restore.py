@@ -44,7 +44,8 @@ def _libpq_env() -> dict[str, str]:
 async def _populate() -> uuid.UUID:
     from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
-    from app.models import Organization, Server
+    from app.core.security import hash_password
+    from app.models import Organization, Server, User
     from app.services.secrets import set_credential
 
     engine = create_async_engine(_url(SRC))
@@ -57,6 +58,7 @@ async def _populate() -> uuid.UUID:
             db.add(s)
             await db.flush()
             await set_credential(db, s, "monitoring", username="dbm_monitor", password="Backup-Restore-Secret-1")
+            db.add(User(username="restore.user", password_hash=hash_password("Restore-User-Passw0rd!")))
             await db.commit()
             return s.id
     finally:
@@ -76,6 +78,24 @@ async def _read_back(server_id: uuid.UUID) -> tuple[str, str | None]:
             s = await db.get(Server, server_id)
             cred = (await db.execute(select(Credential).where(Credential.server_id == server_id))).scalar_one()
             return s.name, resolve_password(cred)
+    finally:
+        await engine.dispose()
+
+
+async def _restored_login_and_revision() -> tuple[bool, str]:
+    """The restored user can still sign in (password hash intact); the schema revision is kept."""
+    from sqlalchemy import select, text
+    from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+
+    from app.core.security import verify_password
+    from app.models import User
+
+    engine = create_async_engine(_url(DST))
+    try:
+        async with AsyncSession(engine) as db:
+            u = (await db.execute(select(User).where(User.username == "restore.user"))).scalar_one()
+            rev = (await db.execute(text("SELECT version_num FROM alembic_version"))).scalar_one()
+            return verify_password("Restore-User-Passw0rd!", u.password_hash), rev
     finally:
         await engine.dispose()
 
@@ -101,6 +121,11 @@ def test_dump_and_restore_keep_schema_inventory_and_secrets(tmp_path) -> None:  
     name, password = asyncio.run(_read_back(server_id))
     assert name == "restored-pg"
     assert password == "Backup-Restore-Secret-1"  # same DBM_MASTER_KEY → decrypts
+    can_login, revision = asyncio.run(_restored_login_and_revision())
+    assert can_login
+    from tests.migrations.test_migrations import revisions
+
+    assert revision == revisions()[-1]
 
     # the stored blob is useless without the key: a different master key cannot decrypt it
     import base64

@@ -114,3 +114,114 @@ def test_head_schema_matches_models() -> None:
 
     changes = asyncio.run(diff())
     assert changes == [], f"models and migrations disagree (write a migration): {changes}"
+
+
+# ---- existing installation -> latest ----------------------------------------------------------
+#: tables seeded at an older revision (in FK order); a table missing at that revision is skipped
+SEEDED = ["organizations", "environments", "users", "roles", "servers", "alert_rules", "notification_channels"]
+
+
+async def _seed_generic(tables: list[str]) -> dict[str, str]:
+    """Insert one row per table using only the columns that exist at the current revision:
+    required columns get a type-appropriate value, foreign keys point at the seeded parent row."""
+    import uuid as _uuid
+
+    import asyncpg
+
+    u = make_url(_scratch_url())
+    conn = await asyncpg.connect(
+        host=u.host, port=u.port or 5432, user=u.username, password=u.password, database=SCRATCH
+    )
+    ids: dict[str, str] = {}
+    try:
+        for table in tables:
+            cols = await conn.fetch(
+                "SELECT column_name, data_type, is_nullable, column_default, character_maximum_length AS maxlen "
+                "FROM information_schema.columns "
+                "WHERE table_schema='public' AND table_name=$1 ORDER BY ordinal_position",
+                table,
+            )
+            if not cols:
+                continue
+            fks = {
+                r["col"]: r["ref"]
+                for r in await conn.fetch(
+                    "SELECT kcu.column_name AS col, ccu.table_name AS ref FROM information_schema.table_constraints tc "
+                    "JOIN information_schema.key_column_usage kcu ON kcu.constraint_name = tc.constraint_name "
+                    "JOIN information_schema.constraint_column_usage ccu ON ccu.constraint_name = tc.constraint_name "
+                    "WHERE tc.table_name=$1 AND tc.constraint_type='FOREIGN KEY'",
+                    table,
+                )
+            }
+            names, values = [], []
+            for c in cols:
+                name, typ = c["column_name"], c["data_type"]
+                if name in fks:
+                    if fks[name] in ids:
+                        names.append(name)
+                        values.append(ids[fks[name]])
+                    continue
+                if c["is_nullable"] == "YES" or c["column_default"] is not None and name != "id":
+                    continue
+                names.append(name)
+                if name == "id" and typ == "uuid":
+                    ids[table] = str(_uuid.uuid4())
+                    values.append(ids[table])
+                elif typ == "uuid":
+                    values.append(str(_uuid.uuid4()))
+                elif typ in ("character varying", "text"):
+                    v = {"engine": "postgresql", "kind": "metric", "severity": "high", "tier": "test"}.get(
+                        name, f"seed-{table}-{name}"
+                    )
+                    values.append(v[: c["maxlen"]] if c["maxlen"] else v)
+                elif typ in ("integer", "bigint", "smallint"):
+                    values.append(5432 if name == "port" else 1)
+                elif typ == "double precision":
+                    values.append(1.0)
+                elif typ == "boolean":
+                    values.append(False)
+                elif typ.startswith("timestamp"):
+                    from datetime import UTC, datetime
+
+                    values.append(datetime.now(UTC))
+                elif typ == "jsonb":
+                    values.append("[]" if name.endswith("_ids") or name.endswith("states") else "{}")
+                else:
+                    raise AssertionError(f"no seed value for {table}.{name} ({typ})")
+            ph = ", ".join(f"${i + 1}" + ("::jsonb" if v in ("[]", "{}") else "") for i, v in enumerate(values))
+            await conn.execute(f'INSERT INTO "{table}" ({", ".join(names)}) VALUES ({ph})', *values)  # noqa: S608
+            if table not in ids:
+                ids[table] = "row"
+        return ids
+    finally:
+        await conn.close()
+
+
+async def _row_ids(tables: list[str]) -> dict[str, list[str]]:
+    import asyncpg
+
+    u = make_url(_scratch_url())
+    conn = await asyncpg.connect(
+        host=u.host, port=u.port or 5432, user=u.username, password=u.password, database=SCRATCH
+    )
+    try:
+        return {t: [str(r[0]) for r in await conn.fetch(f'SELECT id FROM "{t}"')] for t in tables}  # noqa: S608
+    finally:
+        await conn.close()
+
+
+@pytest.mark.parametrize("start", ["first", "previous"])
+def test_existing_installation_upgrades_to_head_with_its_data(start: str) -> None:
+    """An installation at an older revision, with data in it, upgrades to the latest schema and
+    keeps every row (``previous`` = the revision before head, i.e. the last release state)."""
+    revs = revisions()
+    rev = revs[0] if start == "first" else revs[-2]
+    alembic("downgrade", "base")
+    alembic("upgrade", rev)
+    seeded = asyncio.run(_seed_generic(SEEDED))
+    present = [t for t in SEEDED if t in seeded]
+    assert "servers" in present and "users" in present
+    before = asyncio.run(_row_ids(present))
+    alembic("upgrade", "head")
+    assert revs[-1] in alembic("current")
+    assert asyncio.run(_row_ids(present)) == before

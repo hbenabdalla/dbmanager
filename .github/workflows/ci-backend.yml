@@ -1,8 +1,9 @@
 name: Backend
 
 on:
+  # no path filter on pull requests: these checks are required by branch protection and
+  # must always report (see CONTRIBUTING.md, "Branch protection")
   pull_request:
-    paths: ["backend/**", ".github/workflows/ci-backend.yml"]
   push:
     branches: [main]
     paths: ["backend/**", ".github/workflows/ci-backend.yml"]
@@ -16,6 +17,7 @@ concurrency:
 
 jobs:
   lint:
+    name: Backend lint
     runs-on: ubuntu-24.04
     defaults: { run: { working-directory: backend } }
     steps:
@@ -27,6 +29,7 @@ jobs:
       - run: ruff format --check app tests
 
   test:
+    name: Backend tests
     runs-on: ubuntu-24.04
     defaults: { run: { working-directory: backend } }
     services:

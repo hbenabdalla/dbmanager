@@ -2,7 +2,9 @@
 
 ## Branches and pull requests
 
-* `main` is always releasable; CI must be green.
+* `main` is always releasable; CI must be green. Branch protection (required reviews, required
+  checks `Backend lint`, `Backend tests`, `Frontend build`, `Documentation build`,
+  `Secret scan`, no force pushes) is described in `CONTRIBUTING.md` → *Branch protection*.
 * Work happens on short-lived branches from `main` (`feat/…`, `fix/…`, `docs/…`) and is merged
   through pull requests with review; commit messages follow Conventional Commits
   (see `CONTRIBUTING.md`).

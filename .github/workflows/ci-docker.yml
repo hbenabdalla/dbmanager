@@ -2,7 +2,7 @@ name: Docker images
 
 on:
   pull_request:
-    paths: ["backend/**", "frontend/**", "docker-compose.yml", ".github/workflows/ci-docker.yml"]
+    paths: ["backend/**", "frontend/**", "scripts/**", "docker-compose.yml", ".github/workflows/ci-docker.yml"]
   push:
     branches: [main]
     tags: ["v*"]
@@ -45,6 +45,8 @@ jobs:
       - name: Health
         run: |
           curl -fsS http://localhost:8080/healthz || (docker compose logs; exit 1)
+      - name: Restore drill (backup.sh -> down -v -> restore.sh -> sign in, data and schema intact)
+        run: bash scripts/restore-drill.sh --i-understand-this-wipes-the-stack
       - name: Logs on failure
         if: failure()
         run: docker compose logs --no-color

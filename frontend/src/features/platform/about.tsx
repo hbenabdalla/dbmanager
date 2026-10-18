@@ -13,7 +13,7 @@ export interface About {
   description: string;
   version: { application: string; backend: string; build: string | null; git_commit: string | null; build_date: string | null; schema: string | null };
   milestone: { version: string; name: string };
-  license: string | null;
+  license: string;
   links: { documentation: string | null; github: string | null; roadmap: string | null };
   engines: { engine: string; display_name: string; support_level: string; validation: string | null; validated_version: string | null }[];
   status: { api: string; database: string; timeseries: string; background_jobs: string };
@@ -71,7 +71,7 @@ export function AboutPage() {
               ["Git commit", v.git_commit ? <span className="font-mono">{v.git_commit}</span> : <span className="text-muted">not recorded</span>],
               ["Build date", v.build_date ?? <span className="text-muted">not recorded</span>],
               ["Database schema", <span className="font-mono">{v.schema ?? "unknown"}</span>],
-              ["License", a.license ?? <span className="text-muted">not yet selected</span>],
+              ["License", a.license],
             ]} />
             {FRONTEND_VERSION !== v.application && (
               <p role="alert" className="mt-3 rounded-md border border-warn/30 bg-warn-soft px-3 py-2 text-[12.5px] text-warn">
@@ -91,7 +91,7 @@ export function AboutPage() {
           </CardBody>
           <CardHeader title="Links" className="border-t border-border" />
           <CardBody className="space-y-2">
-            <LinkRow icon={BookOpen} label="Documentation" href={a.links.documentation} missing="not configured (DBM_DOCUMENTATION_URL)" />
+            <LinkRow icon={BookOpen} label="Documentation" href={a.links.documentation} missing="hidden (DBM_DOCUMENTATION_URL=off)" />
             <LinkRow icon={Github} label="Source code" href={a.links.github} missing="not configured (DBM_GITHUB_URL)" />
             <LinkRow icon={MapIcon} label="Roadmap" href={a.links.roadmap} missing="not configured (DBM_ROADMAP_URL)" />
           </CardBody>

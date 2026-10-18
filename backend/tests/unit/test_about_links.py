@@ -32,3 +32,27 @@ def test_documentation_can_point_to_an_internal_copy(monkeypatch: pytest.MonkeyP
 @pytest.mark.parametrize("value", ["off", "OFF", "none", "-"])
 def test_documentation_entry_can_be_hidden(monkeypatch: pytest.MonkeyPatch, value: str) -> None:
     assert _links(monkeypatch, documentation_url=value)["documentation"] is None
+
+
+def test_build_metadata_passes_through_sanitized(monkeypatch: pytest.MonkeyPatch) -> None:
+    from app import __version__
+
+    values = {
+        "build_version": "0.11.0-rc1",
+        "git_commit": "1c7a9da<script>alert(1)</script>",
+        "build_date": "2026-10-18T09:00:00Z; rm -rf /",
+    }
+    monkeypatch.setattr(about, "get_settings", lambda: SimpleNamespace(**values))
+    v = about.version_info("0006")
+    assert v["application"] == v["backend"] == __version__
+    assert v["build"] == "0.11.0-rc1" and v["schema"] == "0006"
+    # only printable version characters survive; values are truncated
+    assert v["git_commit"] == "1c7a9dascriptalert1script"
+    assert v["build_date"] == "2026-10-18T09:00:00Zrm-rf"
+    assert about._clean("x" * 100) == "x" * 64 and about._clean("") is None
+
+
+async def test_public_version_endpoint_exposes_only_product_and_version() -> None:
+    from app import __version__
+
+    assert await about.version() == {"product": "DB Manager", "version": __version__}

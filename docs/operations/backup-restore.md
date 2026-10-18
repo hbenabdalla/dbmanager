@@ -28,10 +28,19 @@ frontend, recreates the database from the dump and starts them again; the backen
 older release is upgraded to the current schema. `.env` must hold the `DBM_MASTER_KEY` that was in
 use when the dump was taken.
 
-What is verified automatically (`backend/tests/migrations/`, run in CI): every migration upgrades
-step by step, downgrades to base and upgrades again; the head schema equals the models; and a
-`pg_dump -Fc` / `pg_restore` round trip of a migrated, populated database keeps the inventory and
-the encrypted credentials, which decrypt with the same key and fail with any other key.
+What is verified automatically:
+
+* `backend/tests/migrations/` (CI job *Backend tests*): every migration upgrades step by step,
+  downgrades to base and upgrades again; the head schema equals the models; an installation
+  holding data at the first revision and at the revision before head upgrades to head without
+  losing rows; and a `pg_dump -Fc` / `pg_restore` round trip of a migrated, populated database
+  keeps the schema revision, users (who can still sign in), the inventory and the encrypted
+  credentials, which decrypt with the same key and fail with any other key.
+* `scripts/restore-drill.sh` (CI job *Docker images → compose*): on a throw-away Compose stack it
+  creates a marker user and environment, runs `scripts/backup.sh --with-metrics`, deletes the
+  volumes (`docker compose down -v`), checks that the data is gone, runs `scripts/restore.sh`,
+  then signs in as the marker user and compares the schema revision with the backup. The metric
+  snapshot is checked to exist; restoring it is the manual procedure below.
 
 ## PostgreSQL (manual commands)
 
