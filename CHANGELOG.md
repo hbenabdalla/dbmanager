@@ -5,11 +5,13 @@ All notable changes to DB Manager are documented here. The format follows
 [Semantic Versioning](https://semver.org/). Pre-1.0 minor versions may contain breaking changes;
 they are listed under **Changed** with migration notes.
 
-No version has been tagged yet. Everything below is the content of the first public pre-release
-(`0.9.0`), which will be tagged once the release checklist (`docs/product/release-checklist.md`)
-passes.
+No version has been tagged yet. Everything below is the content of the first public pre-release,
+`0.11.0`, which will be tagged once the release checklist (`docs/product/release-checklist.md`)
+passes. Its number follows the roadmap: it contains milestone 0.9 (release foundation) and the
+completed sprints of milestones 0.10 (alerting) and 0.11 (API tokens, rate limiting). Versions
+0.9 and 0.10 were never released.
 
-## [Unreleased] — 0.9.0
+## [Unreleased] — 0.11.0
 
 ### Added
 

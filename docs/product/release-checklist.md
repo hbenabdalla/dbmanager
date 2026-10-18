@@ -2,7 +2,7 @@
 
 Run before tagging any `v0.x.y` / `v1.x.y` release. Commands are from the repository root.
 
-| # | Item | How to verify | State (0.9.0-dev) |
+| # | Item | How to verify | State (0.11.0-dev) |
 |---|---|---|---|
 | 1 | Backend unit + API tests pass | `cd backend && pytest tests/unit tests/api` (API tests need `DBM_TEST_DATABASE_URL`, a scratch PostgreSQL) | Passing (337 unit + API + migrations) |
 | 2 | Frontend tests pass | `cd frontend && npm ci && npx vitest run` | Passing (61) |
@@ -18,8 +18,8 @@ Run before tagging any `v0.x.y` / `v1.x.y` release. Commands are from the reposi
 | 12 | Security review | Review changes to authentication, RBAC, credential handling, admin actions; `SECURITY.md` current | Per release |
 | 13 | Capability matrix updated | `docs/product/capability-matrix.md` reflects the release | Current |
 | 14 | Roadmap updated | `ROADMAP.md`, `docs/product/roadmap.md` statuses | Current |
-| 15 | Changelog updated | `CHANGELOG.md` has an entry for the version | Done (`CHANGELOG.md`, Unreleased — 0.9.0) |
-| 16 | Version updated | One version across `backend/app/__init__.py`, `backend/pyproject.toml`, `frontend/package.json`; matches the tag | Passing — `0.9.0-dev` / `0.9.0.dev0` everywhere; set to `0.9.0` when tagging |
+| 15 | Changelog updated | `CHANGELOG.md` has an entry for the version | Done (`CHANGELOG.md`, Unreleased — 0.11.0) |
+| 16 | Version updated | One version across `backend/app/__init__.py`, `backend/pyproject.toml`, `frontend/package.json`; matches the tag | Passing — `0.11.0-dev` (`0.11.0.dev0` in `pyproject.toml`) everywhere; set to `0.11.0` when tagging |
 | 17 | License present | `LICENSE` exists and README states it | Passing — Apache-2.0 (`LICENSE`, README, package metadata, About page) |
 
 Release steps once all rows are green: update `CHANGELOG.md`, bump the version, open a pull

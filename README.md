@@ -8,12 +8,14 @@ administration for PostgreSQL, MySQL, MariaDB, Microsoft SQL Server, Oracle Data
 [![Frontend](https://github.com/hbenabdalla/dbmanager/actions/workflows/ci-frontend.yml/badge.svg)](https://github.com/hbenabdalla/dbmanager/actions/workflows/ci-frontend.yml)
 [![Docs](https://github.com/hbenabdalla/dbmanager/actions/workflows/ci-docs.yml/badge.svg)](https://github.com/hbenabdalla/dbmanager/actions/workflows/ci-docs.yml)
 [![Documentation](https://readthedocs.org/projects/db-manager/badge/?version=latest)](https://db-manager.readthedocs.io/en/latest/)
+[![Version](https://img.shields.io/badge/version-0.11.0--dev-orange)](CHANGELOG.md)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 
 **Documentation: [db-manager.readthedocs.io/en/latest](https://db-manager.readthedocs.io/en/latest/)**
 
-> **Project status: pre-release (0.9.0-dev).** Feature-rich and validated against real engines,
-> but not yet tagged as a stable release. See the [roadmap](ROADMAP.md) for what remains before 1.0.
+> **Version 0.11.0-dev — pre-release.** Feature-complete for its scope and validated against real
+> engines, but not yet tagged: the first public release will be **v0.11.0** (contents in the
+> [changelog](CHANGELOG.md)). See the [roadmap](ROADMAP.md) for what remains before 1.0.
 
 ![Fleet dashboard](docs/assets/screenshots/dashboard-light.png)
 

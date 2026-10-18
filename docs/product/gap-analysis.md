@@ -26,7 +26,7 @@ The tables below keep each gap as originally assessed. Progress since the audit:
 | G-01 Git repository | Closed — published at [hbenabdalla/dbmanager](https://github.com/hbenabdalla/dbmanager) | sprint 0.9.1 |
 | G-02 License | Closed — the owner chose Apache-2.0; `LICENSE` added | sprint 0.9.1 |
 | G-03 CI | Closed — workflows run on GitHub; first-run failures (Compose health, gitleaks) fixed | sprint 0.9.2 |
-| G-04 Version metadata | Closed — `0.9.0-dev`, `/api/v1/version`, `/api/v1/about`, Platform → About | sprint 0.9.4 |
+| G-04 Version metadata | Closed — `0.11.0-dev`, `/api/v1/version`, `/api/v1/about`, Platform → About | sprint 0.9.4 |
 | G-05 Policies | Closed — CONTRIBUTING, SECURITY, CODE_OF_CONDUCT, issue forms, PR template | sprint 0.9.1 |
 | G-06 Publishable documentation | Closed — published on Read the Docs ([https://db-manager.readthedocs.io/en/latest/](https://db-manager.readthedocs.io/en/latest/)) | sprint 0.9.3 |
 | G-07 Secret scan / ignore rules | Closed — tree scanned (only documented development/test placeholders), `.gitignore` hardened, gitleaks in CI | sprint 0.9.1 |

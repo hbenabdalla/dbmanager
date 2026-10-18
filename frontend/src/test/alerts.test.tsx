@@ -21,8 +21,8 @@ const ALERT = {
   resolved_at: null, resolved_by: null,
 };
 const ABOUT = {
-  product: "DB Manager", description: "x", version: { application: "0.9.0-dev", backend: "0.9.0-dev", build: null, git_commit: null, build_date: null, schema: "0004" },
-  milestone: { version: "v0.9", name: "Release preparation" }, license: null,
+  product: "DB Manager", description: "x", version: { application: "0.11.0-dev", backend: "0.11.0-dev", build: null, git_commit: null, build_date: null, schema: "0004" },
+  milestone: { version: "v0.11", name: "First public release" }, license: null,
   links: { documentation: null, github: "https://github.com/hbenabdalla/dbmanager", roadmap: "https://github.com/hbenabdalla/dbmanager/blob/main/ROADMAP.md" },
   engines: [{ engine: "postgresql", display_name: "PostgreSQL", support_level: "supported", validation: "validated", validated_version: "16.4" }],
   status: { api: "ok", database: "ok", timeseries: "ok", background_jobs: "running" },
@@ -151,7 +151,7 @@ describe("alerts", () => {
     });
     renderApp("/platform/about");
     expect(await screen.findByRole("heading", { name: "About DB Manager" })).toBeInTheDocument();
-    expect(screen.getByText("Milestone v0.9 — Release preparation")).toBeInTheDocument();
+    expect(screen.getByText("Milestone v0.11 — First public release")).toBeInTheDocument();
     expect(screen.getByText("not configured (DBM_DOCUMENTATION_URL)")).toBeInTheDocument();
     expect(screen.getByText("not yet selected")).toBeInTheDocument();
     expect(screen.getByText("Validated")).toBeInTheDocument();

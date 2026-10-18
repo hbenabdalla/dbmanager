@@ -40,7 +40,7 @@ documented skip), 54 frontend tests.
 | Logging | COMPLETE | Structured JSON logging `backend/app/core/logging.py`, request IDs in `backend/app/core/middleware.py`, secrets masked (`clean_message`) |
 | Observability (self-metrics) | COMPLETE | Prometheus `GET /metrics` (`backend/app/core/metrics.py`: HTTP, collectors, scheduler leader, pipeline counters) |
 | Diagnostics | PARTIAL | Collectors page (`/api/v1/collectors/status`, `/collectors/jobs`), monitoring-storage page, driver health; no downloadable diagnostic bundle |
-| Version / build metadata | COMPLETE | `0.9.0-dev` in `backend/app/__init__.py`, `pyproject.toml`, `frontend/package.json`; build args `DBM_BUILD_VERSION/DBM_GIT_COMMIT/DBM_BUILD_DATE`; `GET /api/v1/version`, `GET /api/v1/about` (versions, schema revision, engines, status, links); Platform → About |
+| Version / build metadata | COMPLETE | `0.11.0-dev` in `backend/app/__init__.py`, `pyproject.toml`, `frontend/package.json`; build args `DBM_BUILD_VERSION/DBM_GIT_COMMIT/DBM_BUILD_DATE`; `GET /api/v1/version`, `GET /api/v1/about` (versions, schema revision, engines, status, links); Platform → About |
 
 ## Identity
 
@@ -234,5 +234,5 @@ documented skip), 54 frontend tests.
 | License | COMPLETE | Apache-2.0 — `LICENSE`, README, `backend/pyproject.toml`, `frontend/package.json`, About page |
 | CI | PARTIAL | `.github/workflows/` backend (lint, unit, API, migrations, PostgreSQL real engine), frontend, docs (`mkdocs build --strict`), Docker images + Compose health, security (gitleaks, pip-audit, npm audit), on-demand real-engine workflow. First run on `main`: backend, frontend, docs and image builds green; the Compose health job (script not executable) and gitleaks (history re-parented) failed and are fixed — awaiting the next run |
 | Contribution / security policy | COMPLETE | `CONTRIBUTING.md`, `SECURITY.md` (private advisories), `CODE_OF_CONDUCT.md`, issue forms, PR template |
-| Changelog / versioning | COMPLETE | `CHANGELOG.md` (Keep a Changelog, SemVer); version `0.9.0-dev` |
+| Changelog / versioning | COMPLETE | `CHANGELOG.md` (Keep a Changelog, SemVer); version `0.11.0-dev` (first tag: v0.11.0) |
 | Published documentation | COMPLETE | Read the Docs project `db-manager`: [https://db-manager.readthedocs.io/en/latest/](https://db-manager.readthedocs.io/en/latest/), built from `.readthedocs.yaml` with `mkdocs build --strict`; linked from the app's Help menu and About page |

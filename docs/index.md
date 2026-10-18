@@ -30,7 +30,9 @@ control and a complete audit trail.
 
 ## Project status
 
-DB Manager is pre-1.0 software. The capability status of every area is tracked honestly in the
+**Version 0.11.0-dev** — pre-release; the first tagged release will be v0.11.0 (see the
+[changelog](https://github.com/hbenabdalla/dbmanager/blob/main/CHANGELOG.md) and
+[versioning](product/roadmap.md#versioning)). DB Manager is pre-1.0 software. The capability status of every area is tracked honestly in the
 [capability matrix](product/capability-matrix.md) and the [roadmap](product/roadmap.md):
 PostgreSQL, MySQL, MariaDB, SQL Server, Oracle and Db2 LUW are validated against real engines
 (see [Database engines](database-engines/index.md)); Db2 for z/OS is partial and still needs

@@ -3,7 +3,7 @@
  "info": {
   "title": "DB Manager API",
   "description": "Unified administration, monitoring, security and performance analysis for heterogeneous relational databases. Authenticate with `POST /api/v1/auth/login`; unsafe methods require the `X-CSRF-Token` header (value of the `dbm_csrf` cookie).",
-  "version": "0.9.0-dev"
+  "version": "0.11.0-dev"
  },
  "paths": {
   "/healthz": {

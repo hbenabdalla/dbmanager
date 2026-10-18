@@ -17,9 +17,17 @@ of documentation exists.
 
 ## Where the product stands
 
-The current codebase is a feature-rich **pre-release (target version 0.9.0, "public preview")**.
-It already contains the capability groups below; they are listed as the baseline, not as past
-releases.
+The current codebase is a feature-rich **pre-release, version 0.11.0-dev**. It already contains the
+capability groups below; they are listed as the baseline, not as past releases.
+
+### Versioning
+
+Milestone numbers double as version numbers. The product version is the highest milestone with
+completed work: **0.11.0-dev** contains milestone 0.9 (release foundation) and the sprints of
+milestones 0.10 and 0.11 marked DONE below. The first public release will be tagged **v0.11.0**
+once the [release checklist](release-checklist.md) passes; sprints of milestones 0.10 and 0.11
+still open at that point (0.10.4, 0.10.5, 0.11.3–0.11.6) follow in later releases. Versions 0.9
+and 0.10 were never released.
 
 | Baseline capability group | Status |
 |---|---|
@@ -70,7 +78,7 @@ releases.
 
 ### Sprint 0.9.4 — Version & product metadata · DONE
 - **Objective:** users and support know exactly what is running.
-- **Features:** single version source (0.9.0), build/commit and schema version via API, About page (version, engines, backend status, docs/GitHub/roadmap links, license), configurable `DBM_DOCUMENTATION_URL`, `DBM_GITHUB_URL`, `DBM_ROADMAP_URL`, Documentation entry in the app menu.
+- **Features:** single version source (one value in backend, `pyproject.toml` and `package.json`), build/commit and schema version via API, About page (version, engines, backend status, docs/GitHub/roadmap links, license), configurable `DBM_DOCUMENTATION_URL`, `DBM_GITHUB_URL`, `DBM_ROADMAP_URL`, Documentation entry in the app menu.
 - **Dependencies:** none.
 - **Tests:** API test for the version endpoint (no sensitive build details); UI test for the About page and the documentation link.
 - **Acceptance criteria:** no guessed Read the Docs URL — the link was set once the project `db-manager` existed; installations can override it or hide it (`off`).
