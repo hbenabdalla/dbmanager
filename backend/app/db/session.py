@@ -11,6 +11,7 @@ from app.core.config import get_settings
 
 _engine: AsyncEngine | None = None
 _sessionmaker: async_sessionmaker[AsyncSession] | None = None
+_limiter_engine: AsyncEngine | None = None
 
 
 def get_engine() -> AsyncEngine:
@@ -32,6 +33,23 @@ def get_engine() -> AsyncEngine:
     return _engine
 
 
+def get_limiter_engine() -> AsyncEngine:
+    """Small separate pool for rate-limit counters (short autocommit statements)."""
+    global _limiter_engine
+    if _limiter_engine is None:
+        s = get_settings()
+        _limiter_engine = create_async_engine(
+            s.database_url.get_secret_value(),
+            pool_size=s.rate_limit_pool_size,
+            max_overflow=s.rate_limit_pool_size,
+            pool_timeout=5,
+            pool_pre_ping=True,
+            pool_recycle=1800,
+            connect_args={"server_settings": {"application_name": "dbmanager-ratelimit"}},
+        )
+    return _limiter_engine
+
+
 def get_sessionmaker() -> async_sessionmaker[AsyncSession]:
     get_engine()
     assert _sessionmaker is not None
@@ -51,8 +69,11 @@ async def session_scope() -> AsyncIterator[AsyncSession]:
 
 
 async def dispose_engine() -> None:
-    global _engine, _sessionmaker
+    global _engine, _sessionmaker, _limiter_engine
     if _engine is not None:
         await _engine.dispose()
+    if _limiter_engine is not None:
+        await _limiter_engine.dispose()
     _engine = None
     _sessionmaker = None
+    _limiter_engine = None

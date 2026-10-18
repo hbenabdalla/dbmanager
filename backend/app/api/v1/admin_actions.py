@@ -16,7 +16,7 @@ from pydantic import BaseModel, Field
 from app.adapters import admin as A
 from app.adapters.base import AdapterNotSupported, Capability, CapabilityLevel, ConnectionSpec
 from app.adapters.registry import adapter_class_for
-from app.api.deps import DB, CurrentPrincipal, load_server
+from app.api.deps import DB, CurrentPrincipal, load_server, rate_limit
 from app.core.errors import ConfirmationRequired, ValidationFailed
 from app.domain.risk import RiskClass
 from app.models import Server
@@ -114,7 +114,11 @@ async def preview(server_id: uuid.UUID, body: AdminRequest, db: DB, p: CurrentPr
     }
 
 
-@router.post("/servers/{server_id}/admin/execute", summary="Execute a reviewed administration action")
+@router.post(
+    "/servers/{server_id}/admin/execute",
+    summary="Execute a reviewed administration action",
+    dependencies=[rate_limit("expensive")],
+)
 async def execute(server_id: uuid.UUID, body: AdminRequest, db: DB, p: CurrentPrincipal) -> dict[str, Any]:
     s = await load_server(db, p, server_id)
     stmt = _build(s, body)

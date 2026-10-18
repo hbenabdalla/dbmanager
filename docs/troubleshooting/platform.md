@@ -9,7 +9,7 @@
 | Login works but cookies are dropped | serve over HTTPS, or set `DBM_COOKIE_SECURE=false` for plain-HTTP testing on hosts other than localhost |
 | Locked out after failed logins | wait `DBM_LOGIN_LOCKOUT_MINUTES` (15) or **Platform → Users → Unlock** |
 | Lost admin password | `docker compose exec backend python -m app.cli reset-password admin` |
-| `429 rate_limited` | login rate per IP (`DBM_LOGIN_RATE_PER_IP_PER_MINUTE`, 20) or API rate per user (`DBM_API_RATE_PER_USER_PER_MINUTE`, 600) |
+| `429 rate_limited` | a [rate limit](../administration/rate-limiting.md) was reached: `details.policy` says which (`api`, `target`, `expensive`, `login`, `token_failures`) and `Retry-After` how long to wait. Raise the matching `DBM_*_PER_MINUTE` setting if legitimate use hits it; behind a proxy check `DBM_TRUSTED_PROXIES` (otherwise all users share one login budget) |
 | Client IPs in the audit log are the proxy's | add the proxy network to `DBM_TRUSTED_PROXIES` ([Reverse proxy and TLS](../deployment/reverse-proxy-tls.md)) |
 
 ## Documentation build fails

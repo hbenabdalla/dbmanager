@@ -68,3 +68,19 @@ class AppSetting(Base):
     value: Mapped[Any] = mapped_column(JSONB, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
     updated_by: Mapped[str | None] = mapped_column(String(128))
+
+
+class RateLimitWindow(Base):
+    """One fixed window of a rate-limit counter (app.services.ratelimit).
+
+    ``bucket`` = policy and principal (``expensive:user:<uuid>``, ``login:ip:<address>``, …);
+    ``window_start`` = epoch seconds aligned to the window length. Each bucket keeps at most
+    the current and the previous window; idle buckets are removed by the retention job.
+    """
+
+    __tablename__ = "rate_limit_windows"
+    __table_args__ = (Index("ix_rate_limit_windows_start", "window_start"),)
+
+    bucket: Mapped[str] = mapped_column(String(200), primary_key=True)
+    window_start: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    hits: Mapped[int] = mapped_column(Integer, nullable=False)

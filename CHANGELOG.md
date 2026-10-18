@@ -84,6 +84,18 @@ passes.
   interactive-only endpoints (token, password, user/role/IdP management) refuse them; failures
   rate-limited and audited.
 
+**Rate limiting**
+- Per-principal API limits — every request (`DBM_API_RATE_PER_USER_PER_MINUTE`, 600), live
+  queries against managed databases (`DBM_API_RATE_TARGET_PER_MINUTE`, 120) and expensive
+  operations such as SQL execution, plans, administration, exports and tests
+  (`DBM_API_RATE_EXPENSIVE_PER_MINUTE`, 30). A session counts against its user, each API token
+  against itself.
+- Sliding-window counters stored in PostgreSQL (`DBM_RATE_LIMIT_BACKEND=database`, migration
+  `0006`) so the limits hold across backend replicas; login and failed-token limits use them too.
+- `429 rate_limited` with an exact `Retry-After`, `RateLimit-*` headers and the policy in the error
+  details; the UI retries a refused data load once after `Retry-After`; `dbm_rate_limited_total`
+  metric.
+
 **Project**
 - Licensed under the Apache License 2.0 (`LICENSE`); SPDX identifier in `backend/pyproject.toml`,
   `frontend/package.json` and on the About page.

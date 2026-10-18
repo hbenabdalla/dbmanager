@@ -11,7 +11,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import select
 
 from app.adapters.base import Capability
-from app.api.deps import DB, CurrentPrincipal, load_server
+from app.api.deps import DB, CurrentPrincipal, load_server, rate_limit
 from app.core.errors import ConfirmationRequired
 from app.domain.masking import mask_sql
 from app.models import AuditEvent, CollectorJob, Server
@@ -39,7 +39,7 @@ def _mask(p: CurrentPrincipal, s: Server, sql: str | None, database: str | None 
 
 
 # ---- databases / schemas / objects --------------------------------------------------------
-@router.get("/databases")
+@router.get("/databases", dependencies=[rate_limit("target")])
 async def databases(server_id: uuid.UUID, db: DB, p: CurrentPrincipal) -> list[dict[str, Any]]:
     s = await load_server(db, p, server_id)
     require_capability(s, Capability.DATABASES)
@@ -55,7 +55,7 @@ async def databases(server_id: uuid.UUID, db: DB, p: CurrentPrincipal) -> list[d
     return [d.model_dump(mode="json") for d in visible]
 
 
-@router.get("/databases/{database}/schemas")
+@router.get("/databases/{database}/schemas", dependencies=[rate_limit("target")])
 async def schemas(server_id: uuid.UUID, database: str, db: DB, p: CurrentPrincipal) -> list[dict[str, Any]]:
     s = await load_server(db, p, server_id)
     if not p.authz.can_see("schema.view", server_ref(s, database)):
@@ -68,7 +68,7 @@ async def schemas(server_id: uuid.UUID, database: str, db: DB, p: CurrentPrincip
     return [x.model_dump(mode="json") for x in items]
 
 
-@router.get("/databases/{database}/schemas/{schema}/objects")
+@router.get("/databases/{database}/schemas/{schema}/objects", dependencies=[rate_limit("target")])
 async def objects(
     server_id: uuid.UUID,
     database: str,
@@ -85,7 +85,7 @@ async def objects(
     return [x.model_dump(mode="json") for x in items]
 
 
-@router.get("/databases/{database}/schemas/{schema}/objects/{name}")
+@router.get("/databases/{database}/schemas/{schema}/objects/{name}", dependencies=[rate_limit("target")])
 async def object_detail(
     server_id: uuid.UUID, database: str, schema: str, name: str, db: DB, p: CurrentPrincipal, type: str = Query("table")
 ) -> dict[str, Any]:
@@ -97,7 +97,7 @@ async def object_detail(
 
 
 # ---- access -----------------------------------------------------------------------------
-@router.get("/database-users")
+@router.get("/database-users", dependencies=[rate_limit("target")])
 async def database_users(server_id: uuid.UUID, db: DB, p: CurrentPrincipal) -> list[dict[str, Any]]:
     s = await load_server(db, p, server_id, "user.view")
     require_capability(s, Capability.USERS)
@@ -105,7 +105,7 @@ async def database_users(server_id: uuid.UUID, db: DB, p: CurrentPrincipal) -> l
         return [u.model_dump(mode="json") for u in await a.list_users()]
 
 
-@router.get("/roles")
+@router.get("/roles", dependencies=[rate_limit("target")])
 async def db_roles(server_id: uuid.UUID, db: DB, p: CurrentPrincipal) -> list[dict[str, Any]]:
     s = await load_server(db, p, server_id, "user.view")
     require_capability(s, Capability.ROLES)
@@ -113,7 +113,7 @@ async def db_roles(server_id: uuid.UUID, db: DB, p: CurrentPrincipal) -> list[di
         return [u.model_dump(mode="json") for u in await a.list_roles()]
 
 
-@router.get("/privileges")
+@router.get("/privileges", dependencies=[rate_limit("target")])
 async def privileges(
     server_id: uuid.UUID,
     db: DB,
@@ -130,7 +130,7 @@ async def privileges(
 
 
 # ---- activity -----------------------------------------------------------------------------
-@router.get("/sessions")
+@router.get("/sessions", dependencies=[rate_limit("target")])
 async def sessions(server_id: uuid.UUID, db: DB, p: CurrentPrincipal) -> list[dict[str, Any]]:
     s = await load_server(db, p, server_id, "session.view")
     require_capability(s, Capability.SESSIONS)
@@ -144,7 +144,7 @@ async def sessions(server_id: uuid.UUID, db: DB, p: CurrentPrincipal) -> list[di
     return out
 
 
-@router.get("/locks")
+@router.get("/locks", dependencies=[rate_limit("target")])
 async def locks(server_id: uuid.UUID, db: DB, p: CurrentPrincipal) -> list[dict[str, Any]]:
     s = await load_server(db, p, server_id, "session.view")
     require_capability(s, Capability.LOCKS)
@@ -164,7 +164,7 @@ class CancelRequest(BaseModel):
     confirm: str | None = None
 
 
-@router.post("/sessions/{session_id}/cancel")
+@router.post("/sessions/{session_id}/cancel", dependencies=[rate_limit("expensive")])
 async def cancel_session(
     server_id: uuid.UUID, session_id: str, body: CancelRequest, db: DB, p: CurrentPrincipal
 ) -> dict[str, Any]:
@@ -206,7 +206,7 @@ async def cancel_session(
     return {"ok": ok}
 
 
-@router.get("/replication")
+@router.get("/replication", dependencies=[rate_limit("target")])
 async def replication(server_id: uuid.UUID, db: DB, p: CurrentPrincipal) -> dict[str, Any]:
     s = await load_server(db, p, server_id, "performance.view")
     require_capability(s, Capability.REPLICATION)
@@ -214,7 +214,7 @@ async def replication(server_id: uuid.UUID, db: DB, p: CurrentPrincipal) -> dict
         return (await a.get_replication_status()).model_dump(mode="json")
 
 
-@router.get("/configuration")
+@router.get("/configuration", dependencies=[rate_limit("target")])
 async def configuration(server_id: uuid.UUID, db: DB, p: CurrentPrincipal) -> list[dict[str, Any]]:
     s = await load_server(db, p, server_id, "performance.view")
     require_capability(s, Capability.CONFIGURATION)
@@ -222,7 +222,7 @@ async def configuration(server_id: uuid.UUID, db: DB, p: CurrentPrincipal) -> li
         return [c.model_dump(mode="json") for c in await a.get_configuration()]
 
 
-@router.get("/storage")
+@router.get("/storage", dependencies=[rate_limit("target")])
 async def storage(server_id: uuid.UUID, db: DB, p: CurrentPrincipal) -> dict[str, Any]:
     s = await load_server(db, p, server_id, "performance.view")
     require_capability(s, Capability.STORAGE)

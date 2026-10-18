@@ -118,7 +118,7 @@ releases.
 - **Acceptance criteria:** alerts raised in a window are marked suppressed and notify after it ends only if still firing.
 - **Definition of Done:** visible on server pages.
 
-### Sprint 0.10.4 — Alert UX & chat presets · PLANNED
+### Sprint 0.10.4 — Alert UX & chat presets · NEXT
 - **Features:** alert inbox with acknowledge/resolve/comment, dashboard and server badges, Teams and Slack webhook presets, simple re-notify escalation.
 - **Dependencies:** 0.10.1–0.10.3.
 - **Tests:** UI tests for the lifecycle; payload snapshot tests per preset.
@@ -137,7 +137,7 @@ releases.
 | Sprint | Scope | Status |
 |---|---|---|
 | 0.11.1 API tokens | Scoped, hashed, expiring personal tokens; `Authorization: Bearer`; audited; UI to create/revoke (service accounts later) | DONE |
-| 0.11.2 API rate limiting | Per-principal limits on expensive endpoints, `429` with `Retry-After`, limiter shared across backend instances | NEXT |
+| 0.11.2 API rate limiting | Per-principal limits (`api`, live `target` queries, `expensive` operations), `429` with exact `Retry-After` and `RateLimit-*` headers, sliding-window counters in PostgreSQL shared across backend instances, UI retries after `Retry-After` | DONE |
 | 0.11.3 Identity validation | OpenLDAP + Keycloak in `docker-compose.test.yml`; real login, group mapping, OIDC flow tests | PLANNED |
 | 0.11.4 SIEM export | Audit event stream via webhook and syslog (RFC 5424) | PLANNED |
 | 0.11.5 Secret managers | HashiCorp Vault provider (KV v2), then cloud secret stores | PLANNED |
@@ -204,6 +204,5 @@ capability matrix + changelog.
 - Alerting has no Teams/Slack presets or re-notification escalation yet (sprint 0.10.4).
 - LDAP, Active Directory and OIDC are implemented but not validated against real identity providers.
 - Reports export CSV only and cannot be scheduled.
-- API requests are not yet rate-limited per token or user beyond authentication failures (sprint 0.11.2).
 - Kubernetes/OpenShift manifests are provided but not validated in CI; no Helm chart.
 - Db2 for z/OS support is partial; Oracle TCPS has not been exercised against a real listener.

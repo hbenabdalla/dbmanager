@@ -6,7 +6,7 @@ Administrator-relevant controls (the full model is in [Security](../security/ind
 |---|---|
 | Session lifetime and idle timeout | `DBM_SESSION_TTL_MINUTES` (480), `DBM_SESSION_IDLE_TIMEOUT_MINUTES` (30) |
 | Brute-force protection | `DBM_LOGIN_MAX_FAILURES`, `DBM_LOGIN_LOCKOUT_MINUTES`, `DBM_LOGIN_RATE_PER_IP_PER_MINUTE` |
-| API rate limit per user | `DBM_API_RATE_PER_USER_PER_MINUTE` (600) |
+| API rate limits (per principal, shared by replicas) | `DBM_API_RATE_PER_USER_PER_MINUTE` (600), `DBM_API_RATE_TARGET_PER_MINUTE` (120), `DBM_API_RATE_EXPENSIVE_PER_MINUTE` (30) — see [rate limiting](rate-limiting.md) |
 | Cookies | `DBM_COOKIE_SECURE` (keep `true` behind HTTPS), `DBM_COOKIE_DOMAIN` |
 | Client IP behind a proxy | `DBM_TRUSTED_PROXIES` |
 | Production safeguards | Platform → Settings: disable writes or EXPLAIN ANALYZE on production servers |

@@ -34,6 +34,9 @@ class Settings(BaseSettings):
     )
     database_pool_size: int = 10
     database_max_overflow: int = 10
+    #: connections reserved for the rate limiter (``DBM_RATE_LIMIT_BACKEND=database``); a pool of
+    #: its own, so requests holding the main pool can never starve the limiter
+    rate_limit_pool_size: int = Field(default=5, ge=1)
     run_migrations_on_start: bool = True
 
     # --- security -----------------------------------------------------------------------
@@ -50,12 +53,21 @@ class Settings(BaseSettings):
     trusted_proxies: CsvList = Field(default_factory=lambda: ["127.0.0.1", "::1"])
     login_max_failures: int = 5
     login_lockout_minutes: int = 15
-    login_rate_per_ip_per_minute: int = 20
-    api_rate_per_user_per_minute: int = 600
+    # --- rate limiting (app.services.ratelimit) -------------------------------------------
+    #: ``database`` = counters in PostgreSQL, shared by every backend replica; ``memory`` =
+    #: per process (single-instance installations, tests)
+    rate_limit_backend: Literal["database", "memory"] = "database"
+    login_rate_per_ip_per_minute: int = Field(default=20, ge=0)
+    #: every authenticated API request, per principal (a user session or one API token); 0 = off
+    api_rate_per_user_per_minute: int = Field(default=600, ge=0)
+    #: requests that query a managed database live (sessions, locks, objects, configuration …)
+    api_rate_target_per_minute: int = Field(default=120, ge=0)
+    #: expensive operations: SQL execution, plans, administration, exports, connection tests …
+    api_rate_expensive_per_minute: int = Field(default=30, ge=0)
     #: API tokens: required expiry, at most this many days
     api_token_max_days: int = Field(default=365, ge=1, le=3650)
     #: failed Bearer authentications per source IP and minute before 429
-    api_token_auth_failures_per_minute: int = 30
+    api_token_auth_failures_per_minute: int = Field(default=30, ge=0)
     secret_file_dirs: CsvList = Field(
         default_factory=lambda: ["/run/secrets", "/var/run/secrets", "/etc/dbmanager/secrets"]
     )

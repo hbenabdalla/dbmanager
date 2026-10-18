@@ -9,7 +9,7 @@ from typing import Any
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy import func, select
 
-from app.api.deps import DB, CurrentPrincipal
+from app.api.deps import DB, CurrentPrincipal, rate_limit
 from app.core.config import get_settings
 from app.core.crypto import get_keyring
 from app.core.errors import Conflict, NotFound, ValidationFailed
@@ -274,7 +274,7 @@ async def delete_idp(idp_id: uuid.UUID, db: DB, p: CurrentPrincipal) -> Message:
     return Message(message="Provider deleted")
 
 
-@router.post("/identity-providers/{idp_id}/test")
+@router.post("/identity-providers/{idp_id}/test", dependencies=[rate_limit("expensive")])
 async def test_idp(idp_id: uuid.UUID, db: DB, p: CurrentPrincipal) -> dict[str, Any]:
     p.authz.require("idp.manage")
     i = await db.get(IdentityProvider, idp_id)

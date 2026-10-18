@@ -6,7 +6,7 @@ from typing import Any
 from fastapi import APIRouter
 from fastapi.responses import Response
 
-from app.api.deps import DB, CurrentPrincipal
+from app.api.deps import DB, CurrentPrincipal, rate_limit
 from app.core.errors import NotFound, ValidationFailed
 from app.services import audit
 from app.services.reports import PLANNED_FORMATS, RENDERERS, REPORTS
@@ -29,7 +29,7 @@ async def list_reports(p: CurrentPrincipal) -> list[dict[str, Any]]:
     ]
 
 
-@router.get("/{key}.{fmt}")
+@router.get("/{key}.{fmt}", dependencies=[rate_limit("expensive")])
 async def download(key: str, fmt: str, db: DB, p: CurrentPrincipal) -> Response:
     p.authz.require_anywhere("reports.view")
     r = REPORTS.get(key)

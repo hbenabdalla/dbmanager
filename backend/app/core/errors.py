@@ -19,6 +19,9 @@ class AppError(Exception):
     status_code = 400
     code = "bad_request"
 
+    #: extra response headers (e.g. ``Retry-After``)
+    headers: dict[str, str] | None = None
+
     def __init__(self, message: str, *, details: dict[str, Any] | None = None, code: str | None = None):
         super().__init__(message)
         self.message = message
@@ -68,6 +71,17 @@ class RateLimited(AppError):
     status_code = 429
     code = "rate_limited"
 
+    def __init__(
+        self,
+        message: str,
+        *,
+        details: dict[str, Any] | None = None,
+        code: str | None = None,
+        headers: dict[str, str] | None = None,
+    ):
+        super().__init__(message, details=details, code=code)
+        self.headers = headers
+
 
 class TargetUnavailable(AppError):
     """The managed (target) database could not be reached or returned an error."""
@@ -97,7 +111,9 @@ def _body(code: str, message: str, details: dict[str, Any] | None = None) -> dic
 def install_error_handlers(app: FastAPI) -> None:
     @app.exception_handler(AppError)
     async def _app_error(_: Request, exc: AppError) -> JSONResponse:
-        return JSONResponse(status_code=exc.status_code, content=_body(exc.code, exc.message, exc.details))
+        return JSONResponse(
+            status_code=exc.status_code, content=_body(exc.code, exc.message, exc.details), headers=exc.headers
+        )
 
     from app.timeseries.repository import TimeSeriesError, TimeSeriesUnavailable
 

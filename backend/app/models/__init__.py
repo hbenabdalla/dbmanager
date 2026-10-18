@@ -1,6 +1,6 @@
 from app.models.advisor import Recommendation, SecurityFinding
 from app.models.alerting import Alert, AlertRule, MaintenanceWindow, NotificationChannel, NotificationDelivery
-from app.models.audit import AppSetting, AuditEvent, QueryHistory
+from app.models.audit import AppSetting, AuditEvent, QueryHistory, RateLimitWindow
 from app.models.identity import (
     ApiToken,
     Group,
@@ -55,6 +55,7 @@ __all__ = [
     "Organization",
     "QueryFingerprint",
     "QueryHistory",
+    "RateLimitWindow",
     "QueryStatSnapshot",
     "Recommendation",
     "Role",

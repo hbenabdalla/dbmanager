@@ -195,7 +195,7 @@ documented skip), 54 frontend tests.
 | Pagination / filtering / sorting | COMPLETE | `PageParams`, `Page[...]` responses on list endpoints |
 | Versioning | PARTIAL | URL prefix `/api/v1`; no deprecation policy |
 | Error model | COMPLETE | Uniform `{"error": {code, message, details, request_id}}` (`backend/app/core/errors.py`) |
-| Rate limiting | PARTIAL | Sliding-window limiter on login (`backend/app/core/ratelimit.py`); not on the rest of the API |
+| Rate limiting | COMPLETE | Per-principal policies `api` / `target` / `expensive` plus `login` and `token_failures`; sliding-window counters in PostgreSQL shared by replicas (`backend/app/services/ratelimit.py`, migration 0006); `429` with `Retry-After` and `RateLimit-*`; `dbm_rate_limited_total` metric; tests for exact Retry-After, concurrency and replica sharing |
 | API tokens (non-interactive clients) | COMPLETE | `ApiToken` (`backend/app/models/identity.py`, migration 0005), `app/services/api_tokens.py`: hashed, expiring, scope-narrowed personal tokens, `Authorization: Bearer`, interactive-only deny-list, CIDR allow-list, audit; user menu → API tokens; tests `tests/unit/test_api_tokens.py`, `tests/api/test_api_tokens.py` |
 
 ## Integration

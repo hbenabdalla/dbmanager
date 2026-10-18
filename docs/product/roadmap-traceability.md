@@ -24,28 +24,28 @@ the repository root; "—" means not yet created.
 |---|---|---|---|---|---|---|
 | Source control & publication | G-01 | 0.9.1 | public repository `hbenabdalla/dbmanager` | CI on every push and pull request | `CONTRIBUTING.md` | DONE |
 | License | G-02 | 0.9.1 | `LICENSE` (Apache-2.0), `backend/pyproject.toml`, `frontend/package.json`, About page | `tests/api/test_alerting.py` (About reports Apache-2.0) | `README.md`, `CONTRIBUTING.md` | DONE |
-| Governance files | G-05, G-07 | 0.9.1 | `CONTRIBUTING.md`, `SECURITY.md`, `CODE_OF_CONDUCT.md`, `CHANGELOG.md`, `.github/ISSUE_TEMPLATE/`, `.github/pull_request_template.md`, `.gitignore` | secret scan | same files | IN PROGRESS |
+| Governance files | G-05, G-07 | 0.9.1 | `CONTRIBUTING.md`, `SECURITY.md`, `CODE_OF_CONDUCT.md`, `CHANGELOG.md`, `.github/ISSUE_TEMPLATE/`, `.github/pull_request_template.md`, `.gitignore` | gitleaks (`.github/workflows/security.yml`) | same files | DONE |
 | CI | G-03 | 0.9.2 | `.github/workflows/` | workflows on GitHub | `CONTRIBUTING.md` | DONE |
 | Documentation site | G-06 | 0.9.3 | `mkdocs.yml`, `.readthedocs.yaml`, `docs/requirements.txt`, `docs/**` | `mkdocs build --strict` (CI and Read the Docs) | [https://db-manager.readthedocs.io/en/latest/](https://db-manager.readthedocs.io/en/latest/) | DONE |
-| Version & About page | G-04 | 0.9.4 | version API + About page (in progress) | API + UI tests (in progress) | administration guide | IN PROGRESS |
-| Upgrade & recovery verification | G-20, G-22 | 0.9.5 | — | — | operations guide | NEXT |
+| Version & About page | G-04 | 0.9.4 | `backend/app/api/v1/about.py`, Platform → About, Help menu | `tests/api/test_alerting.py::test_about_and_version`, `tests/unit/test_about_links.py`, frontend `alerts.test.tsx` | [About](../administration/about.md) | DONE |
+| Upgrade & recovery verification | G-20, G-22 | 0.9.5 | `scripts/backup.sh`, `scripts/restore.sh` | `tests/migrations/` (upgrade, downgrade, model parity, backup/restore round trip) | [upgrade](../operations/upgrade.md), [backup and restore](../operations/backup-restore.md) | DONE |
 
-## Milestone 0.10 — Operations & alerting
+## Milestones 0.10 and 0.11 — Operations, alerting and enterprise integration
 
 | Capability | Gap | Sprint | Implementation | Tests | Documentation | Status |
 |---|---|---|---|---|---|---|
-| Alert rules & evaluation | G-10, G-11 | 0.10.1 | in progress (backend alerting module, migration) | in progress | user guide "Alerts" | IN PROGRESS |
-| SMTP & webhook channels | G-12, G-13, G-14 | 0.10.2 | in progress | in progress | administration guide | IN PROGRESS |
-| Maintenance windows | G-15 | 0.10.3 | in progress | in progress | user guide | IN PROGRESS |
-| Alert UX, Teams/Slack presets, re-notify | G-16, G-17 | 0.10.4 | — | — | — | PLANNED |
+| Alert rules & evaluation | G-10, G-11 | 0.10.1 | `backend/app/services/alerting.py`, migration `0004_alerting`, Operations → Alerts / Alert rules | `tests/api/test_alerting.py` | [alerting](../user-guide/alerting.md) | DONE |
+| SMTP & webhook channels | G-12, G-13, G-14 | 0.10.2 | `backend/app/services/notify.py` (webhook with HMAC signature and SSRF guard, SMTP), delivery log | `tests/api/test_alerting.py` | [notifications](../administration/notifications.md) | DONE |
+| Maintenance windows | G-15 | 0.10.3 | `backend/app/services/alerting.py` (suppression), Operations → Maintenance windows | `tests/api/test_alerting.py` | [alerting](../user-guide/alerting.md) | DONE |
+| Alert UX, Teams/Slack presets, re-notify | G-16, G-17 | 0.10.4 | — | — | — | NEXT |
 | Collector diagnostics bundle | G-23 | 0.10.5 | — | — | — | PLANNED |
+| API tokens | G-18 | 0.11.1 | `backend/app/services/api_tokens.py`, migration `0005_api_tokens`, Account → API tokens | `tests/api/test_api_tokens.py` | [API tokens](../administration/api-tokens.md) | DONE |
+| API rate limiting | G-19 | 0.11.2 | `backend/app/services/ratelimit.py`, `backend/app/api/deps.py` (`rate_limit`), migration `0006_rate_limits` | `tests/unit/test_ratelimit.py`, `tests/api/test_rate_limits.py` | [rate limiting](../administration/rate-limiting.md) | DONE |
 
 ## Later milestones
 
 | Capability | Gap | Sprint | Status |
 |---|---|---|---|
-| API tokens | G-18 | 0.11.1 | NEXT |
-| API rate limiting | G-19 | 0.11.2 | PLANNED |
 | Real LDAP/AD/OIDC validation | G-40 | 0.11.3 | PLANNED |
 | SIEM export | G-33 | 0.11.4 | PLANNED |
 | Vault / secret managers | G-36 | 0.11.5 | PLANNED |

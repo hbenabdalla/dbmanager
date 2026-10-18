@@ -88,7 +88,7 @@ brings back the tokens that have not expired or been revoked.
 |---|---|---|
 | `DBM_API_TOKEN_MAX_DAYS` | `365` | Longest lifetime a new token may have (1–3650). |
 | `DBM_API_TOKEN_AUTH_FAILURES_PER_MINUTE` | `30` | Failed token authentications allowed per source address per minute; after that the address gets `429`. |
-| `DBM_API_RATE_PER_USER_PER_MINUTE` | `600` | The existing per-user request limit; token requests count toward the owner's limit. |
+| `DBM_API_RATE_PER_USER_PER_MINUTE` | `600` | Requests per minute for each token; a token has its own budget, separate from its owner's sessions. Live and expensive operations have lower limits — see [rate limiting](rate-limiting.md). |
 
 Allowed-address checks use the client address that DB Manager derives using `DBM_TRUSTED_PROXIES`.
 Behind a reverse proxy, configure the proxy addresses there, or every request will appear to come
@@ -96,8 +96,6 @@ from the proxy.
 
 ## Limitations
 
-* The rate limiters are kept in process memory: each backend instance counts on its own, and the
-  counts reset when it restarts.
 * Tokens are personal. There are no service accounts yet; create a dedicated local user for a shared
   integration and give it a narrow role.
 * Successful token authentications are not audited one by one. The actions they perform are audited

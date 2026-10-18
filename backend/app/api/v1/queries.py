@@ -13,7 +13,7 @@ from sqlalchemy import select
 
 from app.adapters.base import Capability
 from app.api import source as fleet_source
-from app.api.deps import DB, CurrentPrincipal, load_server
+from app.api.deps import DB, CurrentPrincipal, load_server, rate_limit
 from app.api.source import SourceQuery
 from app.core.errors import ConfirmationRequired, PermissionDenied, ValidationFailed
 from app.domain.masking import mask_sql
@@ -237,7 +237,7 @@ class ExplainRequest(BaseModel):
     reason: str | None = Field(None, max_length=1000)
 
 
-@router.post("/servers/{server_id}/explain")
+@router.post("/servers/{server_id}/explain", dependencies=[rate_limit("expensive")])
 async def explain(server_id: uuid.UUID, body: ExplainRequest, db: DB, p: CurrentPrincipal) -> dict[str, Any]:
     s = await load_server(db, p, server_id)
     ref = server_ref(s, body.database)

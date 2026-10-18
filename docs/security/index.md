@@ -114,8 +114,9 @@ platform settings can disable writes or EXPLAIN ANALYZE on production entirely. 
 * **Server registration is a network capability**: users with `server.register` can make the backend
   open TCP connections to arbitrary hosts. Grant it narrowly and restrict backend egress with network
   policies to database subnets.
-* The in-memory rate limiter is per replica; account lockout (DB-backed) is the cross-replica control.
-  Put a WAF/ingress rate limit in front for internet-facing deployments.
+* Rate limits are shared by all replicas (PostgreSQL counters) but fail open if that storage is
+  unavailable; account lockout is the security control for passwords. Put a WAF/ingress rate limit
+  in front of internet-facing deployments as well ([rate limiting](../administration/rate-limiting.md)).
 * The DBA's admin credential is as powerful as the account you register. Use dedicated accounts with
   only the privileges your operations need.
 * Optional AI insights are disabled and cannot be enabled in this release; when implemented they will

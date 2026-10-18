@@ -5,14 +5,50 @@ export class ApiError extends Error {
   code: string;
   details: Record<string, unknown>;
   requestId?: string;
+  /** seconds from the Retry-After header of a 429 / 503 response */
+  retryAfter?: number;
 
-  constructor(status: number, code: string, message: string, details: Record<string, unknown> = {}, requestId?: string) {
+  constructor(
+    status: number,
+    code: string,
+    message: string,
+    details: Record<string, unknown> = {},
+    requestId?: string,
+    retryAfter?: number,
+  ) {
     super(message);
     this.status = status;
     this.code = code;
     this.details = details;
     this.requestId = requestId;
+    this.retryAfter = retryAfter;
   }
+}
+
+/** Parses Retry-After (delta seconds or HTTP date); undefined when absent or invalid. */
+export function parseRetryAfter(value: string | null): number | undefined {
+  if (!value) return undefined;
+  const s = Number(value);
+  if (Number.isFinite(s)) return Math.max(0, Math.ceil(s));
+  const at = Date.parse(value);
+  return Number.isNaN(at) ? undefined : Math.max(0, Math.ceil((at - Date.now()) / 1000));
+}
+
+const NO_RETRY = [401, 403, 404, 422, 428];
+
+/** React Query retry policy: no retry for client errors; a rate-limited request is retried
+ *  once after the server's Retry-After (at most a minute); other failures twice. */
+export function shouldRetry(failureCount: number, error: unknown): boolean {
+  if (error instanceof ApiError) {
+    if (NO_RETRY.includes(error.status)) return false;
+    if (error.status === 429) return failureCount < 1 && (error.retryAfter ?? 1) <= 60;
+  }
+  return failureCount < 2;
+}
+
+export function retryDelay(failureCount: number, error: unknown): number {
+  if (error instanceof ApiError && error.status === 429) return Math.min(error.retryAfter ?? 1, 60) * 1000;
+  return Math.min(1000 * 2 ** failureCount, 30_000);
 }
 
 function csrfToken(): string | undefined {
@@ -66,7 +102,14 @@ export async function api<T>(
       /* non-JSON error */
     }
     const e = payload.error ?? {};
-    throw new ApiError(res.status, e.code ?? "http_error", e.message ?? res.statusText, e.details ?? {}, e.request_id);
+    throw new ApiError(
+      res.status,
+      e.code ?? "http_error",
+      e.message ?? res.statusText,
+      e.details ?? {},
+      e.request_id,
+      parseRetryAfter(res.headers.get("Retry-After")),
+    );
   }
   if (opts.raw) return res as unknown as T;
   if (res.status === 204) return undefined as T;

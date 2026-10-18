@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy import func, or_, select
 
 from app.api import source as fleet_source
-from app.api.deps import DB, CurrentPrincipal, load_server
+from app.api.deps import DB, CurrentPrincipal, load_server, rate_limit
 from app.api.source import SourceQuery
 from app.core.errors import ConfirmationRequired, Conflict
 from app.domain.scopes import ResourceRef
@@ -253,7 +253,9 @@ async def delete_server(
     return Message(message=f"{name} removed from DB Manager")
 
 
-@router.post("/servers/{server_id}/test-connection", response_model=TestConnectionResult)
+@router.post(
+    "/servers/{server_id}/test-connection", response_model=TestConnectionResult, dependencies=[rate_limit("expensive")]
+)
 async def test_server_connection(server_id: uuid.UUID, db: DB, p: CurrentPrincipal) -> TestConnectionResult:
     s = await load_server(db, p, server_id)
     if not (p.authz.has("server.modify", server_ref(s)) or p.authz.has("collectors.manage", server_ref(s))):
@@ -280,7 +282,12 @@ async def test_server_connection(server_id: uuid.UUID, db: DB, p: CurrentPrincip
     return TestConnectionResult(**res)
 
 
-@router.post("/servers/{server_id}/collect", response_model=Message, summary="Queue an immediate collection")
+@router.post(
+    "/servers/{server_id}/collect",
+    response_model=Message,
+    summary="Queue an immediate collection",
+    dependencies=[rate_limit("expensive")],
+)
 async def collect_now(
     server_id: uuid.UUID, db: DB, p: CurrentPrincipal, kinds: list[str] | None = Query(None)
 ) -> Message:

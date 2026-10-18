@@ -14,7 +14,7 @@ import httpx
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
-from app.api.deps import DB, CurrentPrincipal
+from app.api.deps import DB, CurrentPrincipal, rate_limit
 from app.core.errors import NotFound, ValidationFailed
 from app.models import IdentityProvider
 from app.services import audit
@@ -370,7 +370,11 @@ async def idp_presets(p: CurrentPrincipal) -> list[dict[str, Any]]:
     return PRESETS
 
 
-@router.post("/identity-providers/test-draft", summary="Staged test of an unsaved LDAP / OIDC configuration")
+@router.post(
+    "/identity-providers/test-draft",
+    summary="Staged test of an unsaved LDAP / OIDC configuration",
+    dependencies=[rate_limit("expensive")],
+)
 async def test_draft(body: DraftTest, db: DB, p: CurrentPrincipal) -> dict[str, Any]:
     p.authz.require("idp.manage")
     from app.services.ldap_auth import provider_secret

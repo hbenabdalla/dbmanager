@@ -27,7 +27,7 @@ Swagger UI at `/api/docs` and ReDoc at `/api/redoc`. A snapshot is in [openapi.j
 | 409 | `conflict`, `simulation_busy`, `simulation_present`, `simulated_server` | duplicate names, resources in use, simulation already running/present, credentials on a simulated server |
 | 422 | `validation_failed`, `capability_not_supported`, `target_error`, `target_permission_denied`, `admin_credential_required` | input or capability problems |
 | 428 | `confirmation_required` | resend with `confirm` (details.expected says what to type) |
-| 429 | `rate_limited` | login or per-user rate limit |
+| 429 | `rate_limited` | a [rate limit](../administration/rate-limiting.md) was reached; wait `Retry-After` seconds (`details.policy` names the limit) |
 | 502 | `target_unavailable` | the managed database could not be reached |
 
 Every response carries `X-Request-ID`; send your own to correlate with audit records and logs.
@@ -68,8 +68,8 @@ Authorization: Bearer dbm_<prefix>_<secret>
   allow-list, or belongs to a disabled or locked user.
 * `403 interactive_only`: the endpoint manages tokens, passwords, users, groups, roles, role assignments
   or identity providers.
-* `429 rate_limited`: too many failed token authentications from the address, or the owner's
-  per-user limit.
+* `429 rate_limited`: too many failed token authentications from the address, or the token's own
+  [rate limit](../administration/rate-limiting.md); the response carries `Retry-After`.
 
 | Method | Path | Summary |
 |---|---|---|

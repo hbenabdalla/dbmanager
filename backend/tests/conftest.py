@@ -19,6 +19,9 @@ os.environ["DBM_COOKIE_SECURE"] = "false"
 os.environ["DBM_LOG_JSON"] = "false"
 os.environ["DBM_LOG_LEVEL"] = "WARNING"
 os.environ["DBM_LOGIN_RATE_PER_IP_PER_MINUTE"] = "1000"
+# rate limits are exercised by tests/api/test_rate_limits.py with explicit, small limits
+for _name in ("API_RATE_PER_USER_PER_MINUTE", "API_RATE_TARGET_PER_MINUTE", "API_RATE_EXPENSIVE_PER_MINUTE"):
+    os.environ[f"DBM_{_name}"] = "100000"
 # monitoring telemetry goes to an in-process time-series repository in tests (the
 # VictoriaMetrics integration tests opt in explicitly via DBM_IT_VM_URL)
 os.environ.setdefault("DBM_TIMESERIES_BACKEND", "memory")

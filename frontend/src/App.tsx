@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { type ReactNode } from "react";
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { Toaster } from "sonner";
-import { ApiError } from "@/api/client";
+import { retryDelay, shouldRetry } from "@/api/client";
 import { AppShell } from "@/components/app-shell";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { EmptyState, SkeletonRows } from "@/components/ui/states";
@@ -42,7 +42,8 @@ import { ReplicationTopologyPage } from "@/features/topology/replication";
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: (n, e) => !(e instanceof ApiError && [401, 403, 404, 422, 428].includes(e.status)) && n < 2,
+      retry: shouldRetry,
+      retryDelay,
       refetchOnWindowFocus: false,
       staleTime: 10_000,
     },

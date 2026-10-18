@@ -32,6 +32,7 @@ The tables below keep each gap as originally assessed. Progress since the audit:
 | G-07 Secret scan / ignore rules | Closed — tree scanned (only documented development/test placeholders), `.gitignore` hardened, gitleaks in CI | sprint 0.9.1 |
 | G-10 … G-15 Alerting, lifecycle, notifications, SMTP, webhooks, maintenance windows | Closed | sprints 0.10.1–0.10.3 |
 | G-18 API tokens | Closed — personal tokens (service accounts later) | sprint 0.11.1 |
+| G-19 API rate limiting | Closed — per-principal policies, shared counters, `Retry-After` | sprint 0.11.2 |
 | G-20 Backup/restore verification | Closed — `scripts/backup.sh`, `scripts/restore.sh`, automated round-trip test | sprint 0.9.5 |
 | G-22 Upgrade & migration testing | Closed for migrations (step-by-step upgrade, downgrade, model parity in CI); release-to-release upgrade test follows the first tagged release | sprint 0.9.5 |
 

@@ -12,7 +12,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import get_settings
 from app.core.errors import NotAuthenticated, RateLimited, ValidationFailed
 from app.core.metrics import LOGIN_ATTEMPTS
-from app.core.ratelimit import SlidingWindowLimiter
 from app.core.security import (
     hash_password,
     needs_rehash,
@@ -25,14 +24,6 @@ from app.models import IdentityProvider, User, UserSession
 from app.services import audit
 
 log = logging.getLogger(__name__)
-_ip_limiter: SlidingWindowLimiter | None = None
-
-
-def ip_limiter() -> SlidingWindowLimiter:
-    global _ip_limiter
-    if _ip_limiter is None:
-        _ip_limiter = SlidingWindowLimiter(get_settings().login_rate_per_ip_per_minute, 60)
-    return _ip_limiter
 
 
 @dataclass
@@ -129,7 +120,10 @@ async def authenticate(db: AsyncSession, username: str, password: str, source_ip
     Returns (user, auth_source). Raises NotAuthenticated with a generic message.
     """
     s = get_settings()
-    if source_ip and not ip_limiter().hit(source_ip):
+    from app.services import ratelimit
+
+    login_limit = await ratelimit.check("login", f"ip:{source_ip}") if source_ip else None
+    if login_limit is not None and not login_limit.allowed:
         LOGIN_ATTEMPTS.labels("any", "rate_limited").inc()
         await audit.record(
             "auth.login",
@@ -139,7 +133,11 @@ async def authenticate(db: AsyncSession, username: str, password: str, source_ip
             category="auth",
             failure_reason="rate limited",
         )
-        raise RateLimited("Too many login attempts. Try again in a minute.")
+        raise RateLimited(
+            f"Too many login attempts. Try again in {login_limit.retry_after} s.",
+            details={"policy": "login", "retry_after_seconds": login_limit.retry_after},
+            headers=ratelimit.headers(login_limit, "login"),
+        )
 
     username = username.strip()
     user = (await db.execute(select(User).where(func.lower(User.username) == username.lower()))).scalar_one_or_none()

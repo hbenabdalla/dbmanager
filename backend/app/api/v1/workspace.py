@@ -14,7 +14,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import select
 
 from app.adapters.base import Capability
-from app.api.deps import DB, CurrentPrincipal, load_server
+from app.api.deps import DB, CurrentPrincipal, load_server, rate_limit
 from app.core.config import get_settings
 from app.core.errors import ConfirmationRequired, PermissionDenied, ValidationFailed
 from app.domain.masking import redact_secret_clauses
@@ -72,7 +72,7 @@ async def classify(body: ClassifyRequest, db: DB, p: CurrentPrincipal) -> dict[s
     return {**c.to_dict(), **out}
 
 
-@router.post("/execute")
+@router.post("/execute", dependencies=[rate_limit("expensive")])
 async def execute(body: ExecuteRequest, db: DB, p: CurrentPrincipal) -> dict[str, Any]:
     settings = get_settings()
     s = await load_server(db, p, body.server_id)
@@ -182,7 +182,11 @@ async def execute(body: ExecuteRequest, db: DB, p: CurrentPrincipal) -> dict[str
     return {**res.model_dump(mode="json"), "classification": c.to_dict(), "max_rows": max_rows, "simulated": s.is_demo}
 
 
-@router.post("/export.csv", summary="Execute a read-only statement and download the result as CSV")
+@router.post(
+    "/export.csv",
+    summary="Execute a read-only statement and download the result as CSV",
+    dependencies=[rate_limit("expensive")],
+)
 async def export_csv(body: ExecuteRequest, db: DB, p: CurrentPrincipal) -> StreamingResponse:
     s = await load_server(db, p, body.server_id)
     c = classify_sql(body.sql, s.engine)

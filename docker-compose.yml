@@ -125,11 +125,19 @@ services:
       DBM_METRIC_BUFFER_MAX: ${DBM_METRIC_BUFFER_MAX:-200000}
       DBM_METRICS_PG_DUAL_WRITE: ${DBM_METRICS_PG_DUAL_WRITE:-false}
       DBM_LOG_LEVEL: ${DBM_LOG_LEVEL:-INFO}
-      # product links (Platform -> About, Help menu); empty documentation URL hides the entry
+      # product links (Platform -> About, Help menu); empty documentation URL = the published docs, "off" hides it
       DBM_DOCUMENTATION_URL: ${DBM_DOCUMENTATION_URL:-}
       DBM_GITHUB_URL: ${DBM_GITHUB_URL:-https://github.com/hbenabdalla/dbmanager}
       DBM_ROADMAP_URL: ${DBM_ROADMAP_URL:-}
       DBM_LICENSE: ${DBM_LICENSE:-}
+      # rate limits per principal (docs: administration/rate-limiting); 0 = off
+      DBM_RATE_LIMIT_BACKEND: ${DBM_RATE_LIMIT_BACKEND:-database}
+      DBM_API_RATE_PER_USER_PER_MINUTE: ${DBM_API_RATE_PER_USER_PER_MINUTE:-600}
+      DBM_API_RATE_TARGET_PER_MINUTE: ${DBM_API_RATE_TARGET_PER_MINUTE:-120}
+      DBM_API_RATE_EXPENSIVE_PER_MINUTE: ${DBM_API_RATE_EXPENSIVE_PER_MINUTE:-30}
+      DBM_LOGIN_RATE_PER_IP_PER_MINUTE: ${DBM_LOGIN_RATE_PER_IP_PER_MINUTE:-20}
+      DBM_API_TOKEN_MAX_DAYS: ${DBM_API_TOKEN_MAX_DAYS:-365}
+      DBM_API_TOKEN_AUTH_FAILURES_PER_MINUTE: ${DBM_API_TOKEN_AUTH_FAILURES_PER_MINUTE:-30}
       # alerting & notifications
       DBM_ALERT_EVALUATION_SECONDS: ${DBM_ALERT_EVALUATION_SECONDS:-60}
       DBM_WEBHOOK_ALLOW_PRIVATE: ${DBM_WEBHOOK_ALLOW_PRIVATE:-false}

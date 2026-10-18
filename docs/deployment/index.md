@@ -63,6 +63,8 @@ the host is protected by that proxy.
 | `DBM_COOKIE_SECURE`, `DBM_COOKIE_DOMAIN` | `true` / — | session cookie attributes |
 | `DBM_SESSION_TTL_MINUTES`, `DBM_SESSION_IDLE_TIMEOUT_MINUTES` | 480 / 30 | sessions |
 | `DBM_LOGIN_MAX_FAILURES`, `DBM_LOGIN_LOCKOUT_MINUTES`, `DBM_LOGIN_RATE_PER_IP_PER_MINUTE` | 5 / 15 / 20 | brute-force protection |
+| `DBM_API_RATE_PER_USER_PER_MINUTE`, `DBM_API_RATE_TARGET_PER_MINUTE`, `DBM_API_RATE_EXPENSIVE_PER_MINUTE` | 600 / 120 / 30 | [rate limits](../administration/rate-limiting.md) per principal; `0` = off |
+| `DBM_RATE_LIMIT_BACKEND`, `DBM_RATE_LIMIT_POOL_SIZE` | `database` / 5 | shared counters in PostgreSQL (or `memory`, per process) |
 | `DBM_TRUSTED_PROXIES` | loopback | CIDRs whose `X-Forwarded-For` is trusted for client IPs |
 | `DBM_CORS_ORIGINS` | — | only needed when the UI is served from another origin |
 | `DBM_COLLECTOR_CONCURRENCY`, `DBM_COLLECTOR_BATCH_SIZE` | 16 / 32 | concurrent target connections per worker |

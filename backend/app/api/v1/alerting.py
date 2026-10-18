@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel, Field, field_validator, model_validator
 from sqlalchemy import case, func, select
 
-from app.api.deps import DB, CurrentPrincipal
+from app.api.deps import DB, CurrentPrincipal, rate_limit
 from app.core.errors import Conflict, NotFound, PermissionDenied, ValidationFailed
 from app.models import (
     Alert,
@@ -620,7 +620,11 @@ async def delete_channel(channel_id: uuid.UUID, db: DB, p: CurrentPrincipal) -> 
     return Message(message=f"Channel {name} deleted")
 
 
-@router.post("/notification-channels/{channel_id}/test", summary="Send a test notification")
+@router.post(
+    "/notification-channels/{channel_id}/test",
+    summary="Send a test notification",
+    dependencies=[rate_limit("expensive")],
+)
 async def test_channel(channel_id: uuid.UUID, db: DB, p: CurrentPrincipal) -> dict[str, Any]:
     p.authz.require("channels.manage")
     c = await db.get(NotificationChannel, channel_id)

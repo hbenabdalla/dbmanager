@@ -13,7 +13,7 @@ from pydantic import BaseModel, Field
 
 from app.adapters.base import BaseDatabaseAdapter
 from app.adapters.registry import create_adapter, normalize_engine
-from app.api.deps import DB, CurrentPrincipal, load_server
+from app.api.deps import DB, CurrentPrincipal, load_server, rate_limit
 from app.core.errors import ValidationFailed
 from app.models import Server
 from app.schemas.inventory import TestConnectionRequest
@@ -39,7 +39,11 @@ def _timeout(opts: dict[str, Any]) -> float:
         return 8.0
 
 
-@router.post("/servers/test-connection/stream", summary="Staged connection test (NDJSON stream)")
+@router.post(
+    "/servers/test-connection/stream",
+    summary="Staged connection test (NDJSON stream)",
+    dependencies=[rate_limit("expensive")],
+)
 async def stream_new_connection(body: TestConnectionRequest, p: CurrentPrincipal) -> StreamingResponse:
     p.authz.require_anywhere("server.register")
     validation_error: str | None = None
@@ -91,7 +95,11 @@ async def stream_new_connection(body: TestConnectionRequest, p: CurrentPrincipal
     return StreamingResponse(_stream(events, on_result), media_type=NDJSON, headers={"Cache-Control": "no-store"})
 
 
-@router.post("/servers/{server_id}/test-connection/stream", summary="Staged connection test of a registered server")
+@router.post(
+    "/servers/{server_id}/test-connection/stream",
+    summary="Staged connection test of a registered server",
+    dependencies=[rate_limit("expensive")],
+)
 async def stream_server_connection(server_id: uuid.UUID, db: DB, p: CurrentPrincipal) -> StreamingResponse:
     s = await load_server(db, p, server_id)
     if not (p.authz.has("server.modify", server_ref(s)) or p.authz.has("collectors.manage", server_ref(s))):
@@ -175,13 +183,19 @@ async def bulk_template(p: CurrentPrincipal) -> Response:
     )
 
 
-@router.post("/servers/bulk/validate", summary="Validate rows for bulk onboarding")
+@router.post(
+    "/servers/bulk/validate", summary="Validate rows for bulk onboarding", dependencies=[rate_limit("expensive")]
+)
 async def bulk_validate(body: BulkRows, db: DB, p: CurrentPrincipal) -> dict[str, Any]:
     _require_register(p)
     return await onboarding.validate_rows(db, body.rows)
 
 
-@router.post("/servers/bulk/create", summary="Register the valid rows (Monitoring Only unless stated)")
+@router.post(
+    "/servers/bulk/create",
+    summary="Register the valid rows (Monitoring Only unless stated)",
+    dependencies=[rate_limit("expensive")],
+)
 async def bulk_create(body: BulkCreate, db: DB, p: CurrentPrincipal) -> dict[str, Any]:
     _require_register(p)
     if not p.authz.has("server.register"):

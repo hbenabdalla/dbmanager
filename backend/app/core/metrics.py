@@ -21,6 +21,7 @@ TARGET_CONNECTIONS = Gauge("dbm_target_connections_open", "Open connections to m
 SCHEDULER_LEADER = Gauge("dbm_scheduler_leader", "1 if this process holds the scheduler leadership")
 APP_DB_POOL = Gauge("dbm_app_db_pool_checked_out", "Application DB connections checked out")
 LOGIN_ATTEMPTS = Counter("dbm_login_attempts_total", "Login attempts", ["source", "result"])
+RATE_LIMITED = Counter("dbm_rate_limited_total", "Requests refused by a rate limit", ["policy"])
 
 # --- monitoring telemetry pipeline (time-series storage) ----------------------------------------
 METRICS_COLLECTED = Counter("dbm_metrics_collected_total", "Samples produced by collectors and normalized")

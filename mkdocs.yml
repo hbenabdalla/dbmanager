@@ -156,6 +156,7 @@ nav:
       - administration/index.md
       - Users: administration/users.md
       - API tokens: administration/api-tokens.md
+      - Rate limiting: administration/rate-limiting.md
       - Roles and permissions: administration/rbac.md
       - Identity providers: administration/identity-providers.md
       - LDAP / Active Directory: administration/ldap.md

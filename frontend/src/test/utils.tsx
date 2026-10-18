@@ -15,14 +15,14 @@ export function renderWithProviders(ui: ReactNode, { route = "/" } = {}) {
   );
 }
 
-type Handler = (url: URL, init: RequestInit) => { status?: number; body: unknown } | undefined;
+type Handler = (url: URL, init: RequestInit) => { status?: number; body: unknown; headers?: Record<string, string> } | undefined;
 
 /** Minimal fetch mock: routes by pathname. */
 export function mockFetch(handler: Handler) {
   const fn = vi.fn(async (input: RequestInfo | URL, init: RequestInit = {}) => {
     const url = new URL(String(input), "http://localhost");
     const r = handler(url, init) ?? { status: 404, body: { error: { code: "not_found", message: "not mocked" } } };
-    return new Response(JSON.stringify(r.body), { status: r.status ?? 200, headers: { "Content-Type": "application/json" } });
+    return new Response(JSON.stringify(r.body), { status: r.status ?? 200, headers: { "Content-Type": "application/json", ...r.headers } });
   });
   vi.stubGlobal("fetch", fn);
   return fn;

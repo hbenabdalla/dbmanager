@@ -12,7 +12,7 @@ from fastapi import APIRouter, Depends, Query
 from fastapi.responses import StreamingResponse
 from sqlalchemy import Select, func, or_, select
 
-from app.api.deps import DB, CurrentPrincipal
+from app.api.deps import DB, CurrentPrincipal, rate_limit
 from app.models import AuditEvent
 from app.schemas.common import Page, PageParams, paginate
 from app.services import audit as audit_svc
@@ -122,7 +122,7 @@ async def list_events(
     return Page(items=[event_out(e) for e in items], total=total, page=params.page, page_size=params.page_size)
 
 
-@router.get("/export.csv")
+@router.get("/export.csv", dependencies=[rate_limit("expensive")])
 async def export(
     db: DB,
     p: CurrentPrincipal,

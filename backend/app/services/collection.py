@@ -338,6 +338,9 @@ async def retention(db: AsyncSession) -> dict[str, Any]:
     fp_cutoff = datetime.now(UTC) - timedelta(days=await monitoring_storage.retention_days(db))
     f = await db.execute(delete(QueryFingerprint).where(QueryFingerprint.last_seen < fp_cutoff))
     pending = await monitoring_storage.retry_pending_deletes(db)
+    from app.services import ratelimit
+
+    rate_windows = await ratelimit.purge_idle()
     return {
         "legacy_metric_rows": m.rowcount,
         "legacy_query_rows": q.rowcount,
@@ -345,6 +348,7 @@ async def retention(db: AsyncSession) -> dict[str, Any]:
         "jobs": j.rowcount,
         "sessions": sessions,
         "timeseries_pending_deletes": pending,
+        "rate_limit_windows": rate_windows,
     }
 
 
