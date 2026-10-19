@@ -20,6 +20,20 @@ Flow: service bind → search one user entry (escaped filter) → bind as that D
 password → read groups → provision. Unknown users get the same generic error as wrong passwords.
 For OpenLDAP use `uid` and `(&(objectClass=inetOrgPerson)(uid={username}))`.
 
+**The service account must be allowed to read users and groups.** With access rules that let an
+account read only its own entry (the default of several OpenLDAP images), the service bind still
+succeeds but every user search comes back empty, so sign-ins fail with the generic error. The
+staged test reports this at the *user search* stage. In OpenLDAP grant read access, for example:
+
+```ldif
+olcAccess: {1}to * by self read by dn="cn=admin,dc=example,dc=org" write
+  by dn="uid=svc-dbm,ou=people,dc=example,dc=org" read by * none
+```
+
+In Active Directory, authenticated users can read users and groups by default.
+
+A group found both through `memberOf` and through the group search is counted once.
+
 
 ## Staged test
 

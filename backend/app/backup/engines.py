@@ -119,6 +119,7 @@ async def _version(path: str) -> str | None:
 _TOOLS = {
     "pg_dump": "backup_pg_bin_dir",
     "pg_restore": "backup_pg_bin_dir",
+    "psql": "backup_pg_bin_dir",
     "mysqldump": "backup_mysql_bin_dir",
     "mysql": "backup_mysql_bin_dir",
     "mariadb-dump": "backup_mysql_bin_dir",
@@ -187,6 +188,21 @@ async def run_tool(
         tail = "\n".join(text.strip().splitlines()[-8:])
         raise BackupProviderError(f"{Path(argv[0]).name} failed (exit {proc.returncode}): {tail}")
     return text
+
+
+async def _in_adapter(adapter: Any, fn: Callable[..., Any], *args: Any, timeout: float | None = None) -> Any:  # noqa: ASYNC109 - passed to the adapter thread
+    """Run a synchronous engine call in the adapter's worker thread. The adapter turns every
+    exception into an ``AdapterError``; backup callers expect ``BackupProviderError`` (with the
+    same message) so a failed backup, verification or restore is reported, not crashed on."""
+    from app.adapters.base import AdapterError
+
+    try:
+        if timeout is None:
+            return await adapter._run(fn, *args)
+        return await adapter._run(fn, *args, timeout=timeout)
+    except AdapterError as exc:
+        cause = exc.__cause__
+        raise BackupProviderError(str(cause) if isinstance(cause, BackupProviderError) else str(exc)) from exc
 
 
 def _private_file(directory: Path, name: str, content: str) -> Path:
@@ -325,13 +341,42 @@ class PostgreSQLProvider(DatabaseBackupProvider):
             conn = await adapter._conn(None)
             if await conn.fetchval("SELECT 1 FROM pg_database WHERE datname = $1", target):
                 raise BackupProviderError(f"database {target!r} already exists: restores never overwrite a database")
+            server_major = int(await conn.fetchval("SHOW server_version_num")) // 10000
             await conn.execute(f'CREATE DATABASE "{target}"')
         finally:
             await adapter.close()
-        argv = [found["pg_restore"]["path"], "--no-password", "--exit-on-error", "--dbname", target, str(local)]
-        if ctx.options.get("no_owner", True):
-            argv.insert(1, "--no-owner")
-        await run_tool(argv, env=self._env(ctx, target), cancelled=ctx.cancelled, secrets=(ctx.password,))
+        tool_major = _major(found["pg_restore"]["version"]) or server_major
+        env = self._env(ctx, target)
+        owner = ["--no-owner"] if ctx.options.get("no_owner", True) else []
+        if tool_major > server_major:
+            # A newer pg_restore writes session settings the older server does not know (pg_restore 17
+            # emits "SET transaction_timeout", unknown before PostgreSQL 17). Render the restore script,
+            # drop exactly those settings and run it with psql, stopping at the first error.
+            if not found.get("psql", {}).get("path"):
+                raise BackupProviderError("psql is needed to restore into an older PostgreSQL server")
+            script = ctx.workdir / "restore.sql"
+            await run_tool([found["pg_restore"]["path"], *owner, "--file", str(script), str(local)])
+            dropped = filter_settings(script, server_major)
+            await run_tool(
+                [
+                    found["psql"]["path"],
+                    "--no-psqlrc",
+                    "--quiet",
+                    "--set",
+                    "ON_ERROR_STOP=1",
+                    "--dbname",
+                    target,
+                    "--file",
+                    str(script),
+                ],
+                env=env,
+                cancelled=ctx.cancelled,
+                secrets=(ctx.password,),
+                stdout=ctx.workdir / "psql.out",
+            )
+            return {"database": target, "tool": f"{found['pg_restore']['version']} → psql", "settings_dropped": dropped}
+        argv = [found["pg_restore"]["path"], *owner, "--no-password", "--exit-on-error", "--dbname", target, str(local)]
+        await run_tool(argv, env=env, cancelled=ctx.cancelled, secrets=(ctx.password,))
         return {"database": target, "tool": found["pg_restore"]["version"]}
 
     async def estimate_size(self, ctx: Context) -> int | None:
@@ -343,6 +388,32 @@ class PostgreSQLProvider(DatabaseBackupProvider):
             return int(await conn.fetchval("SELECT pg_database_size($1)", ctx.database) or 0)
         finally:
             await adapter.close()
+
+
+#: session settings newer pg_dump / pg_restore versions emit, by the server version that introduced them
+PG_NEW_SETTINGS: dict[str, int] = {"transaction_timeout": 17}
+
+
+def filter_settings(script: Path, server_major: int) -> list[str]:
+    """Remove top-level ``SET <name> = …;`` lines for settings the target server does not have yet.
+    Only exact, whole-line SET statements of the names in :data:`PG_NEW_SETTINGS` are touched."""
+    unknown = {n for n, v in PG_NEW_SETTINGS.items() if server_major < v}
+    if not unknown:
+        return []
+    pattern = re.compile(r"^SET (" + "|".join(sorted(unknown)) + r") = [^;]*;\s*$")
+    tmp = script.with_suffix(".filtered")
+    dropped: list[str] = []
+    with (
+        open(script, encoding="utf-8", errors="surrogateescape") as src,
+        open(tmp, "w", encoding="utf-8", errors="surrogateescape") as dst,
+    ):
+        for line in src:
+            if pattern.match(line):
+                dropped.append(line.strip())
+                continue
+            dst.write(line)
+    os.replace(tmp, script)
+    return dropped
 
 
 # ---- MySQL / MariaDB ------------------------------------------------------------------------------
@@ -509,15 +580,40 @@ class MySQLFamilyProvider(DatabaseBackupProvider):
                 ],
                 secrets=(ctx.password,),
             )
+            script = local
+            stripped = 0
+            if not ctx.options.get("keep_definers"):
+                # objects come back owned by the restoring account: restoring another account's
+                # DEFINER would need SUPER / SET_USER_ID, which a backup operator should not hold
+                script = ctx.workdir / "restore.sql"
+                stripped = strip_definers(local, script)
             await run_tool(
                 [path, f"--defaults-extra-file={defaults}", "--default-character-set=utf8mb4", target],
-                stdin=local,
+                stdin=script,
                 cancelled=ctx.cancelled,
                 secrets=(ctx.password,),
             )
         finally:
             defaults.unlink(missing_ok=True)
-        return {"database": target, "tool": version}
+        return {"database": target, "tool": version, "definers_removed": stripped}
+
+
+_DEFINER = re.compile(
+    rb"DEFINER\s*=\s*(?:`(?:[^`]|``)*`|'[^']*'|[A-Za-z0-9_.%-]+)@(?:`(?:[^`]|``)*`|'[^']*'|[A-Za-z0-9_.%-]+)\s*"
+)
+
+
+def strip_definers(src: Path, dst: Path) -> int:
+    """Copy a SQL dump without ``DEFINER=user@host`` clauses (also inside ``/*!50017 … */``).
+    Returns the number of clauses removed. Line by line: dumps can be large."""
+    n = 0
+    with open(src, "rb") as r, open(dst, "wb") as w:
+        for line in r:
+            if b"DEFINER" in line:
+                line, k = _DEFINER.subn(b"", line)
+                n += k
+            w.write(line)
+    return n
 
 
 def _mentions_schema(path: Path, schema: str) -> bool:
@@ -596,9 +692,11 @@ class SQLServerProvider(DatabaseBackupProvider):
         assert ctx.adapter is not None
         adapter = await ctx.adapter()
         try:
-            conn = await adapter._run(adapter._get_conn, "master")
+            conn = await _in_adapter(adapter, adapter._get_conn, "master")
             conn.autocommit = True  # BACKUP / RESTORE cannot run inside a transaction
-            return await adapter._run(fn, conn, *args, timeout=float(get_settings().backup_tool_timeout_seconds))
+            return await _in_adapter(
+                adapter, fn, conn, *args, timeout=float(get_settings().backup_tool_timeout_seconds)
+            )
         finally:
             await adapter.close()
 
@@ -630,17 +728,17 @@ class SQLServerProvider(DatabaseBackupProvider):
             f"WITH COPY_ONLY, CHECKSUM, INIT, FORMAT, NAME = {_nq('DB Manager ' + tag)}"
         )
         _drain(cur)
-        cur.execute(
-            "SELECT TOP 1 backup_size, compressed_backup_size, has_backup_checksums, backup_finish_date "
-            "FROM msdb.dbo.backupset WHERE name = ? ORDER BY backup_finish_date DESC",
-            "DB Manager " + tag,
-        )
-        r = cur.fetchone()
+        # read the header of the file just written (db_backupoperator / dbcreator may not read msdb)
+        cur.execute(f"RESTORE HEADERONLY FROM DISK = {_nq(path)}")
+        cols = [str(d[0]).lower() for d in cur.description or []]
+        rows = _drain(cur)
+        h = dict(zip(cols, rows[0], strict=False)) if rows else {}
+        size = h.get("compressedbackupsize") or h.get("backupsize")
         return {
             "path": path,
-            "size": int(r[1] or r[0]) if r else None,
-            "checksums": bool(r[2]) if r else None,
-            "finished": str(r[3]) if r else None,
+            "size": int(size) if size is not None else None,
+            "checksums": bool(h.get("hasbackupchecksums")) if "hasbackupchecksums" in h else None,
+            "finished": str(h.get("backupfinishdate")) if h.get("backupfinishdate") is not None else None,
         }
 
     async def backup(self, ctx: Context) -> Outcome:
@@ -767,8 +865,10 @@ class OracleProvider(DatabaseBackupProvider):
         assert ctx.adapter is not None
         adapter = await ctx.adapter()
         try:
-            conn = await adapter._run(adapter._get_conn, None)
-            return await adapter._run(fn, conn, *args, timeout=float(get_settings().backup_tool_timeout_seconds))
+            conn = await _in_adapter(adapter, adapter._get_conn, None)
+            return await _in_adapter(
+                adapter, fn, conn, *args, timeout=float(get_settings().backup_tool_timeout_seconds)
+            )
         finally:
             await adapter.close()
 
@@ -900,9 +1000,14 @@ class Db2LUWProvider(DatabaseBackupProvider):
         assert ctx.adapter is not None
         adapter = await ctx.adapter()
         try:
-            conn = await adapter._run(adapter._get_conn, None)
-            info = await adapter._run(
-                self._sync_backup, conn, database, directory, timeout=float(get_settings().backup_tool_timeout_seconds)
+            conn = await _in_adapter(adapter, adapter._get_conn, None)
+            info = await _in_adapter(
+                adapter,
+                self._sync_backup,
+                conn,
+                database,
+                directory,
+                timeout=float(get_settings().backup_tool_timeout_seconds),
             )
         finally:
             await adapter.close()
@@ -933,18 +1038,21 @@ class Db2LUWProvider(DatabaseBackupProvider):
         assert ctx.adapter is not None
         adapter = await ctx.adapter()
         try:
-            conn = await adapter._run(adapter._get_conn, None)
-            return await adapter._run(self._sync_history, conn, ts)
+            conn = await _in_adapter(adapter, adapter._get_conn, None)
+            return await _in_adapter(adapter, self._sync_history, conn, ts)
         finally:
             await adapter.close()
 
     def restore_command(self, backup: Any, target: str) -> str | None:
+        """Commands for the instance owner on the Db2 host: restore the online image (with the logs
+        it includes) as a new database and roll forward to the end of the backup."""
         directory, _, ts = str(backup.location).partition("#")
+        logs = f"{directory.rstrip('/')}/dbm-restore-logs-{ts}"
         return (
-            f"db2 RESTORE DATABASE {backup.database_name} FROM {directory} TAKEN AT {ts} INTO {target} "
-            "LOGTARGET DEFAULT\ndb2 ROLLFORWARD DATABASE {0} TO END OF BACKUP AND COMPLETE OVERFLOW LOG PATH (...)".replace(
-                "{0}", target
-            )
+            f"mkdir -p {logs}\n"
+            f"db2 RESTORE DATABASE {backup.database_name} FROM {directory} TAKEN AT {ts} "
+            f"INTO {target} LOGTARGET {logs} WITHOUT PROMPTING\n"
+            f"db2 ROLLFORWARD DATABASE {target} TO END OF BACKUP AND COMPLETE OVERFLOW LOG PATH ({logs})"
         )
 
 

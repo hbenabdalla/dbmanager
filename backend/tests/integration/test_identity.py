@@ -65,7 +65,8 @@ async def test_ldap_bind_search_and_groups() -> None:
     entry = ldap_auth._ldap_lookup_and_bind(cfg, "It-Bind-Passw0rd", "alice", "It-Alice-Passw0rd")
     assert entry is not None and entry.dn == "uid=alice,ou=people,dc=example,dc=org"
     assert entry.email == "alice@example.org" and entry.display_name == "Alice Admin"
-    assert {g.split(",")[0] for g in entry.groups} == {"cn=dbadmins", "cn=developers"}
+    # found through memberOf and the group search, each group is listed once
+    assert sorted(g.split(",")[0] for g in entry.groups) == ["cn=dbadmins", "cn=developers"]
     bob = ldap_auth._ldap_lookup_and_bind(cfg, "It-Bind-Passw0rd", "bob", "It-Bob-Passw0rd")
     assert bob is not None and {g.split(",")[0] for g in bob.groups} == {"cn=developers"}
     # wrong user password, unknown user, LDAP injection attempt

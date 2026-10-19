@@ -53,6 +53,12 @@ if [[ " ${ENGINES[*]} " == *" db2 "* ]]; then
   run "${C[@]}" --profile db2 exec -T db2 timeout 900 bash /var/custom/dbm-it-users.sh \
     || echo "WARNING: Db2 user setup did not finish; Db2 tests may skip or fail (see /database/dbm-it-users.log in the db2 container)"
 fi
+if [[ " ${ENGINES[*]} " == *" identity "* ]]; then
+  # the service account must be able to search users and groups (idempotent)
+  run "${C[@]}" --profile identity exec -T openldap ldapmodify -Y EXTERNAL -Q -H ldapi:/// \
+    -f /container/service/slapd/assets/config/bootstrap/ldif/custom/40-dbm-it-acl.ldif \
+    || echo "WARNING: could not set the OpenLDAP access rules; LDAP tests may fail"
+fi
 run "${C[@]}" --profile runner build it-runner || { echo "building the test runner failed" >&2; exit 1; }
 run "${C[@]}" --profile runner run --rm "${ENVS[@]}" it-runner; rc=$?
 [ -f integration-results/real-engine-matrix.md ] && tee -a "$LOG" < integration-results/real-engine-matrix.md

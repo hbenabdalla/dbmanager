@@ -107,6 +107,14 @@ if ($Engines -contains 'db2') {
   if ($rc -ne 0) { Write-Warning "Db2 user setup did not finish (exit $rc); Db2 tests may skip or fail. Log: docker compose -f docker-compose.test.yml exec db2 cat /database/dbm-it-users.log" }
 }
 
+if ($Engines -contains 'identity') {
+  # the service account must be able to search users and groups (idempotent; also applied when a
+  # new container bootstraps)
+  $acl = '/container/service/slapd/assets/config/bootstrap/ldif/custom/40-dbm-it-acl.ldif'
+  $rc = Invoke-Docker ($compose + @('--profile', 'identity', 'exec', '-T', 'openldap', 'ldapmodify', '-Y', 'EXTERNAL', '-Q', '-H', 'ldapi:///', '-f', $acl))
+  if ($rc -ne 0) { Write-Warning "could not set the OpenLDAP access rules (exit $rc); LDAP tests may fail" }
+}
+
 $rc = Invoke-Docker ($compose + @('--profile', 'runner', 'build', 'it-runner'))
 if ($rc -ne 0) { throw 'building the test runner image failed (see integration-results\run.log)' }
 

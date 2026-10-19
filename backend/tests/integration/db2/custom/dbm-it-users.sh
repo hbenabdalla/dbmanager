@@ -89,5 +89,21 @@ su - "$INST" -c "db2 connect to $DB >/dev/null; \
   echo \"explain tables writable by DBMMON: \$(tr -d ' ' < /tmp/dbm-it-count.txt)\"; \
   db2 terminate >/dev/null"
 
+# Online backups (DB Manager's Db2 backup provider) need archive logging, as on any production
+# database. Switching LOGARCHMETH1 from OFF puts the database in BACKUP PENDING until one offline
+# backup is taken, so this disposable test database gets one (to /dev/null) right away.
+mkdir -p /database/dbm-it-archive /database/dbm-it-backups
+chown "$INST" /database/dbm-it-archive /database/dbm-it-backups
+su - "$INST" -c "db2 get db cfg for $DB > /tmp/dbm-it-dbcfg.txt"
+if grep -q "LOGARCHMETH1) = OFF" /tmp/dbm-it-dbcfg.txt; then
+  echo "enabling archive logging (LOGARCHMETH1 DISK:/database/dbm-it-archive)"
+  su - "$INST" -c "db2 update db cfg for $DB using LOGARCHMETH1 DISK:/database/dbm-it-archive/ \
+    && db2 force application all; sleep 3; db2 deactivate db $DB; \
+    db2 backup db $DB to /dev/null without prompting && db2 activate db $DB" \
+    || echo "WARN: could not enable archive logging (Db2 backup tests will report REQUIRES_CONFIGURATION)"
+else
+  echo "archive logging already enabled"
+fi
+
 touch "$DONE"
 echo "== done"

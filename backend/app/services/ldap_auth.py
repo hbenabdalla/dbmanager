@@ -107,8 +107,25 @@ def _ldap_lookup_and_bind(
     if not ok:
         return None
     return LdapEntry(
-        dn=dn, username=_val(attr_user) or username, email=_val(attr_mail), display_name=_val(attr_name), groups=groups
+        dn=dn,
+        username=_val(attr_user) or username,
+        email=_val(attr_mail),
+        display_name=_val(attr_name),
+        groups=unique_dns(groups),
     )
+
+
+def unique_dns(dns: list[str]) -> list[str]:
+    """Groups found both through ``memberOf`` and the group search are listed once (DNs compare
+    case-insensitively, ignoring spaces after commas)."""
+    seen: set[str] = set()
+    out = []
+    for d in dns:
+        key = ",".join(part.strip() for part in d.split(",")).lower()
+        if key not in seen:
+            seen.add(key)
+            out.append(d)
+    return out
 
 
 async def ldap_login(db: AsyncSession, provider: IdentityProvider, username: str, password: str) -> User | None:
