@@ -3,6 +3,7 @@
 # See scripts/integration-test.ps1 for the description; usage:
 #   scripts/integration-test.sh [postgresql mysql mariadb mssql oracle db2 timeseries identity vault]
 #   scripts/integration-test.sh --down
+#   IT_PYTEST_ADDOPTS='-k backup' scripts/integration-test.sh ...   # only matching tests
 # Starting a vendor image means accepting that vendor's license (SQL Server Developer EULA,
 # Oracle Free Use Terms for XE, IBM Db2 Community Edition).
 set -uo pipefail

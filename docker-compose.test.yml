@@ -243,6 +243,8 @@ services:
       - ./backend/app/data:/merge
     environment:
       DBM_IT_MERGE_INTO: /merge/real_engine_validation.json
+      # extra pytest options, e.g. -k backup (scripts/integration-test -K / --select)
+      PYTEST_ADDOPTS: "${IT_PYTEST_ADDOPTS:-}"
       DBM_IT_PG_PORT: "5432"
       DBM_IT_PG_USER: postgres
       DBM_IT_PG_PASSWORD: "${IT_PG_PASSWORD:-}"

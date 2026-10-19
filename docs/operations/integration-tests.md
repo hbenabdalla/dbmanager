@@ -83,7 +83,22 @@ more keys, **appends** the missing ones to an existing file (existing values are
 The test layout, markers and how to run individual suites are described in
 [Testing](../development/testing.md).
 
+## Output and narrower runs
+
+The runner prints one line per test (`-v`) and stops any single test after 15 minutes. Every
+failure message is also written to `integration-results/junit.xml`. To run only some tests,
+pass a pytest `-k` expression:
+
+```shell
+.\scripts\integration-test.ps1 -K backup                 # Windows
+IT_PYTEST_ADDOPTS='-k backup' scripts/integration-test.sh   # Linux / macOS
+```
+
 ## Troubleshooting
+
+**A runner from an interrupted run is still going.** Remove it before starting again:
+`docker rm -f $(docker ps -q --filter name=it-runner-run)`.
+
 
 **The run stops after `CALL SYSPROC.SYSINSTALLOBJECTS(...)` (Db2 user setup).** An earlier run that
 was interrupted with Ctrl+C keeps running *inside* the Db2 container and can hold catalog locks.

@@ -17,14 +17,18 @@
 .EXAMPLE
   .\scripts\integration-test.ps1                       # all engines
   .\scripts\integration-test.ps1 mssql oracle db2
+  .\scripts\integration-test.ps1 -K backup             # only tests whose name matches (pytest -k)
   .\scripts\integration-test.ps1 -Down                 # stop and remove the test containers + volumes
 #>
 param(
   [Parameter(ValueFromRemainingArguments = $true)][string[]]$Engines,
   [switch]$Down,
-  [switch]$KeepRunning
+  [switch]$KeepRunning,
+  # pytest -k expression, e.g. -K backup or -K "backup or identity"
+  [string]$K
 )
 $ErrorActionPreference = 'Stop'
+$env:IT_PYTEST_ADDOPTS = if ($K) { "-k `"$K`"" } else { '' }
 $root = Split-Path -Parent $PSScriptRoot
 Set-Location $root
 # plain progress: readable log lines instead of redrawn progress bars

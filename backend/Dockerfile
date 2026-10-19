@@ -95,8 +95,12 @@ CMD ["sh", "-c", "exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT} --prox
 # Same image as runtime plus the test tooling; the tests themselves are mounted at run time.
 FROM runtime AS it
 USER root
-RUN /opt/venv/bin/pip install --no-cache-dir "pytest>=8" "pytest-asyncio>=0.23" \
+RUN /opt/venv/bin/pip install --no-cache-dir "pytest>=8" "pytest-asyncio>=0.23" "pytest-timeout>=2.3" \
     && mkdir -p /results && chown 10001:0 /results
 USER 10001
 ENV DBM_IT_RESULTS_DIR=/results DBM_TIMESERIES_BACKEND=memory
-CMD ["python", "-m", "pytest", "-m", "real_database", "tests/integration", "-p", "no:cacheprovider", "-q", "-rs"]
+# one line per test (progress is visible while slow engines run), failures with a short traceback,
+# no test may hang the run (15 min each), JUnit XML with every failure message in /results.
+# Narrow a run with PYTEST_ADDOPTS (scripts/integration-test: -K / --select).
+CMD ["python", "-m", "pytest", "-m", "real_database", "tests/integration", "-p", "no:cacheprovider", \
+     "-v", "-rfEs", "--tb=short", "--timeout=900", "--junitxml=/results/junit.xml"]
