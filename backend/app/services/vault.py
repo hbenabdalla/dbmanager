@@ -45,7 +45,7 @@ def parse_ref(ref: str) -> tuple[str, str, str]:
             "Vault references look like 'path/to/secret#key' or 'mount:path/to/secret#key'",
             details={"example": "databases/pg-prod#password"},
         )
-    return (m["mount"] or get_settings().vault_kv_mount).strip("/"), m["path"].strip("/"), m["key"]
+    return (m["mount"] or get_settings().vault_kv_mount or "secret").strip("/"), m["path"].strip("/"), m["key"]
 
 
 def configured() -> bool:

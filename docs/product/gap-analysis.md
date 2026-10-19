@@ -26,7 +26,7 @@ The tables below keep each gap as originally assessed. Progress since the audit:
 | G-01 Git repository | Closed — published at [hbenabdalla/dbmanager](https://github.com/hbenabdalla/dbmanager) | sprint 0.9.1 |
 | G-02 License | Closed — the owner chose Apache-2.0; `LICENSE` added | sprint 0.9.1 |
 | G-03 CI | Closed — workflows run on GitHub; first-run failures (Compose health, gitleaks) fixed | sprint 0.9.2 |
-| G-04 Version metadata | Closed — `0.11.0-dev`, `/api/v1/version`, `/api/v1/about`, Platform → About | sprint 0.9.4 |
+| G-04 Version metadata | Closed — `0.12.0`, `/api/v1/version`, `/api/v1/about`, Platform → About | sprint 0.9.4 |
 | G-05 Policies | Closed — CONTRIBUTING, SECURITY, CODE_OF_CONDUCT, issue forms, PR template | sprint 0.9.1 |
 | G-06 Publishable documentation | Closed — published on Read the Docs ([https://db-manager.readthedocs.io/en/latest/](https://db-manager.readthedocs.io/en/latest/)) | sprint 0.9.3 |
 | G-07 Secret scan / ignore rules | Closed — tree scanned (only documented development/test placeholders), `.gitignore` hardened, gitleaks in CI | sprint 0.9.1 |
@@ -34,7 +34,14 @@ The tables below keep each gap as originally assessed. Progress since the audit:
 | G-18 API tokens | Closed — personal tokens (service accounts later) | sprint 0.11.1 |
 | G-19 API rate limiting | Closed — per-principal policies, shared counters, `Retry-After` | sprint 0.11.2 |
 | G-20 Backup/restore verification | Closed — `scripts/backup.sh`, `scripts/restore.sh`, automated round-trip test | sprint 0.9.5 |
-| G-22 Upgrade & migration testing | Closed for migrations (step-by-step upgrade, downgrade, model parity in CI); release-to-release upgrade test follows the first tagged release | sprint 0.9.5 |
+| G-22 Upgrade & migration testing | Closed — step-by-step upgrade, downgrade, model parity, and upgrade of an installation with data from the first and the previous schema | sprint 0.9.5 |
+| G-16, G-17 Slack/Teams presets, re-notify | Closed (re-notify; on-call chains stay with PagerDuty/Opsgenie) | sprint 0.10.4 |
+| G-20, G-21 Backup/restore, configuration backup | Closed — in-app platform backup and restore by component with verification, plus stack scripts | milestone 0.12 |
+| G-23 Collector diagnostics bundle | Closed | sprint 0.10.5 |
+| G-33 SIEM integration | Closed — syslog RFC 5424 (UDP/TCP/TLS) and signed webhook | sprint 0.11.4 |
+| G-36 External secret managers | Partly closed — HashiCorp Vault; cloud secret stores planned | sprints 0.11.5, 0.11.7 |
+| G-38 MFA | Closed — native TOTP + recovery codes, OIDC amr/acr | sprint 0.11.6 |
+| G-40 Real identity validation | Partly closed — OpenLDAP validated; Keycloak run BLOCKED (Docker host) | sprint 0.11.3 |
 
 ## Release blockers (P0)
 

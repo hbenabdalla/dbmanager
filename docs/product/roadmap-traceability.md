@@ -1,10 +1,10 @@
 # Roadmap traceability
 
 Capability → gap → milestone/sprint → implementation → tests → documentation. A row is only
-marked DONE when the implementation and tests columns point at real code. Paths are relative to
+marked VERIFIED COMPLETE when the implementation and tests columns point at real code. Paths are relative to
 the repository root; "—" means not yet created.
 
-## Baseline (DONE)
+## Baseline (VERIFIED COMPLETE)
 
 | Capability | Gap | Sprint | Implementation | Tests | Documentation |
 |---|---|---|---|---|---|
@@ -22,43 +22,57 @@ the repository root; "—" means not yet created.
 
 | Capability | Gap | Sprint | Implementation | Tests | Documentation | Status |
 |---|---|---|---|---|---|---|
-| Source control & publication | G-01 | 0.9.1 | public repository `hbenabdalla/dbmanager` | CI on every push and pull request | `CONTRIBUTING.md` | DONE |
-| License | G-02 | 0.9.1 | `LICENSE` (Apache-2.0), `backend/pyproject.toml`, `frontend/package.json`, About page | `tests/api/test_alerting.py` (About reports Apache-2.0) | `README.md`, `CONTRIBUTING.md` | DONE |
-| Governance files | G-05, G-07 | 0.9.1 | `CONTRIBUTING.md`, `SECURITY.md`, `CODE_OF_CONDUCT.md`, `CHANGELOG.md`, `.github/ISSUE_TEMPLATE/`, `.github/pull_request_template.md`, `.gitignore` | gitleaks (`.github/workflows/security.yml`) | same files | DONE |
-| CI | G-03 | 0.9.2 | `.github/workflows/` | workflows on GitHub | `CONTRIBUTING.md` | DONE |
-| Documentation site | G-06 | 0.9.3 | `mkdocs.yml`, `.readthedocs.yaml`, `docs/requirements.txt`, `docs/**` | `mkdocs build --strict` (CI and Read the Docs) | [https://db-manager.readthedocs.io/en/latest/](https://db-manager.readthedocs.io/en/latest/) | DONE |
-| Version & About page | G-04 | 0.9.4 | `backend/app/api/v1/about.py`, Platform → About, Help menu | `tests/api/test_alerting.py::test_about_and_version`, `tests/unit/test_about_links.py`, frontend `alerts.test.tsx` | [About](../administration/about.md) | DONE |
-| Upgrade & recovery verification | G-20, G-22 | 0.9.5 | `scripts/backup.sh`, `scripts/restore.sh` | `tests/migrations/` (upgrade, downgrade, model parity, backup/restore round trip) | [upgrade](../operations/upgrade.md), [backup and restore](../operations/backup-restore.md) | DONE |
+| Source control & publication | G-01 | 0.9.1 | public repository `hbenabdalla/dbmanager` | CI on every push and pull request | `CONTRIBUTING.md` | VERIFIED COMPLETE |
+| License | G-02 | 0.9.1 | `LICENSE` (Apache-2.0), `backend/pyproject.toml`, `frontend/package.json`, About page | `tests/api/test_alerting.py` (About reports Apache-2.0) | `README.md`, `CONTRIBUTING.md` | VERIFIED COMPLETE |
+| Governance files | G-05, G-07 | 0.9.1 | `CONTRIBUTING.md`, `SECURITY.md`, `CODE_OF_CONDUCT.md`, `CHANGELOG.md`, `.github/ISSUE_TEMPLATE/`, `.github/pull_request_template.md`, `.gitignore` | gitleaks (`.github/workflows/security.yml`) | same files | VERIFIED COMPLETE |
+| CI | G-03 | 0.9.2 | `.github/workflows/` | workflows on GitHub | `CONTRIBUTING.md` | VERIFIED COMPLETE |
+| Documentation site | G-06 | 0.9.3 | `mkdocs.yml`, `.readthedocs.yaml`, `docs/requirements.txt`, `docs/**` | `mkdocs build --strict` (CI and Read the Docs) | [https://db-manager.readthedocs.io/en/latest/](https://db-manager.readthedocs.io/en/latest/) | VERIFIED COMPLETE |
+| Version & About page | G-04 | 0.9.4 | `backend/app/api/v1/about.py`, Platform → About, Help menu | `tests/api/test_alerting.py::test_about_and_version`, `tests/unit/test_about_links.py`, frontend `alerts.test.tsx` | [About](../administration/about.md) | VERIFIED COMPLETE |
+| Upgrade & recovery verification | G-20, G-22 | 0.9.5 | `scripts/backup.sh`, `scripts/restore.sh`, `scripts/restore-drill.sh` (Docker CI) | `tests/migrations/` (upgrade from empty, first and previous schema with data; downgrade; model parity; backup/restore round trip) | [upgrade](../operations/upgrade.md), [backup and restore](../operations/backup-restore.md) | VERIFIED COMPLETE |
 
 ## Milestones 0.10 and 0.11 — Operations, alerting and enterprise integration
 
 | Capability | Gap | Sprint | Implementation | Tests | Documentation | Status |
 |---|---|---|---|---|---|---|
-| Alert rules & evaluation | G-10, G-11 | 0.10.1 | `backend/app/services/alerting.py`, migration `0004_alerting`, Operations → Alerts / Alert rules | `tests/api/test_alerting.py` | [alerting](../user-guide/alerting.md) | DONE |
-| SMTP & webhook channels | G-12, G-13, G-14 | 0.10.2 | `backend/app/services/notify.py` (webhook with HMAC signature and SSRF guard, SMTP), delivery log | `tests/api/test_alerting.py` | [notifications](../administration/notifications.md) | DONE |
-| Maintenance windows | G-15 | 0.10.3 | `backend/app/services/alerting.py` (suppression), Operations → Maintenance windows | `tests/api/test_alerting.py` | [alerting](../user-guide/alerting.md) | DONE |
-| Alert UX, Teams/Slack presets, re-notify | G-16, G-17 | 0.10.4 | — | — | — | NEXT |
-| Collector diagnostics bundle | G-23 | 0.10.5 | — | — | — | PLANNED |
-| API tokens | G-18 | 0.11.1 | `backend/app/services/api_tokens.py`, migration `0005_api_tokens`, Account → API tokens | `tests/api/test_api_tokens.py` | [API tokens](../administration/api-tokens.md) | DONE |
-| API rate limiting | G-19 | 0.11.2 | `backend/app/services/ratelimit.py`, `backend/app/api/deps.py` (`rate_limit`), migration `0006_rate_limits` | `tests/unit/test_ratelimit.py`, `tests/api/test_rate_limits.py` | [rate limiting](../administration/rate-limiting.md) | DONE |
+| Alert rules & evaluation (tag scope, window aggregates) | G-10, G-11 | 0.10.1 | `backend/app/services/alerting.py`, migrations `0004`, `0007` | `tests/api/test_alerting.py`, `tests/unit/test_alerting_completion.py`, `tests/api/test_alerting_completion.py` | [alerting](../user-guide/alerting.md), [architecture](../architecture/alerting.md) | VERIFIED COMPLETE |
+| SMTP (STARTTLS/TLS) & webhook channels, retries, routing | G-12, G-13, G-14 | 0.10.2 | `backend/app/services/notify.py`, `alerting.retry_due` | `tests/unit/test_notify_delivery.py`, `tests/api/test_alerting*.py` | [notifications](../administration/notifications.md) | VERIFIED COMPLETE |
+| Maintenance windows (recurring, time zones) | G-15 | 0.10.3 | `alerting.occurrences` / `window_state` | `tests/unit/test_alerting_completion.py` | [alerting](../user-guide/alerting.md) | VERIFIED COMPLETE |
+| Alert inbox, Slack/Teams presets, re-notify | G-16, G-17 | 0.10.4 | `frontend/src/features/alerts/`, `notify.preset_payload` | `frontend/src/test/alerting-ui.test.tsx`, preset tests | [alerting](../user-guide/alerting.md) | VERIFIED COMPLETE |
+| Collector diagnostics bundle | G-23 | 0.10.5 | `backend/app/services/diagnostics.py`, `app/core/redact.py` | `tests/api/test_diagnostics.py`, `tests/unit/test_redact.py` | [diagnostics](../administration/diagnostics.md) | VERIFIED COMPLETE |
+| API tokens | G-18 | 0.11.1 | `backend/app/services/api_tokens.py`, migration `0005` | `tests/api/test_api_tokens.py` | [API tokens](../administration/api-tokens.md) | VERIFIED COMPLETE |
+| API rate limiting | G-19 | 0.11.2 | `backend/app/services/ratelimit.py`, migration `0006` | `tests/unit/test_ratelimit.py`, `tests/api/test_rate_limits.py` | [rate limiting](../administration/rate-limiting.md) | VERIFIED COMPLETE |
+| Real LDAP validation | G-40 | 0.11.3 | `docker-compose.test.yml` (`identity`), fixtures `backend/tests/integration/identity/` | `tests/integration/test_identity.py` (run: OpenLDAP 2.6) | [integration tests](../operations/integration-tests.md) | VERIFIED COMPLETE |
+| Real OIDC (Keycloak) and Vault validation | G-40, G-36 | 0.11.3 | same | `test_identity.py::test_oidc_code_flow_with_pkce_against_keycloak`, `test_vault_real.py` | same | BLOCKED (Docker host) |
+| SIEM forwarding | G-33 | 0.11.4 | `backend/app/services/siem.py`, migration `0009`, Platform → Audit forwarding | `tests/api/test_siem.py`, `tests/unit/test_siem_format.py` | [SIEM](../administration/siem.md) | VERIFIED COMPLETE |
+| HashiCorp Vault credentials | G-36 | 0.11.5 | `backend/app/services/vault.py` | `tests/api/test_vault.py` | [secret providers](../administration/secret-providers.md) | VERIFIED COMPLETE |
+| MFA (TOTP, OIDC amr/acr) | G-38 | 0.11.6 | `backend/app/services/mfa.py`, migration `0008`, Account → Security | `tests/api/test_mfa.py`, `tests/unit/test_mfa.py`, `frontend/src/test/account-admin.test.tsx` | [MFA](../administration/mfa.md) | VERIFIED COMPLETE |
+| Cloud secret managers | G-36 | 0.11.7 | — | — | — | PLANNED |
+
+## Milestone 0.12 — Asset protection (backup & restore)
+
+| Capability | Gap | Sprint | Implementation | Tests | Documentation | Status |
+|---|---|---|---|---|---|---|
+| Platform backup, encryption, storage targets | G-20 | 0.12.1 | `backend/app/backup/{platform,encryption,storage,service}.py`, migration `0010` | `tests/unit/test_backup_units.py`, `tests/api/test_backup.py` | [Backup & Restore](../backup-restore/index.md) | VERIFIED COMPLETE |
+| Platform restore with impact analysis | G-22 | 0.12.2 | `service.preview_platform_restore`, `platform.apply` / `impact` | `tests/api/test_backup.py` | [restore](../backup-restore/restore.md) | VERIFIED COMPLETE |
+| Managed database backup (PostgreSQL, MariaDB) | — | 0.12.3 | `backend/app/backup/engines.py` | `tests/api/test_backup.py`, `tests/integration/test_backup_engines.py` (run) | [engine support](../backup-restore/engine-support.md) | VERIFIED COMPLETE |
+| Managed database backup (MySQL, SQL Server, Oracle, Db2 LUW) | — | 0.12.3 | same | `tests/integration/test_backup_engines.py` (not run yet) | same | BLOCKED (Docker host) |
+| Policies, retention, bulk, notifications, metrics, protection status, UI | — | 0.12.4 | `service.schedule`, `apply_retention`, `protection`; `frontend/src/features/backup/` | `tests/api/test_backup.py`, frontend tests | [policies](../backup-restore/policies.md) | VERIFIED COMPLETE |
+| Disaster recovery | G-22 | 0.12.5 | `service.scan_target` | `tests/api/test_backup.py` | [disaster recovery](../backup-restore/disaster-recovery.md) | VERIFIED COMPLETE |
+| Azure Blob / GCS targets, PITR | — | 0.12.6, 0.12.7 | — | — | — | PLANNED |
 
 ## Later milestones
 
 | Capability | Gap | Sprint | Status |
 |---|---|---|---|
-| Real LDAP/AD/OIDC validation | G-40 | 0.11.3 | PLANNED |
-| SIEM export | G-33 | 0.11.4 | PLANNED |
-| Vault / secret managers | G-36 | 0.11.5 | PLANNED |
-| MFA readiness | G-38 | 0.11.6 | PLANNED |
-| Baselines in alerts/rules | G-24 | 0.12.1 | PLANNED |
-| Query regression detection | G-27 | 0.12.2 | PLANNED |
-| Capacity forecasting | G-25 | 0.12.3 | PLANNED |
-| Query comparison | G-28 | 0.12.4 | PLANNED |
-| Recommendation validation | G-29 | 0.12.5 | PLANNED |
-| Security & query reports | G-32 | 0.13.1 | PLANNED |
-| Scheduled reports | G-30 | 0.13.2 | PLANNED |
-| PDF export | G-31 | 0.13.3 | PLANNED |
-| Helm, images, manifest CI, HA/TLS reference | G-41, G-42, G-44, G-45 | 0.14.x | PLANNED |
+| Baselines in alerts/rules | G-24 | 0.13.1 | PLANNED |
+| Query regression detection | G-27 | 0.13.2 | PLANNED |
+| Capacity forecasting | G-25 | 0.13.3 | PLANNED |
+| Query comparison | G-28 | 0.13.4 | PLANNED |
+| Recommendation validation | G-29 | 0.13.5 | PLANNED |
+| Security & query reports | G-32 | 0.14.1 | PLANNED |
+| Scheduled reports | G-30 | 0.14.2 | PLANNED |
+| PDF export | G-31 | 0.14.3 | PLANNED |
+| Helm, images, manifest CI, HA/TLS reference | G-41, G-42, G-44, G-45 | 0.15.x | PLANNED |
 | Scale, security, accessibility, upgrade drill, RC | G-54, G-58, G-22 | 1.0.x | PLANNED |
 | Oracle TCPS validation | G-55 | Future | PLANNED |
 | Db2 for z/OS validation and deep monitoring | G-56 | Future | BLOCKED |

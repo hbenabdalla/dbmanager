@@ -5,12 +5,13 @@
 useDefault = true
 
 [allowlist]
-description = "fixed test-only values (simulation API test, identity and Vault integration fixtures)"
+description = "fixed test-only values (simulation API test, identity and Vault integration fixtures) and the Vault KV mount name in .env.example"
 condition = "AND"
 paths = [
   '''^backend/tests/api/test_simulation\.py$''',
   '''^backend/tests/integration/identity/''',
   '''^backend/tests/integration/test_vault_real\.py$''',
+  '''^\.env\.example$''',
 ]
 regexTarget = "line"
 regexes = [
@@ -18,4 +19,6 @@ regexes = [
   '''It-(Alice|Bob|Bind)-Passw0rd''',
   '''it-dbmanager-client-secret''',
   '''Vault-Pg-Secret-1|Not-For-DBM''',
+  '''^DBM_VAULT_KV_MOUNT=secret$''',
 ]
+

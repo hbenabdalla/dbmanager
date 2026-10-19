@@ -21,8 +21,8 @@ router = APIRouter(tags=["about"])
 
 PRODUCT = "DB Manager"
 #: the roadmap milestone this build belongs to (kept in step with ROADMAP.md)
-#: the release being prepared (roadmap milestones 0.9–0.11, see docs/product/roadmap.md "Versioning")
-CURRENT_MILESTONE = {"version": "v0.11", "name": "First public release"}
+#: this release (roadmap milestones 0.9–0.12, see docs/product/roadmap.md "Versioning")
+CURRENT_MILESTONE = {"version": "v0.12", "name": "First public release — asset protection"}
 _SAFE = re.compile(r"[^0-9A-Za-z.+_:\-]")
 
 

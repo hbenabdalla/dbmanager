@@ -30,7 +30,7 @@ control and a complete audit trail.
 
 ## Project status
 
-**Version 0.11.0-dev** — pre-release; the first tagged release will be v0.11.0 (see the
+**Version 0.12.0** — the first public release (see the
 [changelog](https://github.com/hbenabdalla/dbmanager/blob/main/CHANGELOG.md) and
 [versioning](product/roadmap.md#versioning)). DB Manager is pre-1.0 software. The capability status of every area is tracked honestly in the
 [capability matrix](product/capability-matrix.md) and the [roadmap](product/roadmap.md):

@@ -34,26 +34,26 @@ documented skip), 54 frontend tests.
 | Platform setup wizard (resumable) | COMPLETE | `backend/app/api/v1/setup.py`, `frontend/src/features/setup/`, `backend/tests/api/test_onboarding.py` |
 | Configuration | COMPLETE | `backend/app/core/config.py` (`DBM_*` env), runtime settings `GET/PUT /api/v1/settings` (`backend/app/services/app_settings.py`) |
 | Health / readiness | COMPLETE | `GET /healthz`, `GET /readyz` with per-component status (`backend/app/api/ops.py`), tests in `backend/tests/api/test_metrics.py` |
-| Upgrade (schema migrations) | COMPLETE | Alembic `0001–0004`, applied on start (`DBM_RUN_MIGRATIONS_ON_START`) or `python -m app.cli migrate`; `backend/tests/migrations/test_migrations.py` upgrades step by step, downgrades to base, re-upgrades and checks head schema = models (CI) |
-| Backup | COMPLETE | `scripts/backup.sh` (pg_dump -Fc + readability check, optional VictoriaMetrics snapshot); procedure in `docs/operations/backup-restore.md`; round trip tested in `backend/tests/migrations/test_backup_restore.py` |
-| Restore | COMPLETE | `scripts/restore.sh` (recreate DB, pg_restore, migrations on start); credentials decrypt after restore with the same key and fail with another (tested) |
+| Upgrade (schema migrations) | COMPLETE | Alembic `0001–0010`, applied on start (`DBM_RUN_MIGRATIONS_ON_START`) or `python -m app.cli migrate`; `backend/tests/migrations/test_migrations.py` upgrades step by step, downgrades to base, re-upgrades, checks head schema = models, and upgrades an installation with data from the first and the previous schema |
+| Backup | COMPLETE | In-app **Backup & Restore** (`backend/app/backup/`): platform archives by component, age encryption, local / mounted / NFS / S3-compatible targets, policies, retention, verification (`tests/api/test_backup.py`, `tests/unit/test_backup_units.py`); stack-level `scripts/backup.sh` (pg_dump + VictoriaMetrics snapshot) with `scripts/restore-drill.sh` in Docker CI |
+| Restore | COMPLETE | Restore wizard with integrity, compatibility and impact analysis (rolled-back trial), pre-restore backup, typed confirmation; `scripts/restore.sh` for the whole stack; credentials decrypt with the same master key (tested) |
 | Logging | COMPLETE | Structured JSON logging `backend/app/core/logging.py`, request IDs in `backend/app/core/middleware.py`, secrets masked (`clean_message`) |
 | Observability (self-metrics) | COMPLETE | Prometheus `GET /metrics` (`backend/app/core/metrics.py`: HTTP, collectors, scheduler leader, pipeline counters) |
-| Diagnostics | PARTIAL | Collectors page (`/api/v1/collectors/status`, `/collectors/jobs`), monitoring-storage page, driver health; no downloadable diagnostic bundle |
-| Version / build metadata | COMPLETE | `0.11.0-dev` in `backend/app/__init__.py`, `pyproject.toml`, `frontend/package.json`; build args `DBM_BUILD_VERSION/DBM_GIT_COMMIT/DBM_BUILD_DATE`; `GET /api/v1/version`, `GET /api/v1/about` (versions, schema revision, engines, status, links); Platform → About |
+| Diagnostics | COMPLETE | Collectors page, monitoring-storage page, driver health and a redacted per-server diagnostic bundle (`GET /servers/{id}/diagnostics`, `app/services/diagnostics.py`, `tests/api/test_diagnostics.py`, `tests/unit/test_redact.py`) |
+| Version / build metadata | COMPLETE | `0.12.0` in `backend/app/__init__.py`, `pyproject.toml`, `frontend/package.json`; build args `DBM_BUILD_VERSION/DBM_GIT_COMMIT/DBM_BUILD_DATE`; `GET /api/v1/version` (exact keys tested), `GET /api/v1/about`; Platform → About |
 
 ## Identity
 
 | Capability | Status | Evidence |
 |---|---|---|
 | Local authentication | COMPLETE | `POST /api/v1/auth/login`, Argon2 hashing `backend/app/core/security.py`, lockout (`login_max_failures`, `login_lockout_minutes`), `tests/api/test_auth.py` |
-| LDAP | IMPLEMENTED / NOT REAL-VALIDATED | `backend/app/services/ldap_auth.py`, LDAP wizard with staged tests (`backend/app/api/v1/idp_wizard.py`, `frontend/src/features/platform/idp-wizards.tsx`); tested only for failure stages, never against a directory server |
+| LDAP | COMPLETE (real-validated: OpenLDAP 2.6) | `backend/app/services/ldap_auth.py`, wizard; `tests/integration/test_identity.py` (service bind, search, password bind, groups, StartTLS, injection) run against OpenLDAP |
 | Active Directory | IMPLEMENTED / NOT REAL-VALIDATED | Same LDAP path (`sAMAccountName`/`memberOf` configurable); no AD test environment |
-| OIDC | IMPLEMENTED / NOT REAL-VALIDATED | `backend/app/services/oidc.py` (PKCE, state sealing, claims mapping), presets for Keycloak / Entra ID / Okta / generic; no IdP in CI |
+| OIDC | IMPLEMENTED / NOT REAL-VALIDATED | `backend/app/services/oidc.py` (PKCE, state sealing, claims mapping, MFA `amr`/`acr` checks); Keycloak code-flow test written (`test_identity.py`), run needs the Docker `identity` target |
 | SSO (via OIDC) | IMPLEMENTED / NOT REAL-VALIDATED | `GET /auth/oidc/{id}/start` + `/callback`; SAML is not supported |
 | Session management | COMPLETE | Server-side sessions `user_sessions` table, TTL + idle timeout (`session_ttl_minutes`, `session_idle_timeout_minutes`), HttpOnly cookies + CSRF token |
 | Password policy | PARTIAL | Fixed policy: minimum length + 3 of 4 classes (`password_policy_errors`); not configurable, no history/expiry |
-| MFA | MISSING | No TOTP/WebAuthn; MFA can be delegated to the OIDC provider |
+| MFA | COMPLETE | Native TOTP with recovery codes, enrollment policy `DBM_MFA_REQUIRED_FOR`, administrator reset (`app/services/mfa.py`, `tests/api/test_mfa.py`); OIDC `require_mfa` with `amr`/`acr` |
 | Group mapping | COMPLETE | `GroupMapping` model, `POST /identity-providers/{id}/mappings`, sync in `backend/app/services/identity_sync.py` |
 
 ## Authorization
@@ -79,7 +79,7 @@ documented skip), 54 frontend tests.
 | Sites / environments / applications / clusters | COMPLETE | Generic CRUD `backend/app/api/v1/inventory.py` |
 | Grouping (clusters, topology) | COMPLETE | Cluster membership + roles, topology page |
 | Bulk onboarding | COMPLETE | `/servers/bulk/template.csv`, `/validate`, `/create`; CSV/JSON/grid UI `frontend/src/features/onboarding/bulk.tsx`; passwords rejected |
-| Import / export of inventory | PARTIAL | Import via bulk onboarding; inventory export only as CSV report; no round-trip export of configuration |
+| Import / export of inventory | COMPLETE | Import via bulk onboarding; round-trip export/restore of the whole configuration through platform backups (inventory component) |
 
 ## Monitoring
 
@@ -147,11 +147,11 @@ documented skip), 54 frontend tests.
 
 | Capability | Status | Evidence |
 |---|---|---|
-| Thresholds / alert rules | COMPLETE | `backend/app/models/alerting.py`, `app/services/alerting.py` (metric threshold + for-duration, health-state and collector rules; scope all/environment/server), job `evaluate_alerts`; tests `tests/unit/test_alerting.py`, `tests/api/test_alerting.py` |
+| Thresholds / alert rules | COMPLETE | Metric threshold (latest or avg/min/max over a window) + for-duration, health-state and collector rules; scope all/environment/server/tag; `tests/unit/test_alerting*.py`, `tests/api/test_alerting*.py` |
 | Alert lifecycle / acknowledgement | COMPLETE | pending → firing → acknowledged → resolved, auto-resolve, de-duplication (partial unique index), `/alerts/{id}/acknowledge` and `/alerts/{id}/resolve`, audit; Operations → Alerts |
-| Notification channels | COMPLETE | `app/services/notify.py`: webhook (HMAC signature, SSRF guard, timeout) and SMTP (STARTTLS); write-only encrypted secrets, test send, delivery log; real SMTP/webhook endpoints not exercised in CI (mocked / local servers) |
-| Escalation | PLANNED | After channels exist |
-| Maintenance windows | COMPLETE | `/maintenance-windows`; alerts raised but marked suppressed and deliveries skipped (tested) |
+| Notification channels | COMPLETE | Webhook (generic, Slack, Teams presets; HMAC, SSRF guard) and SMTP (STARTTLS / implicit TLS, CA file); routing by environment/tag/engine; retries with backoff; delivery log; tested against local SMTP (aiosmtpd) and HTTP receivers |
+| Escalation | PARTIAL | Re-notification every N minutes until acknowledged (`renotify_minutes`); no multi-level escalation chains |
+| Maintenance windows | COMPLETE | One-off and recurring (daily/weekly, time zone, DST), scope incl. tags; suppressed alerts notify after the window if still firing |
 
 ## Reporting
 
@@ -164,7 +164,7 @@ documented skip), 54 frontend tests.
 | Security report | PARTIAL | Security findings exportable via the findings list; no dedicated report definition |
 | Query report | PARTIAL | Workspace result export (`POST /workspace/export.csv`); no query-statistics report |
 | Audit report / export | COMPLETE | `GET /audit/export.csv` (`audit.export` permission) |
-| Export formats | PARTIAL | CSV only (`RENDERERS = {"csv": ...}`); PDF not implemented |
+| Export formats | PARTIAL | CSV only; the UI offers only the formats the API serves; PDF planned (milestone 0.14) |
 | Scheduling | MISSING | No scheduled report delivery |
 
 ## Topology
@@ -190,7 +190,7 @@ documented skip), 54 frontend tests.
 
 | Capability | Status | Evidence |
 |---|---|---|
-| REST API | COMPLETE | `backend/app/api/v1/*` (~140 routes) |
+| REST API | COMPLETE | `backend/app/api/v1/*` (~180 routes) |
 | OpenAPI | COMPLETE | FastAPI `/api/openapi.json`, snapshot in `docs/openapi.json` |
 | Pagination / filtering / sorting | COMPLETE | `PageParams`, `Page[...]` responses on list endpoints |
 | Versioning | PARTIAL | URL prefix `/api/v1`; no deprecation policy |
@@ -205,12 +205,12 @@ documented skip), 54 frontend tests.
 | LDAP / OIDC | IMPLEMENTED / NOT REAL-VALIDATED | See Identity |
 | SMTP | COMPLETE | Alert email channel (`DBM_SMTP_*` or per-channel); scheduled report e-mail not yet |
 | Webhooks | COMPLETE | Alert webhook channel with HMAC signing and SSRF protection (`DBM_WEBHOOK_ALLOW_PRIVATE`) |
-| Teams / Slack | PLANNED | Via generic webhook first |
-| SIEM | PARTIAL | Audit CSV export and structured JSON logs can be shipped; no syslog/CEF forwarder |
+| Teams / Slack | COMPLETE | Webhook presets (Slack blocks, Teams Adaptive Card); payloads tested |
+| SIEM | COMPLETE | Audit forwarding: syslog RFC 5424 over UDP/TCP/TLS and signed webhook batches, at-least-once cursor (`app/services/siem.py`, `tests/api/test_siem.py`) |
 | Prometheus (platform metrics) | COMPLETE | `GET /metrics` |
 | Prometheus export of *managed database* metrics | MISSING | Database telemetry is in VictoriaMetrics (Prometheus-compatible query API), not re-exposed on `/metrics` |
 | OpenTelemetry | PARTIAL | Scrape `/metrics` with the OTel Prometheus receiver; no native OTLP traces |
-| External secret managers | PARTIAL | Providers `local`, `env`, `file` (`backend/app/services/secrets.py`); `vault` reserved, not implemented |
+| External secret managers | PARTIAL | Providers `local`, `env`, `file`, `vault` (HashiCorp Vault KV v2: token/AppRole/Kubernetes, `tests/api/test_vault.py`); AWS/Azure/Google secret managers planned (0.11.7) |
 
 ## Operations
 
@@ -219,12 +219,30 @@ documented skip), 54 frontend tests.
 | Docker Compose | COMPLETE | `docker-compose.yml`; backend image with ODBC Driver 18 (`backend/Dockerfile`) |
 | Kubernetes readiness | PARTIAL | Plain manifests `deployment/kubernetes/` (ConfigMap, Secret, migrate Job, Deployments, StatefulSet, Ingress, NetworkPolicy); **no Helm chart**, not CI-validated |
 | OpenShift readiness | PARTIAL | Non-root UID 10001 / GID 0 images, `deployment/openshift/route.yaml`; not tested on a cluster |
-| Backup / restore | COMPLETE | `scripts/backup.sh`, `scripts/restore.sh`, automated round-trip test |
+| Backup / restore | COMPLETE | In-app Backup & Restore for the platform and managed databases (see Platform); stack scripts `scripts/backup.sh`, `restore.sh`, `restore-drill.sh` |
 | Upgrade | PARTIAL | Migrations tested step by step and for model parity; no upgrade test between two *released* versions yet (no release tagged) |
 | High availability | PARTIAL | Stateless API, scheduler leader election (`dbm_scheduler_leader`), `process_role` split (api/worker); HA of PostgreSQL/VictoriaMetrics left to the operator |
 | Scaling | PARTIAL | Collector concurrency, worker processes (`docs/deployment/scaling.md`); no load test |
 | Troubleshooting | PARTIAL | Troubleshooting table in `docs/operations/index.md`; full guide being written |
 | Real-engine test environment | COMPLETE | `docker-compose.test.yml`, `scripts/integration-test.{sh,ps1}`, matrix in `backend/app/data/real_engine_validation.json` |
+
+## Asset protection (backup & restore)
+
+| Capability | Status | Evidence |
+|---|---|---|
+| Platform backup (configuration, inventory, identity, findings, alerting, settings, audit optional, telemetry optional) | COMPLETE | `backend/app/backup/platform.py`, `service.py`; every table classified (unit test) |
+| Encryption (age, recipient or passphrase; master key never in the archive) | COMPLETE | `backend/app/backup/encryption.py`; unit + API tests |
+| Storage targets (local, mounted, NFS, S3-compatible) | COMPLETE | `backend/app/backup/storage.py`; S3 tested against a moto server |
+| Azure Blob / Google Cloud Storage (native) | PLANNED | Sprint 0.12.6 (S3-compatible endpoints work today) |
+| Verification (SHA-256 read-back, contents, engine checks), CORRUPTED detection | COMPLETE | Tamper test in `tests/api/test_backup.py` |
+| Platform restore (compatibility, impact analysis, pre-restore backup) | COMPLETE | `tests/api/test_backup.py::test_platform_backup_verify_restore_end_to_end` |
+| PostgreSQL backup / restore | COMPLETE (real-validated: 16) | `engines.PostgreSQLProvider`; API + integration tests |
+| MariaDB backup / restore | COMPLETE (real-validated: 10.11) | `engines.MySQLFamilyProvider`; `tests/integration/test_backup_engines.py` |
+| MySQL, SQL Server, Oracle (Data Pump), Db2 LUW backup | IMPLEMENTED / NOT REAL-VALIDATED | Providers + integration tests; run with `scripts/integration-test` |
+| Db2 LUW restore, Oracle RMAN, Db2 for z/OS | NOT APPLICABLE (external tool required) | Reported as such by capability discovery; Db2 LUW restore command generated |
+| Point-in-time recovery | PLANNED | Sprint 0.12.7; not claimed by any provider |
+| Policies, schedules, retention, bulk, notifications, metrics, protection status | COMPLETE | `service.schedule`, `apply_retention`, `protection`; API tests |
+| Disaster recovery (scan a target into a new catalog) | COMPLETE | `service.scan_target`; tested |
 
 ## Repository and release engineering
 
@@ -232,7 +250,7 @@ documented skip), 54 frontend tests.
 |---|---|---|
 | Source control | COMPLETE | Public repository [hbenabdalla/dbmanager](https://github.com/hbenabdalla/dbmanager), `main` branch, logical commits |
 | License | COMPLETE | Apache-2.0 — `LICENSE`, README, `backend/pyproject.toml`, `frontend/package.json`, About page |
-| CI | PARTIAL | `.github/workflows/` backend (lint, unit, API, migrations, PostgreSQL real engine), frontend, docs (`mkdocs build --strict`), Docker images + Compose health, security (gitleaks, pip-audit, npm audit), on-demand real-engine workflow. First run on `main`: backend, frontend, docs and image builds green; the Compose health job (script not executable) and gitleaks (history re-parented) failed and are fixed — awaiting the next run |
+| CI | COMPLETE | `.github/workflows/` backend (lint, unit, API, migrations, PostgreSQL real engine), frontend, docs (`mkdocs build --strict`), Docker images + Compose health + restore drill, security (gitleaks, pip-audit, npm audit); required checks run on every pull request (no path filters) |
 | Contribution / security policy | COMPLETE | `CONTRIBUTING.md`, `SECURITY.md` (private advisories), `CODE_OF_CONDUCT.md`, issue forms, PR template |
-| Changelog / versioning | COMPLETE | `CHANGELOG.md` (Keep a Changelog, SemVer); version `0.11.0-dev` (first tag: v0.11.0) |
+| Changelog / versioning | COMPLETE | `CHANGELOG.md` (Keep a Changelog, SemVer); version `0.12.0` (first tag: v0.12.0) |
 | Published documentation | COMPLETE | Read the Docs project `db-manager`: [https://db-manager.readthedocs.io/en/latest/](https://db-manager.readthedocs.io/en/latest/), built from `.readthedocs.yaml` with `mkdocs build --strict`; linked from the app's Help menu and About page |
