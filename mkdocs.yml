@@ -132,6 +132,7 @@ nav:
       - Db2 LUW: database-engines/db2-luw.md
       - Db2 for z/OS: database-engines/db2-zos.md
       - Least-privilege accounts: database-engines/permissions.md
+      - Permissions validated on real engines: database-permissions/index.md
       - Adapter gap analysis: database-engines/adapter-gap-analysis.md
   - Monitoring & Performance:
       - Monitoring:
@@ -150,6 +151,7 @@ nav:
           - Locks and blocking: performance/locks-and-blocking.md
           - Recommendations: performance/recommendations.md
           - Baselines and capacity: performance/baselines-and-capacity.md
+          - Regressions and comparisons: performance/regressions-and-comparison.md
   - Security:
       - security/index.md
   - Administration:
@@ -224,6 +226,7 @@ nav:
       - troubleshooting/index.md
       - Connections: troubleshooting/connections.md
       - Engine-specific problems: troubleshooting/engines.md
+      - Real-engine findings: troubleshooting/real-engine-findings.md
       - Monitoring: troubleshooting/monitoring.md
       - Identity providers: troubleshooting/identity.md
       - Platform: troubleshooting/platform.md
@@ -233,7 +236,10 @@ nav:
       - Engine matrix: product/engine-matrix.md
       - Gap analysis: product/gap-analysis.md
       - Roadmap: product/roadmap.md
+      - Current milestone: product/current-milestone.md
+      - Real-engine validation: product/real-engine-validation.md
       - Roadmap traceability: product/roadmap-traceability.md
       - Roadmap audit: product/roadmap-audit.md
+      - Release notes 0.13.0: release-notes/0.13.0.md
       - Release notes 0.12.0: release-notes/0.12.0.md
       - Release checklist: product/release-checklist.md

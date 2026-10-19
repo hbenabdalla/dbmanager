@@ -33,6 +33,16 @@ estimated → actual rows with a misestimate badge at 10× or more), **Tree**, a
 plan: JSON, SQL Server showplan XML or text). Detected issues (sequential scans on large tables,
 misestimates, spills …) are listed with severity. Details: [Execution plans](../performance/execution-plans.md).
 
+Enter a label in **Save plan as** before running EXPLAIN to keep the plan; **Queries → Compare plans**
+puts two saved plans side by side (cost, operators, access paths, issues).
+
+## Regressions and period comparison
+
+**Queries → Regressions** lists statements whose mean latency is well above their own baseline, with
+plan changes on Oracle and SQL Server. **Queries → Compare periods** compares statement activity in
+two periods (presets such as *last 24 h vs the same day a week ago*). Details:
+[Regressions, comparisons and outcomes](../performance/regressions-and-comparison.md).
+
 ## SQL workspace
 
 **SQL workspace** (`query.execute`) runs one statement at a time with a row limit

@@ -118,7 +118,24 @@ def test_head_schema_matches_models() -> None:
 
 # ---- existing installation -> latest ----------------------------------------------------------
 #: tables seeded at an older revision (in FK order); a table missing at that revision is skipped
-SEEDED = ["organizations", "environments", "users", "roles", "servers", "alert_rules", "notification_channels"]
+#: — users and RBAC, servers and credential references, alerting, findings, backup configuration
+#: and settings must all survive an upgrade
+SEEDED = [
+    "organizations",
+    "environments",
+    "users",
+    "roles",
+    "role_assignments",
+    "servers",
+    "credentials",
+    "alert_rules",
+    "notification_channels",
+    "recommendations",
+    "security_findings",
+    "backup_targets",
+    "backup_policies",
+    "app_settings",
+]
 
 
 async def _seed_generic(tables: list[str]) -> dict[str, str]:
@@ -205,7 +222,8 @@ async def _row_ids(tables: list[str]) -> dict[str, list[str]]:
         host=u.host, port=u.port or 5432, user=u.username, password=u.password, database=SCRATCH
     )
     try:
-        return {t: [str(r[0]) for r in await conn.fetch(f'SELECT id FROM "{t}"')] for t in tables}  # noqa: S608
+        # first column = primary key (``id``, or ``key`` for app_settings)
+        return {t: sorted(str(r[0]) for r in await conn.fetch(f'SELECT * FROM "{t}"')) for t in tables}  # noqa: S608
     finally:
         await conn.close()
 
@@ -221,6 +239,8 @@ def test_existing_installation_upgrades_to_head_with_its_data(start: str) -> Non
     seeded = asyncio.run(_seed_generic(SEEDED))
     present = [t for t in SEEDED if t in seeded]
     assert "servers" in present and "users" in present
+    if start == "previous":  # the last release has every one of these tables
+        assert present == SEEDED
     before = asyncio.run(_row_ids(present))
     alembic("upgrade", "head")
     assert revs[-1] in alembic("current")

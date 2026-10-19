@@ -121,8 +121,9 @@ Audited actions: `alert.acknowledge`, `alert.resolve`, `alert.comment`, `alert.e
 
 ## Limitations
 
-* Range rules use avg/min/max over a window; rate-of-change and baseline-relative conditions are
-  planned (roadmap milestone *Performance intelligence*).
+* Range rules use avg/min/max over a window; baseline-relative rules use a z-score against the
+  server's own history ([Baselines and capacity](../performance/baselines-and-capacity.md#baseline-relative-alert-rules-z-score)).
+  Rate-of-change conditions are not available.
 * Re-notification repeats to the same channels; there is no multi-level escalation chain.
 * The SSRF guard checks the address at send time; DNS answers that change between the check and
   the connection are not detected.

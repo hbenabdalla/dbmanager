@@ -11,4 +11,5 @@ comes from where, and what is missing on a given engine is shown as unavailable,
 | Wait events and active sessions by wait class | [Waits](waits.md) |
 | Blocking chains, deadlocks, cancel and terminate | [Locks and blocking](locks-and-blocking.md) |
 | Rule engine, evidence, confidence, risk | [Recommendations](recommendations.md) |
-| Statistical baselines and storage growth forecasts | [Baselines and capacity](baselines-and-capacity.md) |
+| Statistical baselines, z-score alert rules, storage growth forecasts with confidence bands | [Baselines and capacity](baselines-and-capacity.md) |
+| Query regressions and plan changes, period and plan comparison, before/after outcomes of recommendations | [Regressions, comparisons and outcomes](regressions-and-comparison.md) |

@@ -38,7 +38,11 @@ the monitoring user never queried AWR, ASH, ADDM, SQL Monitor or the SQL Tuning 
 * Each suite creates its own fixtures (schemas, tables, indexes, views, routines, triggers,
   5 000 customers / 20 000 orders), a workload, a real blocking chain and least-privilege users
   matching the [engine pages](../database-engines/index.md). Db2 identities are OS users created by
-  `backend/tests/integration/db2/custom/dbm-it-users.sh`.
+  `backend/tests/integration/db2/custom/dbm-it-users.sh`, including the backup operator `DBMBK`
+  (SYSMAINT through `SYSMAINT_GROUP`; the setup restarts the Db2 instance once to apply it, and
+  enables archive logging for online backups). The MySQL backup test checks the binary-logging
+  refusal and then sets `log_bin_trust_function_creators` on the disposable container (reset at
+  the end). All accounts: [database permissions](../database-permissions/index.md).
 * Results: `integration-results/real-engine-matrix.{json,md}` and `run.log`; the run merges them
   into `backend/app/data/real_engine_validation.json`, which **Platform → Engine support** shows
   (a capability is only shown as plain FULL once the suite validated it; otherwise `FULL*`).

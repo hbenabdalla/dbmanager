@@ -11,3 +11,10 @@ when the condition disappears).
 
 Recommendations are **never executed automatically**. Applying one is a normal guarded change by a
 DBA, subject to RBAC, confirmation and audit.
+
+## Outcomes
+
+When a recommendation is resolved, DB Manager measures the metric (or the statement latency) that
+triggered it for a window before and after the resolution and shows the outcome — *improved*,
+*unchanged*, *regressed* — in the recommendation's dialog and on **Optimization → Outcomes**. See
+[recommendation validation](../performance/regressions-and-comparison.md#recommendation-validation-before-after).

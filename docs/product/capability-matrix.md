@@ -22,8 +22,9 @@ documented skip), 54 frontend tests.
 > **Updated after this release's sprints.** Version/build metadata and the About page (0.9.4),
 > upgrade and recovery verification (0.9.5), and alerting with lifecycle, maintenance windows,
 > webhook and SMTP channels (0.10.1–0.10.3) have landed with tests; their rows below are updated.
-> Test counts now: 313 backend unit + API, 3 migration/backup, 75 real-engine integration (plus 1
-> documented skip), 59 frontend. See the [roadmap](roadmap.md).
+> Test counts for 0.13.0: 471 backend unit + API, 5 migration, 86 real-engine integration in the
+> last Docker run (84 passed, 1 failed, 1 documented skip — see the
+> [real-engine validation report](real-engine-validation.md)), 117 frontend. See the [roadmap](roadmap.md).
 
 ## Platform
 
@@ -47,10 +48,10 @@ documented skip), 54 frontend tests.
 | Capability | Status | Evidence |
 |---|---|---|
 | Local authentication | COMPLETE | `POST /api/v1/auth/login`, Argon2 hashing `backend/app/core/security.py`, lockout (`login_max_failures`, `login_lockout_minutes`), `tests/api/test_auth.py` |
-| LDAP | COMPLETE (real-validated: OpenLDAP 2.6) | `backend/app/services/ldap_auth.py`, wizard; `tests/integration/test_identity.py` (service bind, search, password bind, groups, StartTLS, injection) run against OpenLDAP |
+| LDAP | COMPLETE (real-validated: OpenLDAP 2.6 local and osixia/openldap 1.5.0) | `backend/app/services/ldap_auth.py`, wizard; `tests/integration/test_identity.py` (service bind, search, password bind, groups, StartTLS, injection) run against OpenLDAP |
 | Active Directory | IMPLEMENTED / NOT REAL-VALIDATED | Same LDAP path (`sAMAccountName`/`memberOf` configurable); no AD test environment |
-| OIDC | IMPLEMENTED / NOT REAL-VALIDATED | `backend/app/services/oidc.py` (PKCE, state sealing, claims mapping, MFA `amr`/`acr` checks); Keycloak code-flow test written (`test_identity.py`), run needs the Docker `identity` target |
-| SSO (via OIDC) | IMPLEMENTED / NOT REAL-VALIDATED | `GET /auth/oidc/{id}/start` + `/callback`; SAML is not supported |
+| OIDC | COMPLETE (real-validated: Keycloak 26.0.7) | `backend/app/services/oidc.py` (PKCE, state sealing, claims mapping, MFA `amr`/`acr` checks); `test_identity.py::test_oidc_code_flow_with_pkce_against_keycloak` passed in the Docker run of 2026-10-19 |
+| SSO (via OIDC) | COMPLETE (real-validated through Keycloak) | `GET /auth/oidc/{id}/start` + `/callback`; SAML is not supported |
 | Session management | COMPLETE | Server-side sessions `user_sessions` table, TTL + idle timeout (`session_ttl_minutes`, `session_idle_timeout_minutes`), HttpOnly cookies + CSRF token |
 | Password policy | PARTIAL | Fixed policy: minimum length + 3 of 4 classes (`password_policy_errors`); not configurable, no history/expiry |
 | MFA | COMPLETE | Native TOTP with recovery codes, enrollment policy `DBM_MFA_REQUIRED_FOR`, administrator reset (`app/services/mfa.py`, `tests/api/test_mfa.py`); OIDC `require_mfa` with `amr`/`acr` |
@@ -105,19 +106,19 @@ documented skip), 54 frontend tests.
 | P95 / P99 | NOT APPLICABLE | Engines expose cumulative mean/max per statement, not distributions; documented in the UI instead of approximated |
 | Historical trends per statement | COMPLETE | `/query-stats/{fingerprint}/history` (time-series) |
 | Execution plans | COMPLETE | `POST /servers/{id}/explain` (estimate + rolled-back analyze), graph/tree/raw viewer `frontend/src/components/plan-graph.tsx` |
-| Query comparison | MISSING | No side-by-side comparison of two periods or two plans |
-| Regression detection | MISSING | No automatic detection of per-fingerprint latency regressions |
+| Query comparison | COMPLETE | Period vs period `GET /servers/{id}/query-compare` (presets, custom periods, unclassified when a period has no data); plan vs plan of saved plans `GET /plans/compare` (`app/services/perf_intel.py`, `tests/unit/test_perf_intel.py`, `tests/api/test_performance.py`) |
+| Regression detection | COMPLETE | Per-fingerprint mean latency, recent window vs baseline, thresholds in settings, rule `GEN-PERF-011`; plan changes for Oracle (plan hash) and SQL Server (cached plan count), not detectable on engines whose statistics carry no plan identity (`GET /servers/{id}/query-regressions`) |
 
 ## Performance optimization
 
 | Capability | Status | Evidence |
 |---|---|---|
-| Recommendations | COMPLETE | Rule engine `backend/app/advisors/engine.py`, 59 performance rules across engines (`advisors/performance/*.py`) |
+| Recommendations | COMPLETE | Rule engine `backend/app/advisors/engine.py`, 61 performance rules across engines (`advisors/performance/*.py`) |
 | Evidence | COMPLETE | Each finding stores evidence; rules must not fire on unknown evidence |
 | Confidence / risk | COMPLETE | `confidence`, severity and risk on findings (`backend/app/models/advisor.py`, `backend/app/domain/risk.py`) |
-| Historical validation (did the fix help?) | MISSING | Findings have a lifecycle (open/acknowledged/dismissed/resolved) but no before/after measurement |
-| Baselines | PARTIAL | `GET /servers/{id}/metrics/baseline` (mean, stddev, percentiles, z-score); not yet used by rules or alerts |
-| Capacity planning | PARTIAL | `GET /metrics/capacity` (30-day growth, days until full), capacity report; no forecasting model beyond linear trend |
+| Historical validation (did the fix help?) | COMPLETE | Before/after measurement of the triggering metric or statement latency when a recommendation is resolved, job `validate_recommendations`, Outcomes page; configuration/security findings reported as not measurable |
+| Baselines | COMPLETE | `GET /servers/{id}/metrics/baseline`; z-score alert rules (`aggregation: zscore`, `baseline_days`, min. 60 samples, recent window excluded) in `app/services/alerting.py` |
+| Capacity planning | COMPLETE | Theil–Sen trend with Sen 90 % interval and residual band, days to full earliest/likely/latest per server, database and tablespace (`GET /capacity/forecast`, `/servers/{id}/capacity-forecast`), rule `GEN-PERF-012`; seasonality is not modelled. Tablespace maximums only where the engine reports one (Oracle, Db2) |
 
 ## Security
 
@@ -202,7 +203,7 @@ documented skip), 54 frontend tests.
 
 | Capability | Status | Evidence |
 |---|---|---|
-| LDAP / OIDC | IMPLEMENTED / NOT REAL-VALIDATED | See Identity |
+| LDAP / OIDC | COMPLETE (real-validated: OpenLDAP, Keycloak) | See Identity |
 | SMTP | COMPLETE | Alert email channel (`DBM_SMTP_*` or per-channel); scheduled report e-mail not yet |
 | Webhooks | COMPLETE | Alert webhook channel with HMAC signing and SSRF protection (`DBM_WEBHOOK_ALLOW_PRIVATE`) |
 | Teams / Slack | COMPLETE | Webhook presets (Slack blocks, Teams Adaptive Card); payloads tested |
@@ -236,9 +237,12 @@ documented skip), 54 frontend tests.
 | Azure Blob / Google Cloud Storage (native) | PLANNED | Sprint 0.12.6 (S3-compatible endpoints work today) |
 | Verification (SHA-256 read-back, contents, engine checks), CORRUPTED detection | COMPLETE | Tamper test in `tests/api/test_backup.py` |
 | Platform restore (compatibility, impact analysis, pre-restore backup) | COMPLETE | `tests/api/test_backup.py::test_platform_backup_verify_restore_end_to_end` |
-| PostgreSQL backup / restore | COMPLETE (real-validated: 16) | `engines.PostgreSQLProvider`; API + integration tests |
-| MariaDB backup / restore | COMPLETE (real-validated: 10.11) | `engines.MySQLFamilyProvider`; `tests/integration/test_backup_engines.py` |
-| MySQL, SQL Server, Oracle (Data Pump), Db2 LUW backup | IMPLEMENTED / NOT REAL-VALIDATED | Providers + integration tests; run with `scripts/integration-test` |
+| PostgreSQL backup / restore | COMPLETE (real-validated: 16.15, least privilege) | `engines.PostgreSQLProvider`; API + integration tests |
+| MariaDB backup / restore | COMPLETE (real-validated: 11.4.13 and 10.11, least privilege) | `engines.MySQLFamilyProvider`; `tests/integration/test_backup_engines.py` |
+| SQL Server backup / restore | COMPLETE (real-validated: 2022, `db_backupoperator` / `dbcreator`) | `engines.SQLServerProvider` |
+| Oracle Data Pump export / import | COMPLETE (real-validated: 21c XE, no `DBA`) | `engines.OracleProvider` |
+| MySQL backup / restore | IMPLEMENTED / NOT REAL-VALIDATED (failed with error 1419 in the 2026-10-19 run; fixed in 0.13.0, re-run pending) | `engines.MySQLFamilyProvider` binary-logging preflight |
+| Db2 LUW online backup | PARTIAL (real run passed as the instance owner; SYSMAINT-operator run pending) | `engines.Db2LUWProvider` |
 | Db2 LUW restore, Oracle RMAN, Db2 for z/OS | NOT APPLICABLE (external tool required) | Reported as such by capability discovery; Db2 LUW restore command generated |
 | Point-in-time recovery | PLANNED | Sprint 0.12.7; not claimed by any provider |
 | Policies, schedules, retention, bulk, notifications, metrics, protection status | COMPLETE | `service.schedule`, `apply_retention`, `protection`; API tests |

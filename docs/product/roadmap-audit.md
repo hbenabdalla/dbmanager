@@ -1,4 +1,4 @@
-# Roadmap audit (release 0.12.0)
+# Roadmap audit (releases 0.12.0 and 0.13.0)
 
 Every milestone, sprint and task of the [roadmap](roadmap.md) was re-checked against the code and
 the tests before release 0.12.0. A task counts as complete only when the implementation exists
@@ -16,6 +16,12 @@ How it was checked:
 - real-engine tests ran where this environment has the engine: PostgreSQL 16, MariaDB 10.11 and OpenLDAP 2.6.
 
 Docker isn't available in the build environment, so the container-based integration targets show as BLOCKED with the exact command to run.
+
+**Update for 0.13.0:** the container-based targets have since been run on the owner's Docker host
+(`scripts/integration-test.ps1`, Docker Desktop / WSL 2). The results, the defects they found and
+the fixes are in the [real-engine validation report](real-engine-validation.md); the 0.12 rows
+below are updated, and milestone 0.13 is audited at the end. Status vocabulary from 0.13.0 on:
+DONE (= VERIFIED COMPLETE), CURRENT, NEXT, PLANNED, FUTURE, BLOCKED.
 
 ## Milestone 0.9 — Release foundation
 
@@ -49,7 +55,7 @@ Docker isn't available in the build environment, so the container-based integrat
 | 0.11 | 0.11.1 | API tokens | DONE | Complete | `tests/api/test_api_tokens.py` | — | VERIFIED COMPLETE |
 | 0.11 | 0.11.2 | Rate limiting | DONE | Complete | `tests/unit/test_ratelimit.py`, `tests/api/test_rate_limits.py` | — | VERIFIED COMPLETE |
 | 0.11 | 0.11.3 | OpenLDAP real validation | PLANNED | Not started; the first real run found a bug (attribute lookup errors on `memberOf`) | `tests/integration/test_identity.py`, fixtures `tests/integration/identity/`, `app/data/real_engine_validation.json` (openldap) | All | Implemented, bug fixed, run against OpenLDAP 2.6 → VERIFIED COMPLETE |
-| 0.11 | 0.11.3 | Keycloak OIDC flow, Vault real tests | PLANNED | Not started | `test_identity.py::test_oidc_code_flow_with_pkce_against_keycloak`, `test_vault_real.py`, compose profiles `identity`, `vault` | Running the containers | Implemented → BLOCKED (needs Docker: `scripts/integration-test identity` and `vault`) |
+| 0.11 | 0.11.3 | Keycloak OIDC flow, Vault real tests | PLANNED | Not started | `test_identity.py::test_oidc_code_flow_with_pkce_against_keycloak`, `test_vault_real.py`, compose profiles `identity`, `vault` | Running the containers | Implemented → DONE (Keycloak 26.0.7 and Vault 1.17.6 passed in the Docker run of 2026-10-19) |
 | 0.11 | 0.11.4 | SIEM export (syslog RFC 5424 UDP/TCP/TLS, webhook) | PLANNED | Not started | `app/services/siem.py`, `tests/api/test_siem.py`, `tests/unit/test_siem_format.py`, Platform → Audit forwarding | All | Implemented → VERIFIED COMPLETE |
 | 0.11 | 0.11.5 | HashiCorp Vault provider | PLANNED | Not started | `app/services/vault.py`, `tests/api/test_vault.py` (KV v2, AppRole, namespace, cache, end-to-end connection) | All | Implemented → VERIFIED COMPLETE |
 | 0.11 | 0.11.5 | Cloud secret stores | PLANNED | Not started | — | AWS / Azure / Google providers | Moved to its own sprint 0.11.7 → PLANNED (each needs its own SDK, auth and cloud account to validate) |
@@ -102,16 +108,29 @@ Inserted as milestone 0.12 because it builds on 0.10 (notifications), 0.11.4 (au
 | 0.12 | 0.12.1 | Time-series option | new | VictoriaMetrics native export into the archive | `service._metrics_export` | Native snapshots are left to VictoriaMetrics' own `vmbackup` (documented) | VERIFIED COMPLETE (export); snapshot → documented as external |
 | 0.12 | 0.12.2 | Restore wizard steps, impact analysis, pre-restore backup, typed confirmation, compatibility | new | Implemented | `service.preview_platform_restore`, `platform.impact`, `tests/api/test_backup.py::test_platform_backup_verify_restore_end_to_end` | — | VERIFIED COMPLETE |
 | 0.12 | 0.12.3 | PostgreSQL logical backup / restore into a new database | new | Implemented | `engines.PostgreSQLProvider`; API test and `tests/integration/test_backup_engines.py` (PostgreSQL 16) | — | VERIFIED COMPLETE |
-| 0.12 | 0.12.3 | MariaDB / MySQL dumps | new | Implemented; the first real run found that definitions qualified with the source schema would be restored into the source | `engines.MySQLFamilyProvider`; integration test against MariaDB 10.11 | — | Refused with a clear message; MariaDB VERIFIED COMPLETE; MySQL server run BLOCKED (Docker) |
-| 0.12 | 0.12.3 | SQL Server native, Oracle Data Pump, Db2 LUW online backup | new | Implemented | `engines.SQLServerProvider`, `OracleProvider`, `Db2LUWProvider`; integration tests written | Real runs | BLOCKED (needs `scripts/integration-test mssql`, `oracle`, `db2`) |
+| 0.12 | 0.12.3 | MariaDB / MySQL dumps | new | Implemented; the first real run found that definitions qualified with the source schema would be restored into the source | `engines.MySQLFamilyProvider`; integration test against MariaDB 10.11 | — | Refused with a clear message; MariaDB DONE (11.4 and 10.11); MySQL: the 2026-10-19 run failed with error 1419 (binary logging) → preflight added in 0.13.0, re-run pending |
+| 0.12 | 0.12.3 | SQL Server native, Oracle Data Pump, Db2 LUW online backup | new | Implemented | `engines.SQLServerProvider`, `OracleProvider`, `Db2LUWProvider`; integration tests written | Real runs | SQL Server and Oracle DONE (run 2026-10-19, after fixing error conversion and the `msdb` dependency); Db2 LUW backup passed as the instance owner → now run as a SYSMAINT operator, re-run pending |
 | 0.12 | 0.12.3 | Db2 for z/OS | new | External tool required | `engines.Db2ZOSProvider` | — | NOT APPLICABLE for DB Manager execution (z/OS utilities); reported honestly |
 | 0.12 | 0.12.4 | Policies, scheduler, retention, bulk with per-asset progress, cancel, notifications, metrics, RBAC, audit | new | Implemented | `service.schedule`, `apply_retention`, `tests/api/test_backup.py` (S3 policy, retention, scheduler, partial success, RBAC) | — | VERIFIED COMPLETE |
 | 0.12 | 0.12.4 | Backup & Restore UI, dashboard (last 24 h, 30 days, storage used, upcoming runs, protected / at risk / unprotected assets and the list without a recent backup), asset protection status | new | Implemented | `frontend/src/features/backup/`, frontend tests | — | VERIFIED COMPLETE |
 | 0.12 | 0.12.5 | Disaster recovery: scan a target into an empty catalog, runbook, automated restore test | new | Implemented | `service.scan_target`; DR part of the S3 API test; `docs/backup-restore/disaster-recovery.md` | — | VERIFIED COMPLETE |
 | 0.12 | 0.12.7 | Point-in-time recovery | new | Not implemented | — | Log-chain management | PLANNED; no feature claims PITR |
 
+## Milestone 0.13 — Performance Intelligence (release 0.13.0)
+
+| Milestone | Sprint | Task | Roadmap status | Actual status | Evidence | Missing work | Action |
+|---|---|---|---|---|---|---|---|
+| 0.13 | 0.13.1 | z-score alert rules (baseline days, min. 60 samples, recent window excluded, cache), API validation, wizard with baseline preview | PLANNED | Implemented | `app/services/alerting.py`, `app/services/perf_intel.py`, migration `0011`; `test_zscore_condition_on_latest_and_window_values`, `test_baselines_exclude_the_recent_window`, `test_zscore_alert_rule`; frontend `performance.test.tsx` | — | DONE |
+| 0.13 | 0.13.2 | Per-fingerprint latency regression, thresholds as settings, rule `GEN-PERF-011`, Regressions page | PLANNED | Implemented | `perf_intel.query_regressions`; unit tests (thresholds, noise), API test incl. advisor finding and RBAC | — | DONE |
+| 0.13 | 0.13.2 | Plan-change detection | PLANNED | Implemented for Oracle (dominant `PLAN_HASH_VALUE`) and SQL Server (cached plan count) | adapter SQL, normalizer, `test_baseline_plan_*`, real-engine assertions in `test_oracle.py` / `test_mssql.py` | PostgreSQL, MySQL, MariaDB, Db2 expose no plan identity in statement statistics | DONE; not claimed for the other engines (UI says so) |
+| 0.13 | 0.13.3 | Robust trend with confidence bands, days to full per server / database / tablespace, rule `GEN-PERF-012`, forecast page and chart | PLANNED | Implemented (Theil–Sen, Sen 90 % interval, residual band) | `perf_intel.forecast`, `capacity_forecast`, `collection.size_samples`; unit tests (outlier, thin history, scopes), API and advisor tests; size series from real storage data in the integration suites | Seasonality | DONE; seasonality → FUTURE |
+| 0.13 | 0.13.4 | Period-vs-period comparison | PLANNED | Implemented (presets, custom periods, unclassified when a period has no data) | `perf_intel.compare_periods`; unit + API tests | — | DONE |
+| 0.13 | 0.13.4 | Plan-vs-plan comparison | PLANNED | Implemented on saved plans (explain `save_label`, audited save/delete, RBAC `query.explain`) | `perf_intel.compare_plans`, `app/api/v1/performance.py`; unit + API tests | — | DONE |
+| 0.13 | 0.13.5 | Before/after validation when a recommendation is resolved, Outcomes page | PLANNED | Implemented (metric or statement latency; unmeasurable findings marked; reopened marked) | `perf_intel.start_validation` / `complete_validation`, job `validate_recommendations`; unit + API tests | — | DONE |
+| 0.13 | — | Upgrade from 0.12.0 keeps users, RBAC, servers, credential references, alert rules, channels, findings, backup targets and policies, settings | — | Tested | `tests/migrations/test_migrations.py::test_existing_installation_upgrades_to_head_with_its_data[previous]` (seeds every one of these tables) | — | DONE |
+
 ## Later milestones
 
-0.13 (performance intelligence), 0.14 (reporting), 0.15 (cloud-native) and 1.0 haven't started
-and are **PLANNED**. Oracle TCPS validation is **PLANNED**. Db2 for z/OS real validation is
-**BLOCKED** (needs a z/OS subsystem with Db2 Connect).
+0.14 (reporting) is **NEXT**; 0.15 (cloud-native) and 1.0 are **PLANNED**. Oracle TCPS validation
+is **FUTURE**. Db2 for z/OS real validation is **BLOCKED** (needs a z/OS subsystem with Db2
+Connect — EXTERNAL VALIDATION REQUIRED).

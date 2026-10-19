@@ -8,12 +8,12 @@ administration for PostgreSQL, MySQL, MariaDB, Microsoft SQL Server, Oracle Data
 [![Frontend](https://github.com/hbenabdalla/dbmanager/actions/workflows/ci-frontend.yml/badge.svg)](https://github.com/hbenabdalla/dbmanager/actions/workflows/ci-frontend.yml)
 [![Docs](https://github.com/hbenabdalla/dbmanager/actions/workflows/ci-docs.yml/badge.svg)](https://github.com/hbenabdalla/dbmanager/actions/workflows/ci-docs.yml)
 [![Documentation](https://readthedocs.org/projects/db-manager/badge/?version=latest)](https://db-manager.readthedocs.io/en/latest/)
-[![Version](https://img.shields.io/badge/version-0.12.0-blue)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.13.0-blue)](CHANGELOG.md)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 
 **Documentation: [db-manager.readthedocs.io/en/latest](https://db-manager.readthedocs.io/en/latest/)**
 
-> **Version 0.12.0 — first public release** (pre-1.0). Contents in the [changelog](CHANGELOG.md);
+> **Version 0.13.0 — performance intelligence** (pre-1.0; 0.12.0 was the first public release). Contents in the [changelog](CHANGELOG.md);
 > what remains before 1.0 is in the [roadmap](ROADMAP.md).
 
 ![Fleet dashboard](docs/assets/screenshots/dashboard-light.png)
@@ -32,10 +32,11 @@ never filled with made-up data.
 |---|---|
 | Fleet | Registration wizard with a live staged connection test, bulk onboarding (CSV / JSON / grid), environments, sites, clusters, applications, tags, interactive topology |
 | Monitoring | Connections, sessions, locks and blocking chains, throughput, latency, cache, I/O, replication lag, storage; history in a time-series database |
-| Query performance | Top statements from each engine's own statistics, fingerprints and trends, estimated and actual execution plans (graph, tree, raw vendor plan) |
-| Alerting | Threshold, health and collector rules (latest value or window aggregates, scope by server, environment or tag), alert inbox with acknowledge / comment / resolve and re-notification, recurring maintenance windows, webhook (generic, Slack, Teams) and e-mail notifications with retries and routing |
+| Query performance | Top statements from each engine's own statistics, fingerprints and trends, estimated and actual execution plans (graph, tree, raw vendor plan), regression and plan-change detection, period-vs-period and plan-vs-plan comparison |
+| Capacity | Storage forecasts per server, database and tablespace with a robust trend, 90 % band and days to full |
+| Alerting | Threshold, health and collector rules (latest value, window aggregates or deviation from the server's own baseline (z-score), scope by server, environment or tag), alert inbox with acknowledge / comment / resolve and re-notification, recurring maintenance windows, webhook (generic, Slack, Teams) and e-mail notifications with retries and routing |
 | Backup & restore | Encrypted (age) platform backups and managed-database backups (PostgreSQL, MySQL, MariaDB, SQL Server, Oracle Data Pump, Db2 LUW) to local, NFS or S3-compatible storage; policies, retention, verification, restore wizard with impact analysis, disaster-recovery scan |
-| Recommendations | Performance and configuration advice from common and engine-specific rules, each with its evidence and risk |
+| Recommendations | Performance and configuration advice from common and engine-specific rules, each with its evidence and risk, and a before/after outcome once resolved |
 | Security | Privileged accounts, excessive grants, authentication and encryption checks, security posture score per server and fleet |
 | Administration | Users, roles, grants, schemas and indexes through previewed, confirmed and audited actions — off by default (*Monitoring Only*) |
 | Platform | Local sign-in with TOTP MFA, LDAP / Active Directory and OIDC, API tokens, rate limiting, scoped RBAC, full audit trail with SIEM forwarding (syslog RFC 5424 / webhook), HashiCorp Vault credentials, redacted diagnostic bundles, setup wizard, simulated demo fleet, About page |
@@ -44,17 +45,18 @@ never filled with made-up data.
 
 | Engine | Driver | Status | Real-engine validation |
 |---|---|---|---|
-| PostgreSQL 12–17 | asyncpg | Supported (reference adapter) | 16.15 — all capabilities |
-| MySQL 8.0 / 8.4 / 9.x | PyMySQL | Supported | 8.4.11 — all capabilities |
-| MariaDB 10.5–11.x | PyMySQL | Supported | 11.4.13 — all capabilities |
-| SQL Server 2016–2022, Azure SQL | pyodbc + Microsoft ODBC Driver 18 | Supported | 2022 (16.0.4305.5) — all capabilities |
-| Oracle Database 12.2–23ai | python-oracledb (thin, no Oracle Client) | Supported without management packs | 21c XE — all capabilities (TCPS not exercised) |
-| IBM Db2 LUW 11.1–12.1 | ibm_db | Supported | 11.5.9.0 — all capabilities |
+| PostgreSQL 12–17 | asyncpg | Supported (reference adapter) | 16.15 — adapter, backup and restore |
+| MySQL 8.0 / 8.4 / 9.x | PyMySQL | Supported | 8.4.11 — adapter; backup/restore fix awaiting re-run |
+| MariaDB 10.5–11.x | PyMySQL | Supported | 11.4.13 — adapter, backup and restore |
+| SQL Server 2016–2022, Azure SQL | pyodbc + Microsoft ODBC Driver 18 | Supported | 2022 (16.0.4305.5) — adapter, backup and restore |
+| Oracle Database 12.2–23ai | python-oracledb (thin, no Oracle Client) | Supported without management packs | 21c XE — adapter, Data Pump backup and restore (TCPS not exercised) |
+| IBM Db2 LUW 11.1–12.1 | ibm_db | Supported | 11.5.9.0 — adapter; backup partial (restore external) |
 | IBM Db2 for z/OS 12–13 | ibm_db over DRDA (needs Db2 Connect) | **Partial** | External validation required |
 
 Oracle Diagnostics and Tuning Pack features (AWR, ASH, ADDM, SQL Monitor, SQL Tuning Advisor) are
 never queried unless a server is explicitly marked as licensed. Per-engine details, privileges and
-limitations: [database engines](docs/database-engines/index.md); full status:
+limitations: [database engines](docs/database-engines/index.md); per-capability results (TLS, replication and
+what is not exercised): [real-engine validation report](docs/product/real-engine-validation.md); full status:
 [capability matrix](docs/product/capability-matrix.md).
 
 ## Architecture

@@ -5,6 +5,9 @@ Same as [MySQL](mysql.md), with MariaDB's own tools: `mariadb-dump --single-tran
 client for restores (MariaDB TLS options `ssl` / `ssl-verify-server-cert` / `skip-ssl`). The
 qualified-definition safety check applies too.
 
-Validated against MariaDB 10.11 (round trip including a trigger and UTF-8 data, refusal of
+MariaDB enforces the same binary-logging rule for triggers and routines as MySQL (error 1419; see
+[MySQL](mysql.md)); the official MariaDB image runs without binary logging.
+
+Validated against MariaDB 11.4 (Docker) and 10.11 (with and without binary logging) (round trip including a trigger and UTF-8 data, refusal of
 qualified definitions under another name). Not managed: `mariabackup`, binlog point-in-time
 recovery, users and grants.

@@ -42,7 +42,7 @@ the repository root; "—" means not yet created.
 | API tokens | G-18 | 0.11.1 | `backend/app/services/api_tokens.py`, migration `0005` | `tests/api/test_api_tokens.py` | [API tokens](../administration/api-tokens.md) | VERIFIED COMPLETE |
 | API rate limiting | G-19 | 0.11.2 | `backend/app/services/ratelimit.py`, migration `0006` | `tests/unit/test_ratelimit.py`, `tests/api/test_rate_limits.py` | [rate limiting](../administration/rate-limiting.md) | VERIFIED COMPLETE |
 | Real LDAP validation | G-40 | 0.11.3 | `docker-compose.test.yml` (`identity`), fixtures `backend/tests/integration/identity/` | `tests/integration/test_identity.py` (run: OpenLDAP 2.6) | [integration tests](../operations/integration-tests.md) | VERIFIED COMPLETE |
-| Real OIDC (Keycloak) and Vault validation | G-40, G-36 | 0.11.3 | same | `test_identity.py::test_oidc_code_flow_with_pkce_against_keycloak`, `test_vault_real.py` | same | BLOCKED (Docker host) |
+| Real OIDC (Keycloak) and Vault validation | G-40, G-36 | 0.11.3 | same | `test_identity.py::test_oidc_code_flow_with_pkce_against_keycloak`, `test_vault_real.py` (run 2026-10-19: PASS) | same | DONE |
 | SIEM forwarding | G-33 | 0.11.4 | `backend/app/services/siem.py`, migration `0009`, Platform → Audit forwarding | `tests/api/test_siem.py`, `tests/unit/test_siem_format.py` | [SIEM](../administration/siem.md) | VERIFIED COMPLETE |
 | HashiCorp Vault credentials | G-36 | 0.11.5 | `backend/app/services/vault.py` | `tests/api/test_vault.py` | [secret providers](../administration/secret-providers.md) | VERIFIED COMPLETE |
 | MFA (TOTP, OIDC amr/acr) | G-38 | 0.11.6 | `backend/app/services/mfa.py`, migration `0008`, Account → Security | `tests/api/test_mfa.py`, `tests/unit/test_mfa.py`, `frontend/src/test/account-admin.test.tsx` | [MFA](../administration/mfa.md) | VERIFIED COMPLETE |
@@ -54,21 +54,26 @@ the repository root; "—" means not yet created.
 |---|---|---|---|---|---|---|
 | Platform backup, encryption, storage targets | G-20 | 0.12.1 | `backend/app/backup/{platform,encryption,storage,service}.py`, migration `0010` | `tests/unit/test_backup_units.py`, `tests/api/test_backup.py` | [Backup & Restore](../backup-restore/index.md) | VERIFIED COMPLETE |
 | Platform restore with impact analysis | G-22 | 0.12.2 | `service.preview_platform_restore`, `platform.apply` / `impact` | `tests/api/test_backup.py` | [restore](../backup-restore/restore.md) | VERIFIED COMPLETE |
-| Managed database backup (PostgreSQL, MariaDB) | — | 0.12.3 | `backend/app/backup/engines.py` | `tests/api/test_backup.py`, `tests/integration/test_backup_engines.py` (run) | [engine support](../backup-restore/engine-support.md) | VERIFIED COMPLETE |
-| Managed database backup (MySQL, SQL Server, Oracle, Db2 LUW) | — | 0.12.3 | same | `tests/integration/test_backup_engines.py` (not run yet) | same | BLOCKED (Docker host) |
+| Managed database backup (PostgreSQL, MariaDB, SQL Server, Oracle) | — | 0.12.3 | `backend/app/backup/engines.py` | `tests/api/test_backup.py`, `tests/integration/test_backup_engines.py` (run) | [engine support](../backup-restore/engine-support.md) | VERIFIED COMPLETE |
+| Managed database backup (MySQL, Db2 LUW) | — | 0.12.3 | same | `tests/integration/test_backup_engines.py` (run 2026-10-19: MySQL FAIL → fixed; Db2 passed as instance owner → SYSMAINT operator) | same | re-run pending (see [validation report](real-engine-validation.md)) |
 | Policies, retention, bulk, notifications, metrics, protection status, UI | — | 0.12.4 | `service.schedule`, `apply_retention`, `protection`; `frontend/src/features/backup/` | `tests/api/test_backup.py`, frontend tests | [policies](../backup-restore/policies.md) | VERIFIED COMPLETE |
 | Disaster recovery | G-22 | 0.12.5 | `service.scan_target` | `tests/api/test_backup.py` | [disaster recovery](../backup-restore/disaster-recovery.md) | VERIFIED COMPLETE |
 | Azure Blob / GCS targets, PITR | — | 0.12.6, 0.12.7 | — | — | — | PLANNED |
+
+## Milestone 0.13 — Performance Intelligence (DONE)
+
+| Capability | Gap | Sprint | Code | Tests | Documentation | Status |
+|---|---|---|---|---|---|---|
+| Baselines in alert rules (z-score) | G-24 | 0.13.1 | `app/services/alerting.py` (`_zscore_condition`, `zscore_inputs`), `app/services/perf_intel.py` (`baselines`, `zscore`), migration `0011` (`alert_rules.baseline_days`), `frontend/src/features/alerts/alerts.tsx` (wizard, `BaselinePreview`) | `tests/unit/test_perf_intel.py`, `tests/api/test_performance.py::test_zscore_alert_rule`, `frontend/src/test/performance.test.tsx` | [baselines](../performance/baselines-and-capacity.md#baseline-relative-alert-rules-z-score) | DONE |
+| Query regression and plan-change detection | G-27 | 0.13.2 | `perf_intel.query_regressions`, `QueryStat.plans/plan_id`, Oracle/SQL Server query statistics, metrics `db_query_plans`, `db_query_plan_id`, rule `GEN-PERF-011`, `app/api/v1/performance.py`, `features/performance/intelligence.tsx` | unit + API tests; real-engine assertions in `tests/integration/test_oracle.py`, `test_mssql.py` | [regressions](../performance/regressions-and-comparison.md) | DONE |
+| Capacity forecasting | G-25 | 0.13.3 | `perf_intel.theil_sen`, `forecast`, `capacity_forecast`; `collection.size_samples` (discovery); rule `GEN-PERF-012`; `ForecastChart` | unit + API tests; size series from real storage data in the PostgreSQL, SQL Server, Oracle and Db2 integration tests | [capacity forecasting](../performance/baselines-and-capacity.md#capacity-forecasting) | DONE |
+| Query comparison (period and plan) | G-28 | 0.13.4 | `perf_intel.compare_periods`, `compare_plans`; `query_plan_snapshots` (migration `0011`); explain `save_label` | unit + API tests (RBAC, audit) | [comparison](../performance/regressions-and-comparison.md#period-vs-period-comparison) | DONE |
+| Recommendation validation | G-29 | 0.13.5 | `perf_intel.start_validation`, `complete_validation`; `recommendations.validation`; job `validate_recommendations`; Outcomes page | unit + API tests | [validation](../performance/regressions-and-comparison.md#recommendation-validation-before-after) | DONE |
 
 ## Later milestones
 
 | Capability | Gap | Sprint | Status |
 |---|---|---|---|
-| Baselines in alerts/rules | G-24 | 0.13.1 | PLANNED |
-| Query regression detection | G-27 | 0.13.2 | PLANNED |
-| Capacity forecasting | G-25 | 0.13.3 | PLANNED |
-| Query comparison | G-28 | 0.13.4 | PLANNED |
-| Recommendation validation | G-29 | 0.13.5 | PLANNED |
 | Security & query reports | G-32 | 0.14.1 | PLANNED |
 | Scheduled reports | G-30 | 0.14.2 | PLANNED |
 | PDF export | G-31 | 0.14.3 | PLANNED |

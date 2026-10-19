@@ -50,9 +50,9 @@ by `scripts/integration-test` against the vendors' official container images.
 | Administration | FULL | FULL | FULL | FULL | PARTIAL (no PDB lifecycle) | PARTIAL (no users/databases: external) | NOT IMPLEMENTED |
 | Backup (DB Manager-run) | Logical: `pg_dump -Fc` | Logical: `mysqldump` | Logical: `mariadb-dump` | Native: `BACKUP … COPY_ONLY, CHECKSUM` (server-side file) | Logical: Data Pump schema export (server-side); RMAN external | Native: online `BACKUP` (needs archive logging) | EXTERNAL TOOL REQUIRED |
 | Restore (DB Manager-run) | `pg_restore` into a new database | client into a new database | client into a new database | `RESTORE … WITH MOVE` as a new database | Data Pump import with `REMAP_SCHEMA` | EXTERNAL TOOL REQUIRED (command shown) | EXTERNAL TOOL REQUIRED |
-| Backup real-engine run | VALIDATED (16) | pending (Docker) | VALIDATED (10.11) | pending (Docker) | pending (Docker) | pending (Docker) | — |
+| Backup real-engine run | VALIDATED (16.15) | FAIL (error 1419, fixed in 0.13.0; re-run pending) | VALIDATED (11.4.13, 10.11) | VALIDATED (16.0.4305.5) | VALIDATED (21.3 XE) | PARTIAL (instance owner; SYSMAINT re-run pending) | EXTERNAL VALIDATION REQUIRED |
 | Licensing notes | — | — | — | — | Diagnostics/Tuning Pack (AWR, ASH, ADDM, SQL Monitor, SQL Tuning Advisor) never queried; flags default off | — | Db2 Connect license required |
-| Real-engine validation | VALIDATED 16.15 | VALIDATED 8.4.11 (and 8.0.46) | VALIDATED 11.4.13 (and 10.11.14) | VALIDATED 16.0.4305.5 | VALIDATED 21.3 XE (TCPS not exercised) | VALIDATED 11.5.9.0 | BLOCKED BY EXTERNAL DEPENDENCY (needs a z/OS subsystem) |
+| Real-engine validation | VALIDATED 16.15 | VALIDATED 8.4.11 (and 8.0.46) | VALIDATED 11.4.13 (and 10.11.14) | VALIDATED 16.0.4305.5 | VALIDATED 21.3 XE (TCPS not exercised) | VALIDATED 11.5.9.0 | EXTERNAL VALIDATION REQUIRED (needs a z/OS subsystem) — see the [validation report](real-engine-validation.md) |
 | Documentation | Permissions guide + adapter docs | yes | yes | yes | yes | yes | yes (partial-support notes) |
 | Tests | unit + 12 integration | unit + 12 integration (family suite, run per flavor) | same family suite | unit + 13 integration | unit + 14 integration | unit + 13 integration | unit only |
 

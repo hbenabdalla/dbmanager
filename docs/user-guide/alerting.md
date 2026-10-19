@@ -8,7 +8,7 @@ A background job (`evaluate_alerts`) runs every `DBM_ALERT_EVALUATION_SECONDS` (
 
 | Rule type | Fires when |
 |---|---|
-| Metric threshold | `metric operator threshold` holds, e.g. `connections.utilization >= 90`. Metrics are picked from the metric catalog. **Evaluate** chooses the value: the *latest collected value* (a value older than three collection intervals counts as *no data*), or the *average*, *minimum* or *maximum* over a window of history (at least one minute) read from the time-series database — e.g. `avg(cpu.percent, 15m) > 80`. No data neither fires nor resolves. |
+| Metric threshold | `metric operator threshold` holds, e.g. `connections.utilization >= 90`. Metrics are picked from the metric catalog. **Evaluate** chooses the value: the *latest collected value* (a value older than three collection intervals counts as *no data*), or the *average*, *minimum* or *maximum* over a window of history (at least one minute) read from the time-series database — e.g. `avg(cpu.percent, 15m) > 80` — or the *deviation from baseline (z-score)*: how many standard deviations the latest value (or a window average) is from the server's own history over *Baseline (days)*, e.g. `zscore(cpu.percent, 7d baseline) > 3`. For a server-scoped z-score rule the last step previews the baseline. Details: [baselines](../performance/baselines-and-capacity.md#baseline-relative-alert-rules-z-score). No data neither fires nor resolves. |
 | Server health state | the server health is in the chosen states (e.g. `unavailable`, `critical`). |
 | Collector failing | a collector component reports `failed`/`unavailable`, or collection failed the given number of times in a row (default: the circuit-breaker threshold). |
 

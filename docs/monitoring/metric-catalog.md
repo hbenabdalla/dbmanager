@@ -58,6 +58,9 @@ Every sample carries the required labels **`server_id`, `engine`, `data_source`*
 | `db_storage_database_bytes` | `storage.database_bytes` | Total size of all databases | B | gauge | all | server_id, engine, data_source | SLOW (5 min) |
 | `db_storage_capacity_bytes` | `storage.capacity_bytes` | Allocated capacity of the data volume / storage | B | gauge | all | server_id, engine, data_source | SLOW (5 min) |
 | `db_storage_utilization_percent` | `storage.utilization` | Used share of the data volume / allocated storage | % | gauge | all | server_id, engine, data_source | SLOW (5 min) |
+| `db_database_size_bytes` | `storage.db_size_bytes` | Size of one user database (capacity forecasting) | B | gauge | all reporting database sizes | server_id, engine, data_source, database | VERY_SLOW (hourly, inventory discovery) |
+| `db_tablespace_used_bytes` | `storage.tablespace_used_bytes` | Used size of one tablespace (top 50 per server) | B | gauge | Oracle, Db2, PostgreSQL, MySQL/MariaDB | server_id, engine, data_source, tablespace | VERY_SLOW (hourly, inventory discovery) |
+| `db_tablespace_max_bytes` | `storage.tablespace_max_bytes` | Maximum size of a tablespace where known (Oracle autoextend limit, Db2 non-resizable) | B | gauge | Oracle, Db2 | server_id, engine, data_source, tablespace | VERY_SLOW (hourly, inventory discovery) |
 | `db_pg_idle_in_transaction_longest_seconds` | `pg.idle_in_transaction_longest_seconds` | Age of the oldest idle-in-transaction session | s | gauge | postgresql | server_id, engine, data_source | FAST (30 s) |
 | `db_oracle_sga_used_bytes` | `oracle.sga_used_bytes` | SGA in use | B | gauge | oracle | server_id, engine, data_source | SLOW (5 min) |
 | `db_oracle_pga_used_bytes` | `oracle.pga_used_bytes` | PGA allocated | B | gauge | oracle | server_id, engine, data_source | NORMAL (60 s) |
@@ -84,6 +87,8 @@ One series per server × database × fingerprint. The fingerprint is the first 1
 | `db_query_lock_wait_ms_total` | Time spent waiting for locks | ms | counter | all with query statistics | server_id, engine, data_source, database, fingerprint | SLOW (5 min) |
 | `db_query_mean_ms` | Mean execution time as reported in the collection | ms | distribution | all with query statistics | server_id, engine, data_source, database, fingerprint | SLOW (5 min) |
 | `db_query_max_ms` | Maximum execution time as reported | ms | distribution | all with query statistics | server_id, engine, data_source, database, fingerprint | SLOW (5 min) |
+| `db_query_plans` | Distinct cached execution plans of the statement | count | gauge | Oracle, SQL Server | server_id, engine, data_source, database, fingerprint | SLOW (5 min) |
+| `db_query_plan_id` | Hash of the plan with most elapsed time (`PLAN_HASH_VALUE`), used for plan-change detection | — | gauge | Oracle | server_id, engine, data_source, database, fingerprint | SLOW (5 min) |
 
 ## Platform self-observability (`/metrics` on the backend, Prometheus format)
 
