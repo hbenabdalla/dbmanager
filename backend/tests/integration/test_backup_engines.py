@@ -380,10 +380,13 @@ async def test_oracle_datapump_export_verify_import(tmp_path: Path) -> None:
 @pytest.mark.skipif(not _env("DB2", "HOST"), reason="DBM_IT_DB2_HOST not set")
 async def test_db2_online_backup_and_recovery_history(tmp_path: Path) -> None:
     """The integration container enables archive logging (dbm-it-users.sh), as a production
-    database must for online backups. BACKUP needs SYSADM / SYSCTRL / SYSMAINT (instance-level
-    authorities): the instance owner runs it. RESTORE is an external step on the Db2 host; the
-    generated commands are checked for the exact image."""
-    user, pw = _env("DB2", "USER", "db2inst1"), _env("DB2", "PASSWORD")
+    database must for online backups. BACKUP needs an instance-level authority: the least one,
+    SYSMAINT, comes from the operating-system group named in SYSMAINT_GROUP. The backup operator
+    DBMBK holds only that, CONNECT, EXECUTE on ADMIN_CMD and SELECT on DB_HISTORY — not SYSADM.
+    RESTORE is an external step on the Db2 host; the generated commands are checked."""
+    if not _env("DB2", "BK_PASSWORD"):
+        pytest.skip("DBM_IT_DB2_BK_PASSWORD not set (re-run scripts/integration-test to add it to .env.test)")
+    user, pw = "dbmbk", _env("DB2", "BK_PASSWORD")
     db = _env("DB2", "DB", "TESTDB")
     srv = _server("db2", "DB2", "50000")
     p = engines.provider("db2")

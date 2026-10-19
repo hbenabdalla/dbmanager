@@ -148,6 +148,7 @@ services:
       DBM_IT_DB2_MON_PASSWORD: "${IT_DB2_MON_PASSWORD:?run scripts/integration-test}"
       DBM_IT_DB2_ADM_PASSWORD: "${IT_DB2_ADM_PASSWORD:?run scripts/integration-test}"
       DBM_IT_DB2_RO_PASSWORD: "${IT_DB2_RO_PASSWORD:?run scripts/integration-test}"
+      DBM_IT_DB2_BK_PASSWORD: "${IT_DB2_BK_PASSWORD:-}"
     ports: ["127.0.0.1:15000:50000"]
     volumes:
       - db2data:/database
@@ -269,6 +270,7 @@ services:
       DBM_IT_DB2_MON_PASSWORD: "${IT_DB2_MON_PASSWORD:-}"
       DBM_IT_DB2_ADM_PASSWORD: "${IT_DB2_ADM_PASSWORD:-}"
       DBM_IT_DB2_RO_PASSWORD: "${IT_DB2_RO_PASSWORD:-}"
+      DBM_IT_DB2_BK_PASSWORD: "${IT_DB2_BK_PASSWORD:-}"
       DBM_IT_LDAP_ADMIN_PASSWORD: "${IT_LDAP_ADMIN_PASSWORD:-}"
       DBM_IT_VAULT_TOKEN: "${IT_VAULT_TOKEN:-}"
 

@@ -105,5 +105,30 @@ else
   echo "archive logging already enabled"
 fi
 
+# Backup operator (least privilege for BACKUP DATABASE): Db2's instance-level SYSMAINT authority
+# comes from an operating-system group named in SYSMAINT_GROUP (not SYSADM, not the instance owner).
+# Changing SYSMAINT_GROUP needs an instance restart, done once on this disposable container.
+if [ -n "${DBM_IT_DB2_BK_PASSWORD:-}" ]; then
+  getent group dbmmaint >/dev/null || groupadd dbmmaint
+  id dbmbk >/dev/null 2>&1 || useradd -m -s /bin/bash -g dbmmaint dbmbk
+  echo "dbmbk:${DBM_IT_DB2_BK_PASSWORD}" | chpasswd
+  su - "$INST" -c "db2 get dbm cfg > /tmp/dbm-it-dbmcfg.txt"
+  if grep -q "SYSMAINT_GROUP) = DBMMAINT" /tmp/dbm-it-dbmcfg.txt; then
+    echo "SYSMAINT_GROUP already DBMMAINT"
+  else
+    echo "setting SYSMAINT_GROUP = DBMMAINT (instance restart)"
+    su - "$INST" -c "db2 update dbm cfg using SYSMAINT_GROUP DBMMAINT && db2 force application all; sleep 3; \
+      db2stop force; db2start; db2 activate db $DB" || echo "WARN: could not set SYSMAINT_GROUP"
+  fi
+  run_as_owner <<SQL
+GRANT CONNECT ON DATABASE TO USER DBMBK
+GRANT EXECUTE ON PROCEDURE SYSPROC.ADMIN_CMD TO USER DBMBK
+GRANT SELECT ON SYSIBMADM.DB_HISTORY TO USER DBMBK
+GRANT EXECUTE ON FUNCTION SYSPROC.DB_HISTORY TO USER DBMBK
+SQL
+else
+  echo "DBM_IT_DB2_BK_PASSWORD not set: no backup operator account (Db2 backup test skips)"
+fi
+
 touch "$DONE"
 echo "== done"
