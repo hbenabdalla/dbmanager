@@ -266,6 +266,7 @@ class SQLServerMonitoringMixin(SQLServerBase):
                     logical_reads=int(num(r["logical_reads"], 0) or 0),
                     physical_reads=int(num(r["physical_reads"], 0) or 0),
                     temp_blocks=int(num(r["spills"], 0) or 0) if r["spills"] is not None else None,
+                    plans=int(num(r["plans"], 0) or 0) or None,
                     extra=jsonable(
                         {
                             "logical_writes": r["logical_writes"],

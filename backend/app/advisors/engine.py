@@ -49,6 +49,11 @@ class EvidenceContext:
     security: dict[str, Any] = field(default_factory=dict)
     capabilities: dict[str, Any] = field(default_factory=dict)
     monitoring_username: str | None = None
+    # performance intelligence (app.services.perf_intel): statements slower than their
+    # baseline, storage forecasts and the thresholds in effect
+    query_regressions: list[dict[str, Any]] = field(default_factory=list)
+    capacity_forecasts: list[dict[str, Any]] = field(default_factory=list)
+    settings: dict[str, Any] = field(default_factory=dict)
 
     def m(self, name: str) -> MetricWindow | None:
         return self.metrics.get(name)

@@ -94,6 +94,7 @@ def _rule_out(r: AlertRule) -> dict[str, Any]:
         "scope_id": r.scope_id,
         "aggregation": r.aggregation,
         "window_seconds": r.window_seconds,
+        "baseline_days": r.baseline_days,
         "channel_ids": r.channel_ids,
         "notify_on_resolve": r.notify_on_resolve,
         "renotify_minutes": r.renotify_minutes,
@@ -369,9 +370,12 @@ class RuleIn(BaseModel):
     severity: Severity
     scope_type: ScopeT = "all"
     scope_id: str | None = None
-    #: metric rules: latest collected value, or avg/min/max over window_seconds of history
-    aggregation: Literal["latest", "avg", "min", "max"] = "latest"
+    #: metric rules: latest collected value, avg/min/max over window_seconds of history, or
+    #: zscore: deviations of the current value (latest, or avg over window_seconds) from the
+    #: server's own baseline over baseline_days — the threshold is then a z-score (e.g. > 3)
+    aggregation: Literal["latest", "avg", "min", "max", "zscore"] = "latest"
     window_seconds: int = Field(0, ge=0, le=7 * 86400)
+    baseline_days: int = Field(7, ge=1, le=90)
     channel_ids: list[uuid.UUID] = Field(default_factory=list, max_length=20)
     notify_on_resolve: bool = True
     renotify_minutes: int = Field(0, ge=0, le=7 * 24 * 60)
@@ -381,8 +385,12 @@ class RuleIn(BaseModel):
         if self.kind == "metric":
             if not self.metric or self.operator is None or self.threshold is None:
                 raise ValueError("metric rules need metric, operator and threshold")
-            if self.aggregation != "latest" and self.window_seconds < 60:
+            if self.aggregation in ("avg", "min", "max") and self.window_seconds < 60:
                 raise ValueError("avg/min/max rules need window_seconds of at least 60")
+            if self.aggregation == "zscore" and 0 < self.window_seconds < 60:
+                raise ValueError("zscore rules use the latest value (window_seconds 0) or a window of at least 60 s")
+            if self.aggregation == "zscore" and self.window_seconds >= self.baseline_days * 86400:
+                raise ValueError("the zscore window must be shorter than the baseline period")
             if self.aggregation == "latest":
                 self.window_seconds = 0
         else:

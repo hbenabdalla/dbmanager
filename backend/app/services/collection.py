@@ -248,6 +248,55 @@ def _legacy_query_row(server: Server, q: QueryStat, now: datetime) -> dict[str, 
     }
 
 
+#: per-server cap of tablespace series (MySQL file-per-table spaces can be numerous)
+MAX_TABLESPACE_SERIES = 50
+
+
+def _first_number(d: dict[str, Any], keys: tuple[str, ...]) -> float | None:
+    for k in keys:
+        v = d.get(k)
+        if isinstance(v, (int, float)) and not isinstance(v, bool):
+            return float(v)
+        if isinstance(v, str):
+            try:
+                return float(v)
+            except ValueError:
+                continue
+    return None
+
+
+def size_samples(server: Server, dbs: list[Any], tablespaces: list[dict[str, Any]], now: datetime) -> list[Sample]:
+    """Database and tablespace sizes as time series, the history capacity forecasting needs.
+
+    Only sizes the engine reports are written; a tablespace's maximum is written when the
+    engine reports one (Oracle autoextend limit) or the tablespace cannot grow (Db2 without
+    automatic resize)."""
+    labels = base_labels(server)
+    out: list[Sample] = []
+    for d in dbs:
+        if d.size_bytes is None or getattr(d, "is_system", False):
+            continue
+        out.append(
+            Sample.make(name_for("storage.db_size_bytes"), {**labels, "database": d.name[:128]}, d.size_bytes, now)
+        )
+    ranked = []
+    for t in tablespaces or []:
+        name = t.get("name") or t.get("tablespace_name")
+        used = _first_number(t, ("used_bytes", "size_bytes", "allocated_bytes", "file_bytes"))
+        if not name or used is None:
+            continue
+        cap = _first_number(t, ("max_bytes",))
+        if cap is None and t.get("autoextend") is False:
+            cap = _first_number(t, ("allocated_bytes",))
+        ranked.append((used, str(name)[:128], cap))
+    for used, name, cap in sorted(ranked, reverse=True)[:MAX_TABLESPACE_SERIES]:
+        tl = {**labels, "tablespace": name}
+        out.append(Sample.make(name_for("storage.tablespace_used_bytes"), tl, used, now))
+        if cap:
+            out.append(Sample.make(name_for("storage.tablespace_max_bytes"), tl, cap, now))
+    return out
+
+
 async def discover(db: AsyncSession, server: Server) -> dict[str, Any]:
     """Refresh version, capabilities and database inventory."""
     adapter = await adapter_for(db, server)
@@ -258,6 +307,11 @@ async def discover(db: AsyncSession, server: Server) -> dict[str, Any]:
             dbs = await adapter.list_databases()
         except AdapterError:
             dbs = []
+        try:
+            storage = await adapter.get_storage_metrics()
+            tablespaces = storage.tablespaces
+        except AdapterError:  # not supported or not permitted: database sizes only
+            tablespaces = []
     finally:
         await adapter.close()
     mark_success(server)
@@ -279,6 +333,9 @@ async def discover(db: AsyncSession, server: Server) -> dict[str, Any]:
         e.size_bytes, e.owner, e.discovered_at = d.size_bytes, d.owner, now
         e.properties = {"is_system": d.is_system, "encoding": d.encoding, "accessible": d.accessible}
         db.add(e)
+    samples = size_samples(server, dbs, tablespaces, now)
+    if samples:
+        get_writer().submit(samples)
     gone = [n for n in existing if n not in seen]
     if gone and dbs:
         await db.execute(

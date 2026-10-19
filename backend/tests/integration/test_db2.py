@@ -38,6 +38,7 @@ from app.adapters.base import (
 )
 from app.adapters.db2.adapter import Db2Adapter
 from tests.integration.matrix import record_version
+from tests.integration.storage_series import size_series
 
 pytestmark = [
     pytest.mark.asyncio(loop_scope="session"),
@@ -313,6 +314,8 @@ async def test_configuration_replication_storage() -> None:
         assert rep.role in ("standalone", "primary")  # HADR off in the test container
         st = await a.get_storage_metrics()
         assert st.total_bytes and st.tablespaces  # MON_GET_TABLESPACE
+        series = size_series("db2", await a.list_databases(), st.tablespaces)
+        assert "SYSCATSPACE" in series["db_tablespace_used_bytes"]
 
 
 @pytest.mark.capability("security", "recommendations")

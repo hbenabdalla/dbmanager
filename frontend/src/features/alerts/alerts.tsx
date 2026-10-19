@@ -37,7 +37,7 @@ export interface AlertRule {
   id: string; name: string; description: string | null; enabled: boolean; kind: "metric" | "health" | "collector";
   metric: string | null; operator: string | null; threshold: number | null; health_states: string[]; for_seconds: number;
   severity: string; scope_type: ScopeType; scope_id: string | null; channel_ids: string[];
-  notify_on_resolve: boolean; aggregation: "latest" | "avg" | "min" | "max"; window_seconds: number; renotify_minutes: number;
+  notify_on_resolve: boolean; aggregation: "latest" | "avg" | "min" | "max" | "zscore"; window_seconds: number; baseline_days: number; renotify_minutes: number;
 }
 export interface MaintenanceWindow {
   id: string; name: string; reason: string | null; scope_type: ScopeType; scope_id: string | null; starts_at: string; ends_at: string;
@@ -84,8 +84,9 @@ function ScopeFields({ type, id, onType, onId, envs, servers, noun = "Applies to
   </>;
 }
 
-export function ruleCondition(r: Pick<AlertRule, "kind" | "metric" | "operator" | "threshold" | "health_states" | "for_seconds" | "aggregation" | "window_seconds">): string {
-  const metric = r.aggregation && r.aggregation !== "latest" && r.window_seconds ? `${r.aggregation}(${r.metric}, ${Math.round(r.window_seconds / 60)}m)` : r.metric;
+export function ruleCondition(r: Pick<AlertRule, "kind" | "metric" | "operator" | "threshold" | "health_states" | "for_seconds" | "aggregation" | "window_seconds"> & { baseline_days?: number }): string {
+  let metric = r.aggregation && r.aggregation !== "latest" && r.window_seconds ? `${r.aggregation === "zscore" ? "avg" : r.aggregation}(${r.metric}, ${Math.round(r.window_seconds / 60)}m)` : r.metric;
+  if (r.aggregation === "zscore") metric = `zscore(${metric}, ${r.baseline_days ?? 7}d baseline)`;
   const base = r.kind === "metric" ? `${metric} ${r.operator} ${r.threshold}` : r.kind === "health" ? `health ∈ {${r.health_states.join(", ")}}` : `collector failing (≥ ${r.threshold ?? 3})`;
   return base + (r.for_seconds ? ` for ${r.for_seconds}s` : "");
 }
@@ -271,7 +272,7 @@ export function AlertsPage() {
 const EMPTY_RULE: Omit<AlertRule, "id"> = {
   name: "", description: "", enabled: true, kind: "metric", metric: "connections.utilization", operator: ">=", threshold: 90,
   health_states: ["unavailable"], for_seconds: 300, severity: "high", scope_type: "all", scope_id: null, channel_ids: [], notify_on_resolve: true,
-  aggregation: "latest", window_seconds: 0, renotify_minutes: 0,
+  aggregation: "latest", window_seconds: 0, baseline_days: 7, renotify_minutes: 0,
 };
 
 function RuleDialog({ rule, onClose }: { rule: AlertRule | null; onClose: () => void }) {
@@ -286,7 +287,7 @@ function RuleDialog({ rule, onClose }: { rule: AlertRule | null; onClose: () => 
   const set = <K extends keyof typeof f>(k: K, v: (typeof f)[K]) => setF((p) => ({ ...p, [k]: v }));
   const save = useMutation({
     mutationFn: () => {
-      const ranged = f.kind === "metric" && f.aggregation !== "latest";
+      const ranged = f.kind === "metric" && f.aggregation !== "latest" && !(f.aggregation === "zscore" && f.window_seconds === 0);
       const body = {
         ...f, description: f.description || null, scope_id: f.scope_type === "all" ? null : f.scope_id,
         aggregation: f.kind === "metric" ? f.aggregation : "latest", window_seconds: ranged ? f.window_seconds : 0,
@@ -299,7 +300,8 @@ function RuleDialog({ rule, onClose }: { rule: AlertRule | null; onClose: () => 
   const steps = ["Condition", "Scope", "Notify"];
   const valid = [
     f.name.trim().length > 0 && (f.kind !== "metric" || (!!f.metric && f.threshold !== null && !Number.isNaN(f.threshold)
-      && (f.aggregation === "latest" || f.window_seconds >= 60))),
+      && (f.aggregation === "latest" || f.window_seconds >= 60 || (f.aggregation === "zscore" && f.window_seconds === 0))
+      && (f.aggregation !== "zscore" || (f.baseline_days >= 1 && f.baseline_days <= 90 && f.window_seconds < f.baseline_days * 86400)))),
     f.scope_type === "all" || (f.scope_type === "tag" ? validTag(f.scope_id) : !!f.scope_id),
     true,
   ];
@@ -330,17 +332,30 @@ function RuleDialog({ rule, onClose }: { rule: AlertRule | null; onClose: () => 
               </Select>
             </Field>
             <Field label="Operator"><Select value={f.operator ?? ">="} onChange={(e) => set("operator", e.target.value)}>{OPERATORS.map((o) => <option key={o}>{o}</option>)}</Select></Field>
-            <Field label={`Threshold${metric?.unit ? ` (${metric.unit})` : ""}`}><Input inputMode="decimal" value={f.threshold ?? ""} onChange={(e) => set("threshold", e.target.value === "" ? null : Number(e.target.value))} /></Field>
+            <Field label={f.aggregation === "zscore" ? "Threshold (z-score)" : `Threshold${metric?.unit ? ` (${metric.unit})` : ""}`}
+              hint={f.aggregation === "zscore" ? "Standard deviations from the server's own baseline: > 3 fires on unusually high values, < -3 on unusually low ones" : undefined}><Input inputMode="decimal" value={f.threshold ?? ""} onChange={(e) => set("threshold", e.target.value === "" ? null : Number(e.target.value))} /></Field>
             <Field label="Evaluate" hint="Latest collected value, or a summary of the metric history in the time-series database">
               <Select value={f.aggregation} onChange={(e) => {
                 const a = e.target.value as AlertRule["aggregation"];
-                setF((p) => ({ ...p, aggregation: a, window_seconds: a === "latest" ? 0 : Math.max(p.window_seconds, 600) }));
+                setF((p) => ({
+                  ...p, aggregation: a,
+                  window_seconds: a === "latest" ? 0 : a === "zscore" ? p.window_seconds : Math.max(p.window_seconds, 600),
+                  threshold: a === "zscore" && p.aggregation !== "zscore" ? 3 : p.threshold, operator: a === "zscore" && p.aggregation !== "zscore" ? ">" : p.operator,
+                }));
               }}>
                 <option value="latest">Latest value</option><option value="avg">Average over a window</option><option value="min">Minimum over a window</option><option value="max">Maximum over a window</option>
+                <option value="zscore">Deviation from baseline (z-score)</option>
               </Select>
             </Field>
+            {f.aggregation === "zscore" && (
+              <Field label="Baseline (days)" hint="Mean and standard deviation of the server's own history; needs at least 60 samples"
+                error={f.baseline_days < 1 || f.baseline_days > 90 ? "1 to 90 days" : f.window_seconds >= f.baseline_days * 86400 ? "Must be longer than the window" : undefined}>
+                <Input inputMode="numeric" value={f.baseline_days} onChange={(e) => set("baseline_days", Number(e.target.value.replace(/\D/g, "")) || 0)} />
+              </Field>
+            )}
             {f.aggregation !== "latest" && (
-              <Field label="Window (minutes)" hint="At least 1 minute" error={f.window_seconds < 60 ? "At least 1 minute" : undefined}>
+              <Field label={f.aggregation === "zscore" ? "Compare (minutes, 0 = latest value)" : "Window (minutes)"} hint={f.aggregation === "zscore" ? "0 compares the latest value; a window compares its average" : "At least 1 minute"}
+                error={f.window_seconds < 60 && !(f.aggregation === "zscore" && f.window_seconds === 0) ? "At least 1 minute" : undefined}>
                 <Input inputMode="numeric" value={Math.round(f.window_seconds / 60)} onChange={(e) => set("window_seconds", Math.max(0, Number(e.target.value.replace(/\D/g, "")) || 0) * 60)} />
               </Field>
             )}
@@ -382,10 +397,38 @@ function RuleDialog({ rule, onClose }: { rule: AlertRule | null; onClose: () => 
           <Field label="Re-notify every (minutes, 0 = never)" hint="Repeats the firing notification until someone acknowledges or the alert resolves">
             <Input inputMode="numeric" value={f.renotify_minutes} onChange={(e) => set("renotify_minutes", Math.max(0, Number(e.target.value.replace(/\D/g, "")) || 0))} />
           </Field>
+          {f.kind === "metric" && f.aggregation === "zscore" && f.scope_type === "server" && f.scope_id && f.metric && (
+            <BaselinePreview serverId={f.scope_id} metric={f.metric} days={f.baseline_days} threshold={f.threshold} />
+          )}
           <p className="rounded-md border border-border bg-surface-2 px-3 py-2 text-[12.5px] text-muted">Summary: {ruleCondition(f)} on {scopeLabel(f.scope_type, f.scope_id, envs, servers).toLowerCase()} → {f.severity}{f.renotify_minutes ? `, re-notify every ${f.renotify_minutes} min` : ""}</p>
         </div>
       )}
     </Dialog>
+  );
+}
+
+type Baseline = { sufficient_data: boolean; samples: number; reason?: string; mean?: number; stddev?: number; current?: number | null; z_score?: number | null };
+
+/** What the z-score rule would see for one server right now (the baseline of its own history). */
+export function BaselinePreview({ serverId, metric, days, threshold }: { serverId: string; metric: string; days: number; threshold: number | null }) {
+  const q = useQuery({
+    queryKey: ["baseline", serverId, metric, days],
+    queryFn: () => get<Baseline>(`/servers/${serverId}/metrics/baseline`, { metric, days }),
+    enabled: days >= 1 && days <= 90, retry: false,
+  });
+  if (q.isLoading) return <p className="text-[12.5px] text-muted">Loading the baseline…</p>;
+  if (q.error) return <p className="text-[12.5px] text-muted">Baseline preview unavailable: {errorText(q.error)}</p>;
+  const b = q.data;
+  if (!b) return null;
+  if (!b.sufficient_data) return <p className="rounded-md border border-border px-3 py-2 text-[12.5px] text-warn" role="status">No baseline yet: {b.reason}. The rule reports “no data” until enough history exists.</p>;
+  const fmt = (v: number | null | undefined) => (v === null || v === undefined ? "—" : Number(v.toPrecision(4)).toLocaleString());
+  const fireAt = threshold !== null && b.mean !== undefined && b.stddev !== undefined ? b.mean + threshold * b.stddev : null;
+  return (
+    <div className="rounded-md border border-border px-3 py-2 text-[12.5px]" data-testid="baseline-preview">
+      <div className="font-medium">Baseline over {days} days ({b.samples.toLocaleString()} samples)</div>
+      <div className="text-text-2">mean {fmt(b.mean)} ± {fmt(b.stddev)} · current {fmt(b.current)} (z = {fmt(b.z_score)})
+        {fireAt !== null && <> · with threshold {threshold} the rule fires around {fmt(fireAt)}</>}</div>
+    </div>
   );
 }
 

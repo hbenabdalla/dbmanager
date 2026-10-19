@@ -289,6 +289,11 @@ class QueryStat(BaseModel):
     physical_reads: int | None = None
     temp_blocks: int | None = None
     lock_wait_ms: float | None = None
+    #: distinct execution plans currently cached for the statement (Oracle, SQL Server)
+    plans: int | None = None
+    #: identifier of the plan that accounts for most of the statement's time (Oracle
+    #: ``plan_hash_value``); used to detect plan changes, never shown as a cost
+    plan_id: int | None = None
     extra: dict[str, Any] = Field(default_factory=dict)
 
 

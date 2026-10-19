@@ -333,3 +333,126 @@ def storage_capacity(ctx: EvidenceContext) -> list[RuleFinding]:
             severity=sev,
         )
     ]
+
+
+@rule(
+    "GEN-PERF-011",
+    engines=("*",),
+    kind="performance",
+    category="queries",
+    severity="medium",
+    title="Query latency regression",
+)
+def query_regression(ctx: EvidenceContext) -> list[RuleFinding]:
+    """A statement's mean latency in the recent window is well above its own baseline
+    (thresholds: platform settings ``performance.regression_*``), optionally after an
+    execution plan change (Oracle plan hash, SQL Server cached plan count)."""
+    out = []
+    for r in ctx.query_regressions:
+        if not r.get("regressed"):
+            continue
+        plan = r.get("plan_changed")
+        change = r.get("change_pct")
+        sev = "high" if (change or 0) >= 200 or r["recent_mean_ms"] >= 1000 else "medium"
+        plan_txt = ""
+        if plan and r.get("baseline_plan_id") and r.get("recent_plan_id"):
+            plan_txt = f" The dominant plan changed from {r['baseline_plan_id']} to {r['recent_plan_id']}."
+        elif plan:
+            plan_txt = f" The number of cached plans grew from {r.get('baseline_plans')} to {r.get('recent_plans')}."
+        out.append(
+            RuleFinding(
+                title="Query is slower than its baseline" + (" after a plan change" if plan else ""),
+                finding=f"Query {r['fingerprint']} averaged {r['recent_mean_ms']:.1f} ms over the last "
+                f"{r['recent_window_hours']}h ({r['recent_calls']:,} calls) against {r['baseline_mean_ms']:.1f} ms over "
+                f"the previous {r['baseline_days']} days ({r['baseline_calls']:,} calls)"
+                + (f", +{change:.0f}%." if change is not None else ".")
+                + plan_txt,
+                evidence={
+                    k: r.get(k)
+                    for k in (
+                        "fingerprint",
+                        "baseline_mean_ms",
+                        "recent_mean_ms",
+                        "change_pct",
+                        "delta_ms",
+                        "baseline_calls",
+                        "recent_calls",
+                        "plan_changed",
+                        "baseline_plan_id",
+                        "recent_plan_id",
+                        "baseline_plans",
+                        "recent_plans",
+                        "recent_window_hours",
+                        "baseline_days",
+                        "excess_ms",
+                    )
+                },
+                recommendation="Compare the statement's recent and baseline periods (Queries → Compare) and its current "
+                "plan with a saved earlier plan; look for changed statistics, data volume, parameters or a plan change. "
+                "On Oracle, a known good plan can be fixed with a SQL plan baseline; on SQL Server, Query Store plan "
+                "forcing does the same.",
+                expected_impact="Returns the statement to its baseline latency and removes the extra database time "
+                f"(about {r.get('excess_ms', 0) / 1000:,.0f} s in the recent window).",
+                risk="Plan forcing and statistics changes affect other statements; validate on a non-production copy.",
+                confidence=0.8 if (r.get("recent_calls") or 0) >= 100 else 0.65,
+                affected_object=f"query:{r['fingerprint']}",
+                database=r.get("database"),
+                severity=sev,
+            )
+        )
+    return out[:10]
+
+
+@rule(
+    "GEN-PERF-012",
+    engines=("*",),
+    kind="performance",
+    category="capacity",
+    severity="high",
+    title="Storage forecast to fill",
+)
+def storage_forecast(ctx: EvidenceContext) -> list[RuleFinding]:
+    """A robust (Theil–Sen) growth trend reaches the capacity of the server volume or of a
+    tablespace within ``performance.forecast_warning_days`` (earliest reading of the 90 %
+    band). Needs at least 7 days of history and a reported capacity."""
+    horizon = int(ctx.settings.get("performance.forecast_warning_days", 30))
+    out = []
+    for f in ctx.capacity_forecasts:
+        days = (f.get("days_to_full") or {}).get("earliest")
+        if days is None or days > horizon:
+            continue
+        likely = f["days_to_full"].get("likely")
+        what = {"server": "Server storage", "tablespace": f"Tablespace {f.get('object')}"}.get(
+            f["scope"], f"Database {f.get('object')}"
+        )
+        out.append(
+            RuleFinding(
+                title=f"{what} may fill within {max(days, 0):.0f} days",
+                finding=f"{what} grows by about {fmt_bytes(f['growth_bytes_per_day'])}/day "
+                f"(90% band {fmt_bytes(f['growth_low'])}–{fmt_bytes(f['growth_high'])}/day over "
+                f"{f['history_days']:.0f} days). At this rate it reaches {fmt_bytes(f['capacity_bytes'])} "
+                f"({f['capacity_basis']}) in {days:.0f} days at the earliest"
+                + (f", {likely:.0f} days most likely." if likely is not None else "."),
+                evidence={
+                    "scope": f["scope"],
+                    "object": f.get("object"),
+                    "current_bytes": f.get("current_bytes"),
+                    "capacity_bytes": f.get("capacity_bytes"),
+                    "capacity_basis": f.get("capacity_basis"),
+                    "growth_bytes_per_day": f.get("growth_bytes_per_day"),
+                    "growth_low": f.get("growth_low"),
+                    "growth_high": f.get("growth_high"),
+                    "days_to_full": f.get("days_to_full"),
+                    "history_days": f.get("history_days"),
+                    "method": "Theil-Sen median slope, Sen 90% interval",
+                },
+                recommendation="Extend the volume or the tablespace (or its autoextend limit), or archive/purge data, "
+                "before the earliest date; review the largest tables and the growth chart on the Storage tab.",
+                expected_impact="Avoids write failures when the storage fills.",
+                risk="Extending storage is usually online; purging data needs application owner approval.",
+                confidence=0.8 if (f.get("history_days") or 0) >= 21 else 0.65,
+                affected_object=f"{f['scope']}:{f.get('object') or 'server'}",
+                severity="critical" if days <= 7 else "high" if days <= 14 else "medium",
+            )
+        )
+    return out[:10]

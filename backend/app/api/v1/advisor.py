@@ -18,7 +18,7 @@ from app.core.errors import NotFound
 from app.jobs.runner import enqueue
 from app.models import DbAccount, Environment, Recommendation, SecurityFinding, Server
 from app.schemas.common import Message, Page, PageParams, apply_sort
-from app.services import audit
+from app.services import app_settings, audit, perf_intel
 
 router = APIRouter(tags=["advisor"])
 
@@ -71,6 +71,7 @@ def _finding_out(r: Any, s: Server, kind: str) -> dict[str, Any]:
     }
     if kind == "performance":
         d["expected_impact"] = r.expected_impact
+        d["validation"] = r.validation
     else:
         d["remediation"] = r.remediation
     return d
@@ -218,6 +219,12 @@ async def _change(
     old = r.status
     r.status, r.status_reason, r.status_changed_by = body.status, body.reason, p.username
     r.resolved_at = datetime.now(UTC) if body.status == "resolved" else None
+    if model is Recommendation:
+        if body.status == "resolved" and old != "resolved":
+            hours = int(await app_settings.get(db, "performance.validation_window_hours"))
+            r.validation = await perf_intel.start_validation(r, r.resolved_at, hours)  # type: ignore[arg-type]
+        elif body.status != "resolved" and old == "resolved" and r.validation:
+            r.validation = {**r.validation, "status": "reopened", "reopened_at": datetime.now(UTC).isoformat()}
     await audit.record(
         f"{kind}.status",
         actor=p,
@@ -240,6 +247,31 @@ async def update_recommendation(item_id: uuid.UUID, body: StatusChange, db: DB, 
 @router.patch("/security/findings/{item_id}")
 async def update_finding(item_id: uuid.UUID, body: StatusChange, db: DB, p: CurrentPrincipal) -> dict[str, Any]:
     return await _change(db, p, SecurityFinding, item_id, body, "security.manage", "security_finding")
+
+
+@router.get("/recommendations/validation-summary", summary="Outcome of resolved recommendations (before/after)")
+async def validation_summary(db: DB, p: CurrentPrincipal, source: SourceQuery = None) -> dict[str, Any]:
+    """How many resolved recommendations improved, did not change or regressed the measured
+    metric, over the visible servers."""
+    stmt = (
+        select(Recommendation, Server)
+        .join(Server, Server.id == Recommendation.server_id)
+        .where(Recommendation.validation.is_not(None))
+    )
+    flt = p.authz.server_filter("performance.view")
+    if flt is not None:
+        stmt = stmt.where(flt)
+    src_cond = fleet_source.condition(await fleet_source.resolve(db, p, source))
+    if src_cond is not None:
+        stmt = stmt.where(src_cond)
+    counts: dict[str, int] = {}
+    recent: list[dict[str, Any]] = []
+    for r, s in (await db.execute(stmt.order_by(Recommendation.resolved_at.desc()))).all():
+        st = (r.validation or {}).get("status", "unknown")
+        counts[st] = counts.get(st, 0) + 1
+        if st in ("improved", "unchanged", "regressed") and len(recent) < 20:
+            recent.append(_finding_out(r, s, "performance"))
+    return {"counts": counts, "recent": recent}
 
 
 @router.get("/advisor/rules", summary="Rule catalog of the deterministic advisors")

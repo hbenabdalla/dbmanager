@@ -44,6 +44,8 @@ class Recommendation(UUIDPk, _FindingColumns, Base):
     __table_args__ = (Index("ix_recommendations_server_status", "server_id", "status"),)
 
     expected_impact: Mapped[str] = mapped_column(Text, nullable=False)
+    #: before/after measurement once the recommendation is resolved (app.services.perf_intel)
+    validation: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
 
 
 class SecurityFinding(UUIDPk, _FindingColumns, Base):
@@ -51,3 +53,23 @@ class SecurityFinding(UUIDPk, _FindingColumns, Base):
     __table_args__ = (Index("ix_security_findings_server_status", "server_id", "status"),)
 
     remediation: Mapped[str | None] = mapped_column(Text)
+
+
+class QueryPlanSnapshot(UUIDPk, Base):
+    """An execution plan saved for later comparison (plan-vs-plan)."""
+
+    __tablename__ = "query_plan_snapshots"
+    __table_args__ = (Index("ix_query_plan_snapshots_server_created", "server_id", "created_at"),)
+
+    server_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("servers.id", ondelete="CASCADE"), nullable=False)
+    database: Mapped[str | None] = mapped_column(String(256))
+    fingerprint: Mapped[str | None] = mapped_column(String(32))
+    label: Mapped[str] = mapped_column(String(128), nullable=False)
+    statement: Mapped[str] = mapped_column(Text, nullable=False)
+    statement_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    engine: Mapped[str] = mapped_column(String(32), nullable=False)
+    mode: Mapped[str] = mapped_column(String(16), nullable=False)
+    total_cost: Mapped[float | None] = mapped_column(Float)
+    plan: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    created_by: Mapped[str | None] = mapped_column(String(128))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)

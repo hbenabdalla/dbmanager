@@ -250,7 +250,9 @@ SELECT s.sql_id, MIN(s.sql_text) AS sql_text, s.con_id,
        SUM(s.buffer_gets) AS buffer_gets, SUM(s.disk_reads) AS disk_reads, SUM(s.rows_processed) AS rows_processed,
        SUM(s.application_wait_time) / 1000 AS app_wait_ms, SUM(s.concurrency_wait_time) / 1000 AS concurrency_wait_ms,
        SUM(s.user_io_wait_time) / 1000 AS io_wait_ms, SUM(s.direct_writes) AS direct_writes,
-       COUNT(DISTINCT s.plan_hash_value) AS plans, MAX(s.last_active_time) AS last_active_time
+       COUNT(DISTINCT s.plan_hash_value) AS plans,
+       MAX(s.plan_hash_value) KEEP (DENSE_RANK LAST ORDER BY s.elapsed_time) AS top_plan,
+       MAX(s.last_active_time) AS last_active_time
 FROM v$sqlstats s
 WHERE s.executions > 0
 GROUP BY s.sql_id, s.con_id

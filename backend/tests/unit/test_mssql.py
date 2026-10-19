@@ -359,6 +359,7 @@ def test_query_stats_fallback_and_privilege_mapping() -> None:
         "logical_reads": 40,
         "physical_reads": 1,
         "spills": None,
+        "plans": 2,
         "logical_writes": 0,
         "last_execution_time": None,
         "first_cached": None,
@@ -372,6 +373,7 @@ def test_query_stats_fallback_and_privilege_mapping() -> None:
     )
     rows = asyncio.run(a.get_query_statistics(10))
     assert rows[0].mean_ms == 5.0 and rows[0].temp_blocks is None and conn.executed("NULL AS spills")
+    assert rows[0].plans == 2 and conn.executed("COUNT(DISTINCT qs.query_plan_hash) AS plans")
     denied, _ = _adapter(
         [
             ("SERVERPROPERTY('ProductVersion')", [_server_row()]),

@@ -93,6 +93,14 @@ _DEFS: list[MetricDef] = [
     MetricDef("storage.database_bytes", "db_storage_database_bytes", G, "B", IntervalClass.SLOW),
     MetricDef("storage.capacity_bytes", "db_storage_capacity_bytes", G, "B", IntervalClass.SLOW),
     MetricDef("storage.utilization", "db_storage_utilization_percent", G, "%", IntervalClass.SLOW),
+    # per database / tablespace sizes, written by the hourly inventory discovery (capacity forecasting)
+    MetricDef("storage.db_size_bytes", "db_database_size_bytes", G, "B", IntervalClass.VERY_SLOW, ("database",)),
+    MetricDef(
+        "storage.tablespace_used_bytes", "db_tablespace_used_bytes", G, "B", IntervalClass.VERY_SLOW, ("tablespace",)
+    ),
+    MetricDef(
+        "storage.tablespace_max_bytes", "db_tablespace_max_bytes", G, "B", IntervalClass.VERY_SLOW, ("tablespace",)
+    ),
     # engine specific
     MetricDef(
         "pg.idle_in_transaction_longest_seconds",
@@ -155,6 +163,9 @@ QUERY_METRICS: list[MetricDef] = [
     MetricDef("lock_wait_ms", "db_query_lock_wait_ms_total", C, "ms", IntervalClass.SLOW, ("database", "fingerprint")),
     MetricDef("mean_ms", "db_query_mean_ms", D, "ms", IntervalClass.SLOW, ("database", "fingerprint")),
     MetricDef("max_ms", "db_query_max_ms", D, "ms", IntervalClass.SLOW, ("database", "fingerprint")),
+    # plan identity (Oracle, SQL Server): cached plan count and the dominant plan's hash
+    MetricDef("plans", "db_query_plans", G, "count", IntervalClass.SLOW, ("database", "fingerprint")),
+    MetricDef("plan_id", "db_query_plan_id", G, "", IntervalClass.SLOW, ("database", "fingerprint")),
 ]
 
 BY_KEY: dict[str, MetricDef] = {d.key: d for d in _DEFS}

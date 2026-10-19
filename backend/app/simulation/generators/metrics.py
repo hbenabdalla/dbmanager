@@ -34,6 +34,7 @@ HISTORY_METRICS = [
     "sessions.blocked",
     "io.blocks_read_per_sec",
     "storage.database_bytes",
+    "storage.capacity_bytes",
     "storage.utilization",
     "cpu.percent",
     "memory.used_bytes",
@@ -85,9 +86,24 @@ async def backfill_metrics(
     labels = base_labels(server)
     names = {m: name_for(m) for m in HISTORY_METRICS}
     samples: list[Sample] = []
+    shares = adapter.database_shares()
+    size_hours: set[int] = set()
     for ts in sample_times(profile, now):
         snap = adapter.metrics_at(ts)
         g = snap.gauges
+        hour = int(ts.timestamp() // 3600)
+        if g.get("storage.database_bytes") and hour not in size_hours:
+            # per-database sizes once an hour, like the inventory discovery writes them
+            size_hours.add(hour)
+            for name, share in shares.items():
+                samples.append(
+                    Sample.make(
+                        name_for("storage.db_size_bytes"),
+                        {**labels, "database": name},
+                        float(g["storage.database_bytes"]) * share,
+                        ts,
+                    )
+                )
         for m in HISTORY_METRICS:
             if m in g and g[m] is not None:
                 samples.append(Sample.make(names[m], labels, float(g[m]), ts))

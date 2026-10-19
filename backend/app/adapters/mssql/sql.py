@@ -279,6 +279,7 @@ SELECT TOP (?) CONVERT(varchar(34), qs.query_hash, 1) AS query_hash,
        SUM(qs.total_physical_reads) AS physical_reads,
        SUM(qs.total_logical_writes) AS logical_writes,
        SUM(qs.total_rows) AS rows_count,
+       COUNT(DISTINCT qs.query_plan_hash) AS plans,
        {spills}
        MAX(qs.last_execution_time) AS last_execution_time,
        MIN(qs.creation_time) AS first_cached,

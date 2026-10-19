@@ -60,7 +60,7 @@ COMPONENTS: dict[str, tuple[str, ...]] = {
         "identities",
         "api_tokens",
     ),
-    "findings": ("recommendations", "security_findings"),
+    "findings": ("recommendations", "security_findings", "query_plan_snapshots"),
     "alerting": ("alert_rules", "maintenance_windows", "notification_channels"),
     "settings": ("app_settings", "siem_destinations"),
     "backup_config": ("backup_targets", "backup_policies"),

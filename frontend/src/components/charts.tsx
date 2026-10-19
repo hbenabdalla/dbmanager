@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Area, AreaChart, CartesianGrid, Legend, Line, LineChart, ReferenceArea, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Area, AreaChart, CartesianGrid, ComposedChart, Legend, Line, LineChart, ReferenceArea, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { MetricPoint } from "@/api/types";
 import { metricValue, timeLabel } from "@/lib/format";
 
@@ -137,6 +137,38 @@ export function Meter({ value, max = 100, tone }: { value: number | null | undef
   return (
     <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface-3" role="meter" aria-valuenow={value ?? 0} aria-valuemax={max}>
       <div className="h-full rounded-full" style={{ width: `${p}%`, background: color }} />
+    </div>
+  );
+}
+
+export interface ForecastBandPoint { t: string; likely: number; low: number; high: number }
+
+/** Size history (solid), forecast (dashed) with its 90 % band (shaded) and the capacity line. */
+export function ForecastChart({ history, band, capacity, height = 240 }: {
+  history: { t: string; v: number }[]; band: ForecastBandPoint[]; capacity?: number | null; height?: number;
+}) {
+  const data = useMemo(() => {
+    const rows: Record<string, number | string | [number, number] | null>[] = history.map((h) => ({ t: h.t, actual: h.v, likely: null, range: null }));
+    for (const b of band) rows.push({ t: b.t, actual: null, likely: b.likely, range: [b.low, b.high] });
+    return rows.sort((a, b) => String(a.t).localeCompare(String(b.t)));
+  }, [history, band]);
+  if (!data.length) return <div className="flex items-center justify-center text-[12.5px] text-muted" style={{ height }}>No history yet</div>;
+  const span = (new Date(String(data[data.length - 1].t)).getTime() - new Date(String(data[0].t)).getTime()) / 1000;
+  return (
+    <div style={{ height }} role="img" aria-label="Storage history and forecast with a 90 percent band">
+      <ResponsiveContainer width="100%" height="100%">
+        <ComposedChart data={data} margin={{ top: 6, right: 8, bottom: 0, left: 0 }}>
+          <CartesianGrid stroke="var(--chart-grid)" vertical={false} />
+          <XAxis dataKey="t" tickFormatter={(t) => timeLabel(String(t), span)} tick={{ fontSize: 11, fill: "var(--muted)" }} tickLine={false} axisLine={false} minTickGap={48} />
+          <YAxis width={64} tickFormatter={(v) => metricValue("B", Number(v))} tick={{ fontSize: 11, fill: "var(--muted)" }} tickLine={false} axisLine={false} domain={[0, "auto"]} />
+          <Tooltip formatter={(v: unknown, name: string) => [Array.isArray(v) ? `${metricValue("B", Number(v[0]))} – ${metricValue("B", Number(v[1]))}` : metricValue("B", Number(v)), { actual: "Size", likely: "Forecast", range: "90% band" }[name] ?? name]}
+            labelFormatter={(l) => new Date(String(l)).toLocaleDateString(undefined, { dateStyle: "medium" })} />
+          <Area dataKey="range" stroke="none" fill="var(--chart-2)" fillOpacity={0.16} isAnimationActive={false} connectNulls={false} />
+          <Line dataKey="actual" stroke="var(--chart-1)" strokeWidth={1.8} dot={false} isAnimationActive={false} connectNulls />
+          <Line dataKey="likely" stroke="var(--chart-2)" strokeWidth={1.6} strokeDasharray="5 4" dot={false} isAnimationActive={false} connectNulls />
+          {capacity ? <ReferenceLine y={capacity} stroke="var(--crit)" strokeDasharray="3 3" label={{ value: "capacity", position: "insideTopRight", fontSize: 11, fill: "var(--crit)" }} /> : null}
+        </ComposedChart>
+      </ResponsiveContainer>
     </div>
   );
 }

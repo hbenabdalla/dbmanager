@@ -38,6 +38,7 @@ from app.adapters.base import (
 )
 from app.adapters.mssql.adapter import SQLServerAdapter
 from tests.integration.matrix import record_version
+from tests.integration.storage_series import size_series
 
 pytestmark = [
     pytest.mark.asyncio(loop_scope="session"),
@@ -308,6 +309,7 @@ async def test_query_statistics_with_and_without_query_store() -> None:
         assert all("'DE'" not in s.query_text for s in join)  # parameterized text, no literals
         assert {s.database for s in join} >= {DB, QS_DB}  # works whether Query Store is on or off
         assert all(s.extra["source"].startswith("sys.dm_exec_query_stats") for s in join)
+        assert all(s.plans is not None and s.plans >= 1 for s in join)  # COUNT(DISTINCT query_plan_hash), 0.13
 
 
 @pytest.mark.capability("explain")
@@ -338,6 +340,7 @@ async def test_configuration_replication_storage() -> None:
         assert rep.role == "standalone"
         st = await a.get_storage_metrics()
         assert st.total_bytes and st.top_tables
+        assert DB in size_series("mssql", await a.list_databases(), st.tablespaces)["db_database_size_bytes"]
 
 
 @pytest.mark.capability("security", "recommendations")

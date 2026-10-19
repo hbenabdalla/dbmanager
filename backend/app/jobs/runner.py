@@ -254,6 +254,10 @@ async def run_job(job_id: uuid.UUID) -> None:
                     from app.backup import service as backup_service
 
                     result = await backup_service.schedule(db)
+                elif job.kind == "validate_recommendations":
+                    from app.services import advisor
+
+                    result = await advisor.run_validations(db)
                 else:
                     status, error = "skipped", f"unknown global job {job.kind}"
             else:

@@ -35,9 +35,13 @@ class AlertRule(UUIDPk, Timestamps, Base):
     #: all | environment (scope_id = environment id) | server (server id) | tag (``key`` or ``key=value``)
     scope_type: Mapped[str] = mapped_column(String(16), default="all", nullable=False)
     scope_id: Mapped[str | None] = mapped_column(String(64))
-    #: metric rules: ``latest`` collector value, or avg|min|max over ``window_seconds`` of history
+    #: metric rules: ``latest`` collector value, avg|min|max over ``window_seconds`` of history, or
+    #: ``zscore``: standard deviations of the current value (latest, or avg over ``window_seconds``)
+    #: from the server's own baseline over ``baseline_days``
     aggregation: Mapped[str] = mapped_column(String(8), default="latest", server_default="latest", nullable=False)
     window_seconds: Mapped[int] = mapped_column(Integer, default=0, server_default="0", nullable=False)
+    #: zscore rules: days of history the baseline (mean, stddev) is computed from
+    baseline_days: Mapped[int] = mapped_column(Integer, default=7, server_default="7", nullable=False)
     channel_ids: Mapped[list[str]] = mapped_column(JSONB, default=list, nullable=False)
     notify_on_resolve: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     #: repeat the "firing" notification every N minutes until acknowledged or resolved (0 = never)

@@ -39,6 +39,7 @@ export const NAV_GROUPS: NavGroup[] = [
         label: "Monitoring", icon: Activity, perm: ["performance.view", "session.view"], items: [
           { label: "Overview", to: "/monitoring", perm: "performance.view" },
           { label: "Performance", to: "/monitoring/performance", perm: "performance.view" },
+          { label: "Capacity forecast", to: "/monitoring/capacity", perm: "performance.view" },
           { label: "Sessions", to: "/monitoring/sessions", perm: "session.view" },
           { label: "Locks", to: "/monitoring/locks", perm: "session.view" },
           { label: "Replication", to: "/monitoring/replication", perm: "performance.view" },
@@ -49,7 +50,10 @@ export const NAV_GROUPS: NavGroup[] = [
         label: "Queries", icon: SquareTerminal, perm: ["query.view", "query.execute", "query.explain"], items: [
           { label: "Query performance", to: "/queries", perm: "query.view" },
           { label: "Slow queries", to: "/queries/slow", perm: "query.view" },
+          { label: "Regressions", to: "/queries/regressions", perm: "query.view" },
+          { label: "Compare periods", to: "/queries/compare", perm: "query.view" },
           { label: "Execution plans", to: "/queries/plans", perm: "query.explain" },
+          { label: "Compare plans", to: "/queries/plans/compare", perm: "query.explain" },
           { label: "SQL workspace", to: "/workspace", perm: "query.execute" },
         ],
       },
@@ -71,6 +75,7 @@ export const NAV_GROUPS: NavGroup[] = [
           { label: "Performance", to: "/optimization/performance" },
           { label: "Query", to: "/optimization/query" },
           { label: "Configuration", to: "/optimization/configuration" },
+          { label: "Outcomes", to: "/optimization/outcomes" },
         ],
       },
     ],

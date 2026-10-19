@@ -42,6 +42,7 @@ from app.adapters.base import (
 )
 from app.adapters.oracle.adapter import OracleAdapter
 from tests.integration.matrix import record_version
+from tests.integration.storage_series import size_series
 
 pytestmark = [
     pytest.mark.asyncio(loop_scope="session"),
@@ -354,6 +355,10 @@ async def test_query_statistics_from_v_sqlstats() -> None:
         assert join, f"workload not in V$SQLSTATS top {len(stats)}; DBM_IT_SHOP statements seen: {shop}"
         assert join[0].calls >= 50 and ":c" in join[0].query_text.lower()
         assert join[0].query_id  # SQL_ID
+        # plan identity for regression / plan-change detection (0.13): distinct cached plans and the
+        # plan_hash_value that accounts for most of the elapsed time
+        assert join[0].plans is not None and join[0].plans >= 1
+        assert join[0].plan_id is not None and join[0].plan_id > 0
 
 
 @pytest.mark.capability("explain")
@@ -375,6 +380,8 @@ async def test_configuration_replication_storage() -> None:
         assert rep.role in ("standalone", "primary")
         st = await a.get_storage_metrics()
         assert st.total_bytes and st.tablespaces
+        series = size_series("oracle", await a.list_databases(), st.tablespaces)
+        assert "SYSTEM" in series["db_tablespace_used_bytes"] and series["db_tablespace_max_bytes"]
 
 
 @pytest.mark.capability("security", "recommendations")

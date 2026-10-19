@@ -1,4 +1,4 @@
-from app.models.advisor import Recommendation, SecurityFinding
+from app.models.advisor import QueryPlanSnapshot, Recommendation, SecurityFinding
 from app.models.alerting import (
     Alert,
     AlertComment,
@@ -71,6 +71,7 @@ __all__ = [
     "RateLimitWindow",
     "SiemDestination",
     "QueryStatSnapshot",
+    "QueryPlanSnapshot",
     "Recommendation",
     "Role",
     "RoleAssignment",

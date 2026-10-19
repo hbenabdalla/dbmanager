@@ -18,6 +18,7 @@ import { Field, Input, Select, Textarea } from "@/components/ui/input";
 import { EmptyState } from "@/components/ui/states";
 import { useAuth } from "@/lib/auth";
 import { dateTime, relTime } from "@/lib/format";
+import { ValidationBadge, ValidationDetail } from "../performance/intelligence";
 
 type Kind = "recommendations" | "security";
 
@@ -70,6 +71,7 @@ function FindingDialog({ f, kind, onClose }: { f: Finding; kind: Kind; onClose: 
           <section><h4 className="mb-1 text-[12px] font-medium text-muted">Confidence</h4><p className="tabular">{Math.round(f.confidence * 100)}%</p></section>
         </div>
         {(f.guidance || f.remediation) && <section><h4 className="mb-1.5 font-semibold">Implementation guidance</h4><CodeBlock code={(f.remediation ?? f.guidance)!} /></section>}
+        {f.validation && <ValidationDetail v={f.validation} />}
         <p className="rounded-md border border-border bg-surface-2 px-3 py-2 text-[12.5px] text-muted">
           DB Manager never applies recommendations automatically. Make the change through your change process or the SQL workspace, which asks for confirmation and records it in the audit log.
         </p>
@@ -115,7 +117,10 @@ export function FindingsList({ kind, serverId, group, defaultStatus = "open" }: 
     { header: "Category", accessorKey: "category", cell: ({ getValue }) => <span className="capitalize text-text-2">{getValue() as string}</span> },
     { header: "Rule", accessorKey: "rule_id", cell: ({ getValue }) => <span className="font-mono text-[12px] text-muted">{getValue() as string}</span> },
     { header: "Confidence", accessorKey: "confidence", meta: { align: "right" }, cell: ({ getValue }) => `${Math.round((getValue() as number) * 100)}%` },
-    { header: "Status", accessorKey: "status", cell: ({ getValue }) => { const s = getValue() as string; return <Badge tone={s === "open" ? "accent" : s === "resolved" ? "ok" : "neutral"}>{s}</Badge>; } },
+    { header: "Status", accessorKey: "status", cell: ({ row: { original: f } }) => (
+      <span className="flex items-center gap-1"><Badge tone={f.status === "open" ? "accent" : f.status === "resolved" ? "ok" : "neutral"}>{f.status}</Badge>
+        {f.status === "resolved" && f.validation && f.validation.status !== "not_measurable" && <ValidationBadge v={f.validation} />}</span>
+    ) },
   ];
   return (
     <Card>

@@ -179,11 +179,13 @@ def _metric_value(rule: AlertRule, server: Server, now: datetime) -> float | Non
 
 
 def condition(
-    rule: AlertRule, server: Server, now: datetime, window_values: dict[str, float] | None = None
+    rule: AlertRule, server: Server, now: datetime, window_values: dict[str, Any] | None = None
 ) -> tuple[bool | None, float | None, str]:
     """(holds?, observed value, human description). ``None`` = no data: keep the current state.
 
     ``window_values``: server id → aggregate over the rule's window (range rules only)."""
+    if rule.kind == "metric" and rule.aggregation == "zscore":
+        return _zscore_condition(rule, server, now, window_values)
     if rule.kind == "metric":
         ranged = rule.aggregation in ("avg", "min", "max") and rule.window_seconds > 0
         if ranged:
@@ -217,6 +219,51 @@ def condition(
     return None, None, "unknown rule kind"
 
 
+def _zscore_condition(
+    rule: AlertRule, server: Server, now: datetime, window_values: dict[str, Any] | None
+) -> tuple[bool | None, float | None, str]:
+    """``zscore`` rules: how many standard deviations the current value (latest, or the
+    window average) is from the server's own baseline; the threshold applies to the z-score."""
+    from app.services.perf_intel import zscore
+
+    data = (window_values or {}).get(str(server.id)) or {}
+    current = data.get("current") if rule.window_seconds > 0 else _metric_value(rule, server, now)
+    z, reason = zscore(current, data.get("baseline"))
+    if z is None or rule.operator not in OPERATORS or rule.threshold is None:
+        return None, None, f"no z-score: {reason}"
+    base = data["baseline"]
+    holds = OPERATORS[rule.operator](z, rule.threshold)
+    what = f"avg({rule.metric}, {_dur(rule.window_seconds)})" if rule.window_seconds > 0 else rule.metric
+    return (
+        holds,
+        round(z, 3),
+        f"z-score of {what} = {z:.2f} ({rule.operator} {rule.threshold:g}): current {current:g}, "
+        f"baseline {base['avg']:.4g} ± {base['stddev']:.4g} over {rule.baseline_days}d",
+    )
+
+
+async def zscore_inputs(rule: AlertRule, servers: list[Server], now: datetime) -> dict[str, Any] | None:
+    """Per server: the baseline (mean, stddev, samples over ``baseline_days``) and, for
+    windowed rules, the window average. ``None`` when the time-series storage is down."""
+    from app.services.perf_intel import baselines
+    from app.timeseries.repository import TimeSeriesError
+
+    if not servers or not rule.metric:
+        return {}
+    ids = [str(s.id) for s in servers]
+    try:
+        base = await baselines(
+            rule.metric, ids, days=max(rule.baseline_days, 1), exclude_recent_s=rule.window_seconds, now=now
+        )
+        current = await window_aggregates(rule, servers, now) if rule.window_seconds > 0 else {}
+    except TimeSeriesError as exc:
+        log.warning("alert rule %s: baseline query failed: %s", rule.name, exc)
+        return None
+    if current is None:
+        return None
+    return {sid: {"baseline": base.get(sid), "current": current.get(sid)} for sid in ids}
+
+
 def _dur(seconds: int) -> str:
     if seconds % 3600 == 0:
         return f"{seconds // 3600}h"
@@ -240,7 +287,7 @@ async def window_aggregates(rule: AlertRule, servers: list[Server], now: datetim
             sel,
             now - timedelta(seconds=rule.window_seconds),
             now,
-            rule.aggregation,  # type: ignore[arg-type]
+            "avg" if rule.aggregation == "zscore" else rule.aggregation,  # type: ignore[arg-type]
         )
     except TimeSeriesError as exc:
         log.warning("alert rule %s: time-series query failed: %s", rule.name, exc)
@@ -448,7 +495,9 @@ async def evaluate(db: AsyncSession, now: datetime | None = None) -> dict[str, i
     for rule in rules:
         scoped = [s for s in servers if in_scope(rule.scope_type, rule.scope_id, s)]
         ranged = rule.kind == "metric" and rule.aggregation in ("avg", "min", "max") and rule.window_seconds > 0
-        window_values = await window_aggregates(rule, scoped, now) if ranged else None
+        window_values: dict[str, Any] | None = await window_aggregates(rule, scoped, now) if ranged else None
+        if rule.kind == "metric" and rule.aggregation == "zscore":
+            window_values = await zscore_inputs(rule, scoped, now)
         for server in scoped:
             holds, value, desc = condition(rule, server, now, window_values)
             alert = active.get((rule.id, server.id))

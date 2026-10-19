@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import uuid
 from datetime import UTC, datetime, timedelta
 from typing import Any
@@ -18,7 +19,7 @@ from app.api.source import SourceQuery
 from app.core.errors import ConfirmationRequired, PermissionDenied, ValidationFailed
 from app.domain.masking import mask_sql
 from app.domain.sql_classifier import classify_sql
-from app.models import QueryFingerprint, Server
+from app.models import QueryFingerprint, QueryPlanSnapshot, Server
 from app.services import app_settings, audit
 from app.services import metrics as metrics_svc
 from app.services.authz import server_ref
@@ -235,6 +236,14 @@ class ExplainRequest(BaseModel):
     analyze: bool = False
     confirm: str | None = None
     reason: str | None = Field(None, max_length=1000)
+    #: save the resulting plan for later comparison (plan-vs-plan) under this label
+    save_label: str | None = Field(None, min_length=1, max_length=128)
+    #: the statement's fingerprint when explained from the query list (links the saved plan)
+    fingerprint: str | None = Field(None, max_length=32, pattern=r"^[0-9a-zA-Z]+$")
+
+
+#: a saved plan keeps the engine's raw plan document only up to this size
+MAX_RAW_PLAN_CHARS = 512_000
 
 
 @router.post("/servers/{server_id}/explain", dependencies=[rate_limit("expensive")])
@@ -305,6 +314,38 @@ async def explain(server_id: uuid.UUID, body: ExplainRequest, db: DB, p: Current
         details={"sha256": digest, "statement_type": cls.statement_type, "objects": cls.objects},
     )
     out = result.model_dump(mode="json")
+    if body.save_label:
+        plan = dict(out)
+        if len(json.dumps(plan.get("raw"), default=str)) > MAX_RAW_PLAN_CHARS:
+            plan["raw"] = None
+            plan["notes"] = [*plan.get("notes", []), "raw plan document omitted (too large to store)"]
+        snap = QueryPlanSnapshot(
+            id=uuid.uuid4(),
+            server_id=s.id,
+            database=body.database,
+            fingerprint=body.fingerprint,
+            label=body.save_label,
+            statement=body.sql,
+            statement_sha256=hashlib.sha256(body.sql.encode()).hexdigest(),
+            engine=s.engine,
+            mode=result.mode,
+            total_cost=result.total_cost,
+            plan=plan,
+            created_by=p.username,
+        )
+        db.add(snap)
+        await audit.record(
+            "query.plan_saved",
+            actor=p,
+            server=s,
+            database=body.database,
+            category="query",
+            target_type="query_plan",
+            target_id=str(snap.id),
+            object_name=body.save_label,
+            details={"sha256": digest, "mode": result.mode},
+        )
+        out["snapshot_id"] = str(snap.id)
     out["classification"] = cls.to_dict()
     out["simulated"] = s.is_demo
     return out

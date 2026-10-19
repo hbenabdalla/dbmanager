@@ -50,6 +50,8 @@ GLOBAL_JOBS: dict[str, int] = {
     "siem_export": 30,
     # backup policies due, lost backup workers, "no successful backup" notifications (app.backup)
     "backup_scheduler": 60,
+    # before/after measurement of resolved recommendations (app.services.perf_intel)
+    "validate_recommendations": 900,
 }
 
 

@@ -65,6 +65,8 @@ export interface Finding {
   confidence: number; guidance: string | null; status: string; status_reason: string | null;
   status_changed_by: string | null; first_seen_at: string; last_seen_at: string; resolved_at: string | null;
   expected_impact?: string; remediation?: string | null;
+  /** recommendations: before/after measurement once resolved (see features/performance) */
+  validation?: import("@/features/performance/intelligence").Validation | null;
 }
 
 export interface DatabaseInfo {

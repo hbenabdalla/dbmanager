@@ -246,9 +246,7 @@ class DemoAdapter(BaseDatabaseAdapter):
         g["memory.total_bytes"] = mem_total
         g["memory.used_bytes"] = round(mem_total * (0.72 + 0.05 * noise(s, "mem", ts)))
 
-        days = (ts - datetime(2026, 1, 1, tzinfo=UTC)).total_seconds() / 86400
-        growth = rnd(s, "growth", 0.0008, 0.004)
-        g["storage.database_bytes"] = round(self.size_gb * GiB * (1 + growth * days))
+        g["storage.database_bytes"] = self.data_bytes_at(ts)
         if "storage_full" in self.scenarios:
             used_pct = 96.0 + 1.8 * rnd(s, "stor", 0, 1) + 0.3 * noise(s, "storn", ts, 3600)
         elif "storage_pressure" in self.scenarios:
@@ -302,6 +300,14 @@ class DemoAdapter(BaseDatabaseAdapter):
         hours = (ts - self.regression_since).total_seconds() / 3600
         return 1.0 + weight * min(hours * 0.35, 14.0)
 
+    def _regression_integral(self, ts: datetime) -> float:
+        """∫ (multiplier − 1) dt in hours since the regression started (see ``_regression``)."""
+        if "regressing_query" not in self.scenarios or self.regression_since is None or ts <= self.regression_since:
+            return 0.0
+        h = (ts - self.regression_since).total_seconds() / 3600
+        cap_h = 14.0 / 0.35  # the multiplier stops growing after 40 h
+        return 0.175 * min(h, cap_h) ** 2 + 14.0 * max(h - cap_h, 0.0)
+
     async def get_performance_metrics(self, slow: bool = True) -> MetricSnapshot:
         await self.connect()
         return self.metrics_at(datetime.now(UTC))
@@ -309,14 +315,28 @@ class DemoAdapter(BaseDatabaseAdapter):
     # ------------------------------------------------------------------------------------
     # inventory
     # ------------------------------------------------------------------------------------
+    def data_bytes_at(self, ts: datetime) -> int:
+        """Total data volume of the simulated server, growing steadily (stable per seed)."""
+        days = (ts - datetime(2026, 1, 1, tzinfo=UTC)).total_seconds() / 86400
+        growth = rnd(self.seed, "growth", 0.0008, 0.004)
+        return round(self.size_gb * GiB * (1 + growth * days))
+
+    def database_shares(self) -> dict[str, float]:
+        """Share of the server's data volume per user database (stable per seed, sums to 1)."""
+        dbs = self.meta["databases"]
+        user_dbs = [d for d in dbs if d not in self.meta["system_dbs"]] or dbs
+        raw = {d: rnd(self.seed, d, 0.6, 1.4) for d in user_dbs}
+        total = sum(raw.values()) or 1.0
+        return {d: v / total for d, v in raw.items()}
+
     async def list_databases(self) -> list[DatabaseInfo]:
         await self.connect()
         dbs = self.meta["databases"]
-        user_dbs = [d for d in dbs if d not in self.meta["system_dbs"]] or dbs
-        total = self.size_gb * GiB
+        shares = self.database_shares()
+        total = self.data_bytes_at(datetime.now(UTC))
         out = []
         for d in dbs:
-            share = (1 / len(user_dbs)) * rnd(self.seed, d, 0.6, 1.4) if d in user_dbs else 0.002
+            share = shares.get(d, 0.002)
             out.append(
                 DatabaseInfo(
                     name=d,
@@ -326,7 +346,7 @@ class DemoAdapter(BaseDatabaseAdapter):
                     is_system=d in self.meta["system_dbs"],
                     allow_connections=True,
                     extra={
-                        "sessions": int(rnd(self.seed, d + "s", 0, 60)) if d in user_dbs else 0,
+                        "sessions": int(rnd(self.seed, d + "s", 0, 60)) if d in shares else 0,
                         "cache_hit_ratio": round(rnd(self.seed, d + "h", 97.5, 99.9), 2),
                     },
                 )
@@ -612,18 +632,29 @@ class DemoAdapter(BaseDatabaseAdapter):
         tmpl = catalog.QUERY_TEMPLATES.get(self.sim_engine, catalog.QUERY_TEMPLATES["postgresql"])
         dbs = [d for d in self.meta["databases"] if d not in self.meta["system_dbs"]] or self.meta["databases"]
         for i, (text, mean_ms, cpm) in enumerate(tmpl):
-            calls = int(cpm * 60 * hours_up * 0.55 * self.scale)
-            mean = mean_ms * pressure * (1 + 0.15 * noise(self.seed, f"qm{i}", now, 3600))
-            if mean_ms >= 500:
-                mean *= slow  # the heavy statements (scans, reports) get slower
+            rate_h = cpm * 60 * 0.55 * self.scale  # executions per hour
+            calls = int(rate_h * hours_up)
+            mean0 = mean_ms * pressure * (slow if mean_ms >= 500 else 1.0)  # heavy statements get slower
+            # cumulative counters must integrate the latency over time (as the engines' own
+            # statistics do), otherwise every hourly wobble looks like a regression
+            total_ms = calls * mean0
+            mean = mean0 * (1 + 0.15 * noise(self.seed, f"qm{i}", now, 3600))
             if i == 0:
                 mean *= self._regression(now)  # the hot statement regresses in ``regressing_query``
+                total_ms += rate_h * mean0 * self._regression_integral(now)
             rows_per = (
                 1
                 if text.lstrip().upper().startswith(("UPDATE", "INSERT", "DELETE"))
                 else int(rnd(self.seed, f"qr{i}", 1, 400))
             )
-            reads = int(calls * (mean * 9))
+            reads = int(total_ms * 9)
+            plans = plan_id = None
+            if self.sim_engine in ("oracle", "mssql"):
+                # simulated plan identity: the regressing statement switches to a new plan
+                regressed = i == 0 and self._regression(now) > 1.0
+                plans = 2 if regressed else 1
+                plan_id = int(rnd(self.seed, f"plan{i}{'b' if regressed else 'a'}", 1e8, 4e9))
+                plan_id = plan_id if self.sim_engine == "oracle" else None
             out.append(
                 QueryStat(
                     query_id=str(int(rnd(self.seed, text, 1e15, 9e15))),
@@ -631,16 +662,18 @@ class DemoAdapter(BaseDatabaseAdapter):
                     database=str(pick(self.seed, f"qd{i}", dbs)),
                     username=self.meta["users"][1 + i % 3][0],
                     calls=calls,
-                    total_ms=round(calls * mean, 1),
+                    total_ms=round(total_ms, 1),
                     mean_ms=round(mean, 3),
                     max_ms=round(mean * rnd(self.seed, f"qx{i}", 3, 25), 1),
                     stddev_ms=round(mean * 0.6, 2),
                     rows=calls * rows_per,
-                    cpu_ms=round(calls * mean * 0.6, 1) if self.sim_engine in ("mssql", "oracle", "db2") else None,
+                    cpu_ms=round(total_ms * 0.6, 1) if self.sim_engine in ("mssql", "oracle", "db2") else None,
                     logical_reads=reads,
                     physical_reads=int(reads * (0.08 if pressure > 1 else 0.006)),
                     temp_blocks=int(calls * 40) if mean_ms > 1000 else 0,
-                    lock_wait_ms=round(calls * mean * 0.02, 1) if self.sim_engine in ("mssql", "db2") else None,
+                    lock_wait_ms=round(total_ms * 0.02, 1) if self.sim_engine in ("mssql", "db2") else None,
+                    plans=plans,
+                    plan_id=plan_id,
                 )
             )
         out.sort(key=lambda q: q.total_ms, reverse=True)

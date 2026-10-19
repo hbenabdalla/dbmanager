@@ -1,7 +1,8 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { AlertTriangle, FileSearch, Gauge } from "lucide-react";
 import { useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
+import { toast } from "sonner";
 import { ApiError, get, post } from "@/api/client";
 import { serverCan } from "@/api/hooks";
 import type { DatabaseInfo, ExplainResult, ServerDetail } from "@/api/types";
@@ -12,7 +13,7 @@ import { SqlEditor } from "@/components/sql-editor";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
-import { Select } from "@/components/ui/input";
+import { Input, Select } from "@/components/ui/input";
 import { EmptyState, ErrorState } from "@/components/ui/states";
 import { compactNum, ms } from "@/lib/format";
 import { QueryStatsTable } from "../shared/query-stats";
@@ -39,16 +40,23 @@ export function SlowQueriesPage() {
 
 const SEV_TONE: Record<string, "crit" | "warn" | "info"> = { high: "crit", medium: "warn", low: "info" };
 
-function ExplainWorkbench({ server, initialSql, initialDb }: { server: ServerDetail; initialSql: string; initialDb?: string }) {
+function ExplainWorkbench({ server, initialSql, initialDb, fingerprint }: { server: ServerDetail; initialSql: string; initialDb?: string; fingerprint?: string }) {
   const [sql, setSql] = useState(initialSql);
+  const [saveLabel, setSaveLabel] = useState("");
   const dbs = useQuery({ queryKey: ["dbs", server.id], queryFn: () => get<DatabaseInfo[]>(`/servers/${server.id}/databases`) });
   const [database, setDatabase] = useState(initialDb || server.default_database || "");
   const [confirm, setConfirm] = useState<{ expected: string; reasons: string[]; production: boolean } | null>(null);
-  const [result, setResult] = useState<ExplainResult | null>(null);
+  const [result, setResult] = useState<(ExplainResult & { snapshot_id?: string }) | null>(null);
   const run = useMutation({
     mutationFn: (v: { analyze: boolean; confirm?: string; reason?: string }) =>
-      post<ExplainResult>(`/servers/${server.id}/explain`, { sql, database: database || null, analyze: v.analyze, confirm: v.confirm, reason: v.reason }),
-    onSuccess: (r) => { setResult(r); setConfirm(null); },
+      post<ExplainResult & { snapshot_id?: string }>(`/servers/${server.id}/explain`, {
+        sql, database: database || null, analyze: v.analyze, confirm: v.confirm, reason: v.reason,
+        save_label: saveLabel.trim() || undefined, fingerprint: saveLabel.trim() && fingerprint ? fingerprint : undefined,
+      }),
+    onSuccess: (r) => {
+      setResult(r); setConfirm(null);
+      if (r.snapshot_id) { toast.success(`Plan saved as “${saveLabel.trim()}”`); setSaveLabel(""); }
+    },
     onError: (e: ApiError) => {
       if (e.code === "confirmation_required") {
         const exp = e.details.expected === "server name" ? server.name : String(e.details.expected);
@@ -72,6 +80,8 @@ function ExplainWorkbench({ server, initialSql, initialDb }: { server: ServerDet
           <div className="flex flex-wrap items-center gap-2">
             <Button variant="primary" onClick={() => run.mutate({ analyze: false })} disabled={!sql.trim() || run.isPending}><FileSearch /> Explain (estimate)</Button>
             {canAnalyze && <Button onClick={() => run.mutate({ analyze: true })} disabled={!sql.trim() || run.isPending}><Gauge /> Explain analyze (executes)</Button>}
+            <Input aria-label="Save plan as" className="w-52" placeholder="Save plan as (optional)" maxLength={128} value={saveLabel} onChange={(e) => setSaveLabel(e.target.value)} />
+            <Link className="text-[12.5px] text-accent hover:underline" to={`/queries/plans/compare?server=${server.id}`}>Compare saved plans</Link>
             <span className="text-[12px] text-muted">Estimate never runs the statement. Analyze runs it inside a transaction that is always rolled back.</span>
           </div>
         </CardBody>
@@ -120,7 +130,7 @@ export function ExecutionPlansPage() {
   return (
     <ServerScopedPage title="Execution plans" description="Readable plan trees with issue detection. EXPLAIN and EXPLAIN ANALYZE are kept separate on purpose."
       crumbs={[{ label: "Queries" }, { label: "Execution plans" }]} perm="query.explain" cap="explain">
-      {(s) => <ExplainWorkbench key={s.id} server={s} initialSql={params.get("sql") ?? "SELECT *\nFROM orders o\nJOIN customers c ON c.id = o.customer_id\nWHERE o.status = 'open'\nORDER BY o.created_at DESC"} initialDb={params.get("database") ?? undefined} />}
+      {(s) => <ExplainWorkbench key={s.id} server={s} fingerprint={params.get("fp") ?? undefined} initialSql={params.get("sql") ?? "SELECT *\nFROM orders o\nJOIN customers c ON c.id = o.customer_id\nWHERE o.status = 'open'\nORDER BY o.created_at DESC"} initialDb={params.get("database") ?? undefined} />}
     </ServerScopedPage>
   );
 }

@@ -152,15 +152,21 @@ def normalize_query_stats(
         key = ((q.database or "")[:128], fp)
         m = merged.get(key)
         if m is None:
-            merged[key] = {"q": q, **{d.key: getattr(q, d.key, None) for d in QUERY_METRICS}}
+            merged[key] = {
+                "q": q,
+                "_plan_ms": q.total_ms or 0,
+                **{d.key: getattr(q, d.key, None) for d in QUERY_METRICS},
+            }
             continue
+        if q.plan_id is not None and (q.total_ms or 0) > m["_plan_ms"]:
+            m["plan_id"], m["_plan_ms"] = q.plan_id, q.total_ms or 0  # the dominant plan of the merged statement
         for d in QUERY_METRICS:
             v = getattr(q, d.key, None)
-            if v is None:
+            if v is None or d.key in ("mean_ms", "plan_id"):
                 continue
-            if d.key == "max_ms":
+            if d.key in ("max_ms", "plans"):
                 m[d.key] = max(m[d.key] or 0, v)
-            elif d.key != "mean_ms":
+            else:
                 m[d.key] = (m[d.key] or 0) + v
     for m in merged.values():
         if m.get("calls"):

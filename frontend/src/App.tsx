@@ -44,6 +44,7 @@ import { SetupChecklistPage } from "@/features/setup/checklist";
 import { SetupWizardPage } from "@/features/setup/setup-wizard";
 import { TopologyPage } from "@/features/topology/topology-page";
 import { ReplicationTopologyPage } from "@/features/topology/replication";
+import { CapacityForecastPage, PlanComparePage, QueryComparePage, QueryRegressionsPage, RecommendationValidationPage } from "./features/performance/intelligence";
 
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -87,6 +88,7 @@ export function AppRoutes() {
         <Route path="servers/:id" element={<ServerPage />} />
         <Route path="monitoring" element={<MonitoringOverviewPage />} />
         <Route path="monitoring/performance" element={<PerformanceComparePage />} />
+        <Route path="monitoring/capacity" element={<CapacityForecastPage />} />
         <Route path="monitoring/sessions" element={<SessionsPage />} />
         <Route path="monitoring/locks" element={<LocksPage />} />
         <Route path="monitoring/replication" element={<ReplicationPage />} />
@@ -96,6 +98,9 @@ export function AppRoutes() {
         <Route path="queries" element={<QueryPerformancePage />} />
         <Route path="queries/slow" element={<SlowQueriesPage />} />
         <Route path="queries/plans" element={<ExecutionPlansPage />} />
+        <Route path="queries/plans/compare" element={<PlanComparePage />} />
+        <Route path="queries/regressions" element={<QueryRegressionsPage />} />
+        <Route path="queries/compare" element={<QueryComparePage />} />
         <Route path="workspace" element={<WorkspacePage />} />
         <Route path="admin/databases" element={<AdminDatabasesPage />} />
         <Route path="admin/schemas" element={<AdminSchemasPage />} />
@@ -105,6 +110,7 @@ export function AppRoutes() {
         <Route path="optimization/performance" element={<RecommendationsPage group="performance" />} />
         <Route path="optimization/query" element={<RecommendationsPage group="query" />} />
         <Route path="optimization/configuration" element={<RecommendationsPage group="configuration" />} />
+        <Route path="optimization/outcomes" element={<RecommendationValidationPage />} />
         <Route path="security" element={<PosturePage />} />
         <Route path="security/findings" element={<SecurityFindingsPage />} />
         <Route path="security/privileged" element={<PrivilegedAccountsPage />} />

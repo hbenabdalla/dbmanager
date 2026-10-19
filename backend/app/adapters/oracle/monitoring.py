@@ -283,6 +283,8 @@ class OracleMonitoringMixin(OracleBase):
                     logical_reads=int(num(r["buffer_gets"], 0) or 0),
                     physical_reads=int(num(r["disk_reads"], 0) or 0),
                     lock_wait_ms=num(r["app_wait_ms"]),
+                    plans=int(num(r["plans"], 0) or 0) or None,
+                    plan_id=int(num(r["top_plan"], 0) or 0) or None,
                     extra=jsonable(
                         {
                             "plans": r["plans"],
