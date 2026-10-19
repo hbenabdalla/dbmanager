@@ -48,6 +48,8 @@ GLOBAL_JOBS: dict[str, int] = {
     "notification_retries": 60,
     # audit events to the configured SIEM destinations (app.services.siem)
     "siem_export": 30,
+    # backup policies due, lost backup workers, "no successful backup" notifications (app.backup)
+    "backup_scheduler": 60,
 }
 
 

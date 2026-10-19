@@ -146,7 +146,32 @@ services:
       DBM_SMTP_USER: ${DBM_SMTP_USER:-}
       DBM_SMTP_PASSWORD: ${DBM_SMTP_PASSWORD:-}
       DBM_SMTP_FROM: ${DBM_SMTP_FROM:-}
-      DBM_SMTP_STARTTLS: ${DBM_SMTP_STARTTLS:-true}
+      # starttls (587) | tls (implicit, 465) | none; DBM_SMTP_STARTTLS is the deprecated older switch
+      DBM_SMTP_SECURITY: ${DBM_SMTP_SECURITY:-starttls}
+      DBM_SMTP_CA_FILE: ${DBM_SMTP_CA_FILE:-}
+      DBM_NOTIFY_MAX_ATTEMPTS: ${DBM_NOTIFY_MAX_ATTEMPTS:-5}
+      DBM_NOTIFY_RETRY_BACKOFF_SECONDS: ${DBM_NOTIFY_RETRY_BACKOFF_SECONDS:-60,300,900,3600}
+      # multi-factor authentication for local accounts: none | admins | all
+      DBM_MFA_REQUIRED_FOR: ${DBM_MFA_REQUIRED_FOR:-none}
+      DBM_MFA_ISSUER: ${DBM_MFA_ISSUER:-DB Manager}
+      # HashiCorp Vault credential provider (empty address = not available)
+      DBM_VAULT_ADDR: ${DBM_VAULT_ADDR:-}
+      DBM_VAULT_NAMESPACE: ${DBM_VAULT_NAMESPACE:-}
+      DBM_VAULT_AUTH: ${DBM_VAULT_AUTH:-token}
+      DBM_VAULT_TOKEN: ${DBM_VAULT_TOKEN:-}
+      DBM_VAULT_ROLE_ID: ${DBM_VAULT_ROLE_ID:-}
+      DBM_VAULT_SECRET_ID: ${DBM_VAULT_SECRET_ID:-}
+      DBM_VAULT_KV_MOUNT: ${DBM_VAULT_KV_MOUNT:-secret}
+      # backup & restore: storage targets of kind local/mounted/nfs must be under these directories
+      DBM_BACKUP_ALLOWED_ROOTS: ${DBM_BACKUP_ALLOWED_ROOTS:-/var/lib/dbmanager/backups}
+      DBM_BACKUP_WORK_DIR: /var/lib/dbmanager/work
+      DBM_BACKUP_IDENTITY_FILE: ${DBM_BACKUP_IDENTITY_FILE:-}
+    volumes:
+      # backups written by the "local" storage target; bind-mount an NFS/SMB share here instead for
+      # off-host copies (docs/backup-restore/storage-targets.md)
+      - ${DBM_BACKUP_HOST_DIR:-backups}:/var/lib/dbmanager/backups
+      # scratch space for building archives and dumps (not tmpfs: dumps can be large)
+      - backupwork:/var/lib/dbmanager/work
     networks: [data, app]
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/readyz', timeout=4).status == 200 else 1)"]
@@ -191,3 +216,5 @@ networks:
 volumes:
   pgdata: {}
   tsdata: {}
+  backups: {}
+  backupwork: {}

@@ -189,6 +189,12 @@ def _send_syslog_sync(config: dict[str, Any], messages: list[bytes]) -> None:
         with conn:
             # octet counting framing (RFC 6587 §3.4.1 / RFC 5425 §4.3)
             conn.sendall(b"".join(str(len(m)).encode() + b" " + m for m in messages))
+            if isinstance(conn, ssl.SSLSocket):
+                # orderly TLS closure (close_notify, RFC 5425 §4.4) so the receiver sees a clean end
+                try:
+                    conn.unwrap()
+                except (OSError, ssl.SSLError):
+                    pass
     finally:
         raw.close()
 

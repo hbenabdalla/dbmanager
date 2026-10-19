@@ -121,9 +121,13 @@ async def test_registered_server_connects_with_a_vault_secret(admin, vault) -> N
         "username": u.username,
         "provider": "vault",
     }
-    ok = (await admin.post("/api/v1/servers/test-connection", json={**pre, "secret_ref": "databases/pg-it#password"})).json()
+    ok = (
+        await admin.post("/api/v1/servers/test-connection", json={**pre, "secret_ref": "databases/pg-it#password"})
+    ).json()
     assert ok["ok"] is True, ok
-    bad = (await admin.post("/api/v1/servers/test-connection", json={**pre, "secret_ref": "databases/nope#password"})).json()
+    bad = (
+        await admin.post("/api/v1/servers/test-connection", json={**pre, "secret_ref": "databases/nope#password"})
+    ).json()
     assert bad["ok"] is False and bad["error_code"] == "CREDENTIAL_UNAVAILABLE"
     r = await admin.post(
         "/api/v1/servers",

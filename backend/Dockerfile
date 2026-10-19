@@ -33,6 +33,15 @@ ENV PATH=/opt/venv/bin:$PATH PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 \
 #    INSTALL_MSODBC=false skips the attempt entirely (same runtime result).
 ARG INSTALL_MSODBC=true
 ARG MSODBC_OPTIONAL=false
+# Backup client tools (Backup & Restore of managed databases, docs/backup-restore/engine-support.md):
+#  - pg_dump / pg_restore 17 from the PostgreSQL project's apt repository (dumps PostgreSQL 9.2–17),
+#    falling back to Debian's client when apt.postgresql.org is unreachable;
+#  - mariadb-dump / mariadb (MariaDB 10.11 client, also installed as mysqldump / mysql).
+#    MySQL's own mysqldump is not redistributed here; mount it and set DBM_BACKUP_MYSQL_BIN_DIR for
+#    MySQL-specific objects (see the engine support page).
+#  SQL Server, Oracle and Db2 backups run inside the database server (no client tools needed).
+#  INSTALL_BACKUP_TOOLS=false builds an image without them (database backups then report TOOL_MISSING).
+ARG INSTALL_BACKUP_TOOLS=true
 RUN apt-get update && apt-get upgrade -y \
     && apt-get install -y --no-install-recommends unixodbc libxml2 ca-certificates curl gnupg \
     && if [ "$INSTALL_MSODBC" = "true" ]; then \
@@ -50,16 +59,31 @@ RUN apt-get update && apt-get upgrade -y \
                 exit 1; \
               fi; } ; \
        fi \
+    && if [ "$INSTALL_BACKUP_TOOLS" = "true" ]; then \
+         apt-get install -y --no-install-recommends mariadb-client \
+         && ( curl -fsSL --retry 3 https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor -o /usr/share/keyrings/pgdg.gpg \
+              && echo "deb [signed-by=/usr/share/keyrings/pgdg.gpg] https://apt.postgresql.org/pub/repos/apt bookworm-pgdg main" \
+                   > /etc/apt/sources.list.d/pgdg.list \
+              && apt-get update && apt-get install -y --no-install-recommends postgresql-client-17 ) \
+         || { rm -f /etc/apt/sources.list.d/pgdg.list; \
+              echo "WARNING: apt.postgresql.org unreachable: installing Debian's postgresql-client (15); servers newer than 15 cannot be dumped."; \
+              apt-get update && apt-get install -y --no-install-recommends postgresql-client; } ; \
+       fi \
     && apt-get purge -y --auto-remove curl gnupg \
     && rm -rf /var/lib/apt/lists/* \
-    && useradd --uid 10001 --gid 0 --no-create-home --shell /usr/sbin/nologin dbm
+    && useradd --uid 10001 --gid 0 --no-create-home --shell /usr/sbin/nologin dbm \
+    && mkdir -p /var/lib/dbmanager/backups /var/lib/dbmanager/work \
+    && chown 10001:0 /var/lib/dbmanager/backups /var/lib/dbmanager/work \
+    && chmod 0770 /var/lib/dbmanager/backups /var/lib/dbmanager/work
 COPY --from=build /opt/venv /opt/venv
 WORKDIR /app
 COPY --chown=10001:0 alembic.ini ./
 COPY --chown=10001:0 alembic ./alembic
 COPY --chown=10001:0 app ./app
-# OpenShift runs with an arbitrary UID in group 0: keep files group-readable, nothing writable needed.
+# OpenShift runs with an arbitrary UID in group 0: keep files group-readable; the only writable
+# path is the default backup directory (mount a volume there, see docker-compose.yml).
 RUN chmod -R g=u /app
+VOLUME ["/var/lib/dbmanager/backups", "/var/lib/dbmanager/work"]
 USER 10001
 EXPOSE 8000
 HEALTHCHECK --interval=15s --timeout=5s --start-period=60s --retries=5 \

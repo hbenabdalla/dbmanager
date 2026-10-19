@@ -190,11 +190,35 @@ class Settings(BaseSettings):
     notify_max_attempts: int = Field(default=5, ge=1, le=20)
     notify_retry_backoff_seconds: CsvList = Field(default_factory=lambda: ["60", "300", "900", "3600"])
 
+    # --- backup & restore (app.backup) -------------------------------------------------------
+    #: file-system storage targets (local disk, a mounted volume, an NFS mount) must live under one
+    #: of these directories; DB Manager never writes or deletes outside them
+    backup_allowed_roots: CsvList = Field(default_factory=lambda: ["/var/lib/dbmanager/backups"])
+    #: scratch space for building and verifying archives (default: the system temp directory)
+    backup_work_dir: str = ""
+    #: backup jobs running at the same time in one worker process
+    backup_concurrency: int = Field(default=1, ge=1, le=16)
+    #: a running backup job without a heartbeat for this long is marked FAILED (worker lost)
+    backup_stale_minutes: int = Field(default=30, ge=5)
+    #: decryption identity for age-recipient backups used by scheduled verification / restore:
+    #: a file holding an AGE-SECRET-KEY-1… line (never stored in the database)
+    backup_identity_file: str = ""
+    #: external tool binaries (PATH lookup when empty)
+    backup_pg_bin_dir: str = ""
+    backup_mysql_bin_dir: str = ""
+    #: an external tool run longer than this is cancelled
+    backup_tool_timeout_seconds: int = Field(default=6 * 3600, ge=60)
+
     # --- AI insights (architected, disabled) ---------------------------------------------
     ai_insights_enabled: bool = False
 
     @field_validator(
-        "cors_origins", "trusted_proxies", "secret_file_dirs", "notify_retry_backoff_seconds", mode="before"
+        "cors_origins",
+        "trusted_proxies",
+        "secret_file_dirs",
+        "notify_retry_backoff_seconds",
+        "backup_allowed_roots",
+        mode="before",
     )
     @classmethod
     def _split_csv(cls, v: object) -> object:

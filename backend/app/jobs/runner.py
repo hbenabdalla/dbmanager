@@ -250,6 +250,10 @@ async def run_job(job_id: uuid.UUID) -> None:
                     from app.services import siem
 
                     result = await siem.export(db)
+                elif job.kind == "backup_scheduler":
+                    from app.backup import service as backup_service
+
+                    result = await backup_service.schedule(db)
                 else:
                     status, error = "skipped", f"unknown global job {job.kind}"
             else:
@@ -309,6 +313,7 @@ class BackgroundRunner:
         self._tasks = [
             asyncio.create_task(self._scheduler_loop(), name="dbm-scheduler"),
             asyncio.create_task(self._worker_loop(), name="dbm-worker"),
+            asyncio.create_task(self._backup_loop(), name="dbm-backup-worker"),
         ]
 
     async def stop(self) -> None:
@@ -370,6 +375,32 @@ class BackgroundRunner:
                 log.exception("worker poll failed")
             try:
                 await asyncio.wait_for(self._stop.wait(), timeout=s.worker_poll_seconds)
+            except TimeoutError:
+                pass
+        for t in inflight:
+            t.cancel()
+
+    async def _backup_loop(self) -> None:
+        """Backup / restore jobs (``backup_jobs``): long-running, outside the collector pool."""
+        from app.backup import service as backup_service
+
+        s = get_settings()
+        inflight: set[asyncio.Task[object]] = set()
+        while not self._stop.is_set():
+            try:
+                while len(inflight) < s.backup_concurrency:
+                    jid = await backup_service.claim()
+                    if jid is None:
+                        break
+                    t = asyncio.create_task(backup_service.run(jid))
+                    inflight.add(t)
+                    t.add_done_callback(inflight.discard)
+            except asyncio.CancelledError:
+                break
+            except Exception:  # noqa: BLE001
+                log.exception("backup worker poll failed")
+            try:
+                await asyncio.wait_for(self._stop.wait(), timeout=max(s.worker_poll_seconds, 2.0))
             except TimeoutError:
                 pass
         for t in inflight:

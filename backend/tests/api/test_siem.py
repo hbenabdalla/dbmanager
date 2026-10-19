@@ -198,9 +198,14 @@ async def test_syslog_over_tls_verifies_the_server(admin, tmp_path) -> None:  # 
         def handle(self) -> None:
             conn = ctx.wrap_socket(self.request, server_side=True)
             data = b""
-            while chunk := conn.recv(65536):
-                data += chunk
-            got.append(data)
+            try:
+                while chunk := conn.recv(65536):
+                    data += chunk
+            except (OSError, ssl.SSLError):
+                pass  # an abrupt close after the data still counts
+            finally:
+                if data:
+                    got.append(data)
 
     srv = _serve(socketserver.ThreadingTCPServer, TLSHandler)
     port = srv.server_address[1]

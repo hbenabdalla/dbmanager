@@ -8,6 +8,7 @@ from app.models.alerting import (
     NotificationDelivery,
 )
 from app.models.audit import AppSetting, AuditEvent, QueryHistory, RateLimitWindow, SiemDestination
+from app.models.backup import Backup, BackupJob, BackupPolicy, BackupTarget
 from app.models.identity import (
     ApiToken,
     Group,
@@ -45,6 +46,10 @@ __all__ = [
     "NotificationChannel",
     "NotificationDelivery",
     "AppSetting",
+    "Backup",
+    "BackupJob",
+    "BackupPolicy",
+    "BackupTarget",
     "Application",
     "AuditEvent",
     "Cluster",

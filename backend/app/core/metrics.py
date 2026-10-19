@@ -43,3 +43,21 @@ TIMESERIES_QUERY_LATENCY = Histogram(
     ["op"],
     buckets=(0.002, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10),
 )
+
+# --- backup & restore (app.backup.service) -------------------------------------------------------
+BACKUP_JOBS = Counter("dbm_backup_jobs_total", "Backup jobs finished", ["kind", "result"])
+BACKUP_FAILURES = Counter("dbm_backup_failures_total", "Backups that failed or were found corrupted", ["kind"])
+BACKUP_DURATION = Histogram(
+    "dbm_backup_duration_seconds",
+    "Backup job duration",
+    ["kind"],
+    buckets=(1, 5, 15, 30, 60, 300, 900, 1800, 3600, 7200, 21600),
+)
+BACKUP_BYTES = Counter("dbm_backup_bytes_total", "Bytes written to backup storage", ["kind"])
+RESTORE_JOBS = Counter("dbm_restore_jobs_total", "Restore jobs finished", ["kind", "result"])
+RESTORE_FAILURES = Counter("dbm_restore_failures_total", "Restore jobs that failed", ["kind"])
+BACKUP_LAST_SUCCESS = Gauge(
+    "dbm_backup_last_successful_backup_timestamp_seconds",
+    'Unix time of the newest successful backup per policy (manual backups: policy="manual")',
+    ["policy"],
+)
