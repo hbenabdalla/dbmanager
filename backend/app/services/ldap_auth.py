@@ -34,14 +34,18 @@ def provider_secret(p: IdentityProvider) -> str | None:
 
 
 def _server(cfg: dict[str, Any]):  # type: ignore[no-untyped-def]
-    from ldap3 import Server, Tls
+    from ldap3 import NONE, Server, Tls
 
     uri: str = cfg["server_uri"]
     tls = None
     if uri.startswith("ldaps://") or cfg.get("start_tls"):
         validate = ssl.CERT_REQUIRED if cfg.get("verify_cert", True) else ssl.CERT_NONE
         tls = Tls(validate=validate, ca_certs_data=cfg.get("ca_pem") or None, version=ssl.PROTOCOL_TLS_CLIENT)
-    return Server(uri, use_ssl=uri.startswith("ldaps://"), tls=tls, connect_timeout=int(cfg.get("timeout", 8)))
+    # get_info=NONE: no schema download, so requested attributes the directory does not define
+    # (e.g. memberOf without the overlay) are simply absent instead of an error
+    return Server(
+        uri, use_ssl=uri.startswith("ldaps://"), tls=tls, connect_timeout=int(cfg.get("timeout", 8)), get_info=NONE
+    )
 
 
 def _ldap_lookup_and_bind(
@@ -57,6 +61,9 @@ def _ldap_lookup_and_bind(
         password=bind_password or None,
         receive_timeout=int(cfg.get("timeout", 8)),
         raise_exceptions=False,
+        # do not validate attribute names against the server schema: directories without the
+        # memberOf overlay simply return no groups instead of failing the sign-in
+        check_names=False,
     )
     if cfg.get("start_tls") and not cfg["server_uri"].startswith("ldaps://"):
         svc.open()
@@ -71,9 +78,8 @@ def _ldap_lookup_and_bind(
         attr_mail = cfg.get("attr_email", "mail")
         attr_name = cfg.get("attr_display_name", "displayName")
         group_attr = cfg.get("group_attribute", "memberOf")
-        svc.search(
-            cfg["user_base_dn"], flt, SUBTREE, attributes=[attr_user, attr_mail, attr_name, group_attr], size_limit=2
-        )
+        attrs = [a for a in (attr_user, attr_mail, attr_name, group_attr) if a]
+        svc.search(cfg["user_base_dn"], flt, SUBTREE, attributes=attrs, size_limit=2)
         if len(svc.entries) != 1:
             return None
         e = svc.entries[0]
@@ -82,7 +88,7 @@ def _ldap_lookup_and_bind(
         def _val(a: str) -> str | None:
             return str(e[a].value) if a in e and e[a].value else None
 
-        groups: list[str] = [str(g) for g in (e[group_attr].values if group_attr in e else [])]
+        groups: list[str] = [str(g) for g in (e[group_attr].values if group_attr and group_attr in e else [])]
         if cfg.get("group_search_base"):
             gflt = cfg.get("group_filter", "(member={user_dn})").replace("{user_dn}", escape_filter_chars(dn))
             svc.search(cfg["group_search_base"], gflt, SUBTREE, attributes=["cn"])

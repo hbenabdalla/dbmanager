@@ -88,6 +88,40 @@ def _claim(claims: dict[str, Any], path: str) -> Any:
 
 
 async def callback(db: AsyncSession, provider: IdentityProvider, code: str, state: str, sealed: str | None) -> User:
+    """Complete the sign-in: validate the flow and the ID token, then provision the user."""
+    claims = await exchange_and_validate(provider, code, state, sealed)
+    cfg = provider.config
+    username = _claim(claims, cfg.get("username_claim", "preferred_username")) or claims.get("email") or claims["sub"]
+    email = claims.get("email")
+    allowed = cfg.get("allowed_email_domains") or []
+    if allowed and (not email or email.split("@")[-1].lower() not in [d.lower() for d in allowed]):
+        raise NotAuthenticated("Your account is not permitted to sign in")
+    user = await provision_external_user(
+        db,
+        provider,
+        subject=str(claims["sub"]),
+        username=str(username),
+        email=email,
+        display_name=claims.get("name"),
+        external_groups=groups_of(cfg, claims),
+    )
+    if user is None:
+        raise NotAuthenticated("Your account is not permitted to sign in")
+    return user
+
+
+def groups_of(cfg: dict[str, Any], claims: dict[str, Any]) -> list[str]:
+    groups = _claim(claims, cfg.get("groups_claim", "groups")) or []
+    if isinstance(groups, str):
+        groups = [groups]
+    return [str(g) for g in groups]
+
+
+async def exchange_and_validate(
+    provider: IdentityProvider, code: str, state: str, sealed: str | None
+) -> dict[str, Any]:
+    """Check state/expiry of the sealed flow, exchange the code (PKCE), validate the ID token
+    (signature, issuer, audience, nonce, expiry) and the MFA requirement; returns the claims."""
     if not sealed:
         raise NotAuthenticated("Login session expired; start sign-in again")
     try:
@@ -139,29 +173,9 @@ async def callback(db: AsyncSession, provider: IdentityProvider, code: str, stat
         registry.validate(token.claims)
     except (JoseError, ValueError) as exc:
         raise NotAuthenticated("The identity provider's ID token could not be validated") from exc
-    claims = token.claims
+    claims = dict(token.claims)
     check_mfa(cfg, claims)
-
-    username = _claim(claims, cfg.get("username_claim", "preferred_username")) or claims.get("email") or claims["sub"]
-    email = claims.get("email")
-    allowed = cfg.get("allowed_email_domains") or []
-    if allowed and (not email or email.split("@")[-1].lower() not in [d.lower() for d in allowed]):
-        raise NotAuthenticated("Your account is not permitted to sign in")
-    groups = _claim(claims, cfg.get("groups_claim", "groups")) or []
-    if isinstance(groups, str):
-        groups = [groups]
-    user = await provision_external_user(
-        db,
-        provider,
-        subject=str(claims["sub"]),
-        username=str(username),
-        email=email,
-        display_name=claims.get("name"),
-        external_groups=[str(g) for g in groups],
-    )
-    if user is None:
-        raise NotAuthenticated("Your account is not permitted to sign in")
-    return user
+    return claims
 
 
 def check_mfa(cfg: dict[str, Any], claims: dict[str, Any]) -> None:

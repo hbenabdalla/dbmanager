@@ -1,0 +1,56 @@
+{
+  "realm": "dbm",
+  "enabled": true,
+  "sslRequired": "none",
+  "groups": [{ "name": "dbadmins" }, { "name": "developers" }],
+  "users": [
+    {
+      "username": "alice",
+      "enabled": true,
+      "email": "alice@example.org",
+      "emailVerified": true,
+      "firstName": "Alice",
+      "lastName": "Admin",
+      "credentials": [{ "type": "password", "value": "It-Alice-Passw0rd", "temporary": false }],
+      "groups": ["/dbadmins", "/developers"]
+    },
+    {
+      "username": "bob",
+      "enabled": true,
+      "email": "bob@example.org",
+      "emailVerified": true,
+      "firstName": "Bob",
+      "lastName": "Builder",
+      "credentials": [{ "type": "password", "value": "It-Bob-Passw0rd", "temporary": false }],
+      "groups": ["/developers"]
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "dbmanager",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "it-dbmanager-client-secret",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": ["http://it-runner/*"],
+      "webOrigins": ["+"],
+      "attributes": { "pkce.code.challenge.method": "S256" },
+      "protocolMappers": [
+        {
+          "name": "groups",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-group-membership-mapper",
+          "config": {
+            "claim.name": "groups",
+            "full.path": "false",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        }
+      ]
+    }
+  ]
+}

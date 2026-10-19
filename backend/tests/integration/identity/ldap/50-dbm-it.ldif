@@ -1,0 +1,44 @@
+# Test directory for the identity integration tests (throw-away container, test-only passwords).
+dn: ou=people,dc=example,dc=org
+objectClass: organizationalUnit
+ou: people
+
+dn: ou=groups,dc=example,dc=org
+objectClass: organizationalUnit
+ou: groups
+
+dn: uid=alice,ou=people,dc=example,dc=org
+objectClass: inetOrgPerson
+uid: alice
+cn: Alice Admin
+sn: Admin
+displayName: Alice Admin
+mail: alice@example.org
+userPassword: It-Alice-Passw0rd
+
+dn: uid=bob,ou=people,dc=example,dc=org
+objectClass: inetOrgPerson
+uid: bob
+cn: Bob Builder
+sn: Builder
+displayName: Bob Builder
+mail: bob@example.org
+userPassword: It-Bob-Passw0rd
+
+dn: uid=svc-dbm,ou=people,dc=example,dc=org
+objectClass: inetOrgPerson
+uid: svc-dbm
+cn: DB Manager service account
+sn: Service
+userPassword: It-Bind-Passw0rd
+
+dn: cn=dbadmins,ou=groups,dc=example,dc=org
+objectClass: groupOfNames
+cn: dbadmins
+member: uid=alice,ou=people,dc=example,dc=org
+
+dn: cn=developers,ou=groups,dc=example,dc=org
+objectClass: groupOfNames
+cn: developers
+member: uid=alice,ou=people,dc=example,dc=org
+member: uid=bob,ou=people,dc=example,dc=org

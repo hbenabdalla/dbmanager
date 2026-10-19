@@ -29,6 +29,13 @@ CAPABILITIES = [
     "security",
     "recommendations",
     "administration",
+    # integrations (identity providers, secret stores) and backup/restore
+    "authentication",
+    "group_mapping",
+    "mfa",
+    "secrets",
+    "backup",
+    "restore",
 ]
 ENGINE_FILES = {
     "test_postgres_adapter.py": "postgresql",
@@ -109,6 +116,8 @@ def merge(existing: dict[str, Any] | None, new: dict[str, Any]) -> dict[str, Any
     for engine, e in new["engines"].items():
         if e["result"] != "skipped" or engine not in out["engines"]:
             out["engines"][engine] = {**e, "validated_at": new["generated_at"]}
+    if existing and "environment" in existing:
+        out["environment"] = existing["environment"]
     for key in ("pending", "notes"):
         if existing and key in existing:
             out[key] = (

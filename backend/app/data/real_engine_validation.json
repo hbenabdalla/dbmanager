@@ -12,7 +12,13 @@
     "storage",
     "security",
     "recommendations",
-    "administration"
+    "administration",
+    "authentication",
+    "group_mapping",
+    "mfa",
+    "secrets",
+    "backup",
+    "restore"
   ],
   "engines": {
     "db2": {
@@ -604,14 +610,89 @@
       },
       "result": "passed",
       "validated_at": "2026-10-18T08:02:08.725237+00:00"
+    },
+    "openldap": {
+      "version": "OpenLDAP 2.6.10 (Ubuntu slapd, local test directory)",
+      "capabilities": {
+        "connection": {
+          "status": "not_tested"
+        },
+        "inventory": {
+          "status": "not_tested"
+        },
+        "users": {
+          "status": "not_tested"
+        },
+        "privileges": {
+          "status": "not_tested"
+        },
+        "sessions": {
+          "status": "not_tested"
+        },
+        "locks": {
+          "status": "not_tested"
+        },
+        "metrics": {
+          "status": "not_tested"
+        },
+        "queries": {
+          "status": "not_tested"
+        },
+        "explain": {
+          "status": "not_tested"
+        },
+        "storage": {
+          "status": "not_tested"
+        },
+        "security": {
+          "status": "not_tested"
+        },
+        "recommendations": {
+          "status": "not_tested"
+        },
+        "administration": {
+          "status": "not_tested"
+        },
+        "authentication": {
+          "status": "validated",
+          "passed": 2,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "group_mapping": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "mfa": {
+          "status": "not_tested"
+        },
+        "secrets": {
+          "status": "not_tested"
+        },
+        "backup": {
+          "status": "not_tested"
+        },
+        "restore": {
+          "status": "not_tested"
+        }
+      },
+      "result": "passed",
+      "validated_at": "2026-10-19T00:05:37.805170+00:00"
     }
   },
-  "generated_at": "2026-10-18T08:02:08.725237+00:00",
   "environment": "docker-compose.test.yml via scripts/integration-test.ps1 (Docker Desktop / WSL 2): vendor images from Docker Hub, mcr.microsoft.com, container-registry.oracle.com, icr.io; backend image with Microsoft ODBC Driver 18.7",
   "pending": {
-    "db2zos": "External validation required: Db2 for z/OS cannot run in a container; validate against a z/OS subsystem through Db2 Connect."
+    "db2zos": "External validation required: Db2 for z/OS cannot run in a container; validate against a z/OS subsystem through Db2 Connect.",
+    "keycloak": "Run scripts/integration-test identity (Keycloak 26 container) to validate the OIDC flow.",
+    "vault": "Run scripts/integration-test vault (Vault dev server container) to validate KV v2 and AppRole."
   },
   "notes": {
-    "oracle": "TCPS not exercised: the Oracle XE image listens on TCP only (set DBM_IT_ORACLE_TCPS_PORT to test a TCPS listener)."
-  }
+    "oracle": "TCPS not exercised: the Oracle XE image listens on TCP only (set DBM_IT_ORACLE_TCPS_PORT to test a TCPS listener).",
+    "openldap": "Validated with the identity suite against a local OpenLDAP 2.6.10 server holding the tests/integration/identity/ldap fixture (bind, search, group search, StartTLS). Keycloak (OIDC) and the osixia/openldap container run with scripts/integration-test identity."
+  },
+  "generated_at": "2026-10-19T00:05:37.805170+00:00"
 }

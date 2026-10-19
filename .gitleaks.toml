@@ -1,11 +1,21 @@
-# gitleaks configuration: the default rules plus allowlists for test fixtures that look like
-# credentials but are not. Keep entries narrow (path AND exact value) so real secrets still fail.
+# gitleaks configuration: the default rules plus one allowlist for test fixtures that look like
+# credentials but are not. Narrow on purpose: a finding is only ignored when it is in one of these
+# test files AND the line contains one of these fixed test values, so real secrets still fail.
 [extend]
 useDefault = true
 
 [allowlist]
-description = "test fixture password in the simulation API test (not a credential)"
+description = "fixed test-only values (simulation API test, identity and Vault integration fixtures)"
 condition = "AND"
-paths = ['''^backend/tests/api/test_simulation\.py$''']
+paths = [
+  '''^backend/tests/api/test_simulation\.py$''',
+  '''^backend/tests/integration/identity/''',
+  '''^backend/tests/integration/test_vault_real\.py$''',
+]
 regexTarget = "line"
-regexes = ['''"password": "Pw-123456789"''']
+regexes = [
+  '''"password": "Pw-123456789"''',
+  '''It-(Alice|Bob|Bind)-Passw0rd''',
+  '''it-dbmanager-client-secret''',
+  '''Vault-Pg-Secret-1|Not-For-DBM''',
+]
