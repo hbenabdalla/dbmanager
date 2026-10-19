@@ -48,7 +48,9 @@ run() { echo "+ $*"; "$@" 2>&1 | tee -a "$LOG"; return "${PIPESTATUS[0]}"; }
 run "${C[@]}" "${PROFILES[@]}" up -d --wait --wait-timeout 2400 "${SERVICES[@]}" \
   || echo "WARNING: an engine did not become healthy; its tests will report the failure"
 if [[ " ${ENGINES[*]} " == *" db2 "* ]]; then
-  run "${C[@]}" --profile db2 exec -T db2 bash /var/custom/dbm-it-users.sh
+  # bounded: a setup step must never block the whole run (the script itself also gives up on locks)
+  run "${C[@]}" --profile db2 exec -T db2 timeout 900 bash /var/custom/dbm-it-users.sh \
+    || echo "WARNING: Db2 user setup did not finish; Db2 tests may skip or fail (see /database/dbm-it-users.log in the db2 container)"
 fi
 run "${C[@]}" --profile runner build it-runner || { echo "building the test runner failed" >&2; exit 1; }
 run "${C[@]}" --profile runner run --rm "${ENVS[@]}" it-runner; rc=$?

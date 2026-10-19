@@ -98,7 +98,9 @@ if ($rc -ne 0) {
 }
 
 if ($Engines -contains 'db2') {
-  $rc = Invoke-Docker ($compose + @('--profile', 'db2', 'exec', '-T', 'db2', 'bash', '/var/custom/dbm-it-users.sh'))
+  # bounded: a setup step must never block the whole run (the script itself also gives up on locks)
+  $rc = Invoke-Docker ($compose + @('--profile', 'db2', 'exec', '-T', 'db2', 'timeout', '900', 'bash', '/var/custom/dbm-it-users.sh'))
+  if ($rc -ne 0) { Write-Warning "Db2 user setup did not finish (exit $rc); Db2 tests may skip or fail. Log: docker compose -f docker-compose.test.yml exec db2 cat /database/dbm-it-users.log" }
 }
 
 $rc = Invoke-Docker ($compose + @('--profile', 'runner', 'build', 'it-runner'))

@@ -82,3 +82,28 @@ more keys, **appends** the missing ones to an existing file (existing values are
 
 The test layout, markers and how to run individual suites are described in
 [Testing](../development/testing.md).
+
+## Troubleshooting
+
+**The run stops after `CALL SYSPROC.SYSINSTALLOBJECTS(...)` (Db2 user setup).** An earlier run that
+was interrupted with Ctrl+C keeps running *inside* the Db2 container and can hold catalog locks.
+Db2 waits for a lock forever by default, so the next run blocks behind it. The setup script now:
+
+- stops any earlier run of itself and its stale CLP processes when it starts;
+- skips the explain tables when they already exist;
+- gives up on a lock after 60 seconds;
+- runs under a 15-minute `timeout`.
+
+If a container is still stuck from before this fix, restart Db2 once (its data volume is kept):
+
+```shell
+docker compose -f docker-compose.test.yml --profile db2 restart db2
+```
+
+**Containers are still running after an interrupted run.** The script only stops the engines at
+the end of a complete run. To stop them, or to start from empty databases:
+
+```shell
+docker compose -f docker-compose.test.yml --profile all stop      # keep data
+docker compose -f docker-compose.test.yml --profile all down -v   # remove data too
+```

@@ -14,6 +14,18 @@ INST=${DB2INSTANCE:-db2inst1}
 exec > >(tee -a "$LOG") 2>&1
 echo "== $(date -u +%FT%TZ) dbm-it-users"
 
+# One run at a time. A run interrupted on the host (Ctrl+C) keeps going inside the container and
+# can hold catalog locks; a new run would then wait for them forever (Db2's default LOCKTIMEOUT is
+# -1). Stop any earlier run and its CLP back-end processes first.
+for pid in $(pgrep -f '/var/custom/dbm-it-users.sh' || true); do
+  # not this run, its launcher (timeout) or its own subshells (the tee process substitution)
+  [ "$pid" = "$$" ] || [ "$pid" = "$PPID" ] && continue
+  [ "$(ps -o ppid= -p "$pid" 2>/dev/null | tr -d ' ')" = "$$" ] && continue
+  kill "$pid" 2>/dev/null && echo "stopped an earlier run (pid $pid)"
+done
+pkill -u "$INST" -f db2bp 2>/dev/null && echo "stopped stale CLP back-end processes"
+sleep 1
+
 declare -A PW=(
   [dbmmon]="${DBM_IT_DB2_MON_PASSWORD:?}"
   [dbmadm]="${DBM_IT_DB2_ADM_PASSWORD:?}"
@@ -33,7 +45,8 @@ done
 run_as_owner() {
   # each statement on its own line; a failed statement is reported, not fatal (the tests then show
   # exactly which privilege is missing)
-  su - "$INST" -c "db2 connect to $DB >/dev/null; while IFS= read -r s; do [ -n \"\$s\" ] && { db2 -v \"\$s\" || echo \"WARN: failed: \$s\"; }; done; db2 terminate >/dev/null"
+  # a statement that waits for a lock gives up after 60 s instead of hanging the run
+  su - "$INST" -c "db2 connect to $DB >/dev/null; db2 'SET CURRENT LOCK TIMEOUT 60' >/dev/null; while IFS= read -r s; do [ -n \"\$s\" ] && { db2 -v \"\$s\" || echo \"WARN: failed: \$s\"; }; done; db2 terminate >/dev/null"
 }
 
 run_as_owner <<SQL
@@ -57,9 +70,16 @@ SQL
 # explain tables in the monitoring user's own schema (EXPLAIN writes to CURRENT USER's tables).
 # Created by the instance owner, then the monitoring user gets DML on them. "Already exists"
 # (SQL0601N) on a re-run is expected.
-run_as_owner <<SQL
+# (CLP output goes through a file: db2 inside a pipeline runs without the connection, SQL1024N)
+su - "$INST" -c "db2 connect to $DB >/dev/null; db2 -x \"SELECT COUNT(*) FROM SYSCAT.TABLES WHERE TABSCHEMA = 'DBMMON' AND TABNAME = 'EXPLAIN_INSTANCE'\" > /tmp/dbm-it-explain.txt; db2 terminate >/dev/null"
+have_explain=$(tr -d ' \n' < /tmp/dbm-it-explain.txt 2>/dev/null)
+if [ "$have_explain" = "1" ]; then
+  echo "explain tables already installed in schema DBMMON"
+else
+  run_as_owner <<SQL
 CALL SYSPROC.SYSINSTALLOBJECTS('EXPLAIN', 'C', CAST(NULL AS VARCHAR(128)), 'DBMMON')
 SQL
+fi
 # The Db2 CLP keeps its connection per shell: db2 commands inside a pipeline or $( ) run in a
 # subshell without it (SQL1024N), so results go through a file and the loop reads from it.
 su - "$INST" -c "db2 connect to $DB >/dev/null; \
