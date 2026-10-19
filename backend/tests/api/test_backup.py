@@ -463,6 +463,9 @@ async def test_a_failing_asset_gives_partial_success_and_wrong_credentials_fail(
         failed = (await admin.get("/api/v1/backups", params={"server_id": bad["id"]})).json()["items"]
         assert failed[0]["status"] == "FAILED" and "Wrong-Password-1" not in str(failed)
         ov = (await admin.get("/api/v1/backup/overview")).json()
+        assert ov["last_24_hours"].get("FAILED", 0) >= 1
+        missing = {a["name"]: a for a in ov["without_recent_backup"]}
+        assert missing[bad["name"]]["status"] == "not_protected" and good["name"] in missing  # no policy covers them
         assert ov["last_30_days"].get("FAILED", 0) >= 1 and any(
             f["server_name"] == bad["name"] for f in ov["recent_failures"]
         )

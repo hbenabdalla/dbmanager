@@ -85,6 +85,30 @@ describe("backup permissions and validation (pure)", () => {
   });
 });
 
+describe("backup overview", () => {
+  it("shows the last 24 hours and the assets without a recent backup", async () => {
+    stub((path) => {
+      if (path === "/auth/me") return { body: ME(["backup.view"], ["backup.view"]) };
+      if (path === "/backup/overview") return { body: {
+        last_24_hours: { SUCCESS: 3, FAILED: 1 }, last_30_days: { SUCCESS: 40 }, last_platform_backup_at: null,
+        platform_protection: { protected: false, last_backup_at: null }, recent_failures: [], stored_bytes: 1024, running_jobs: [],
+        next_runs: [], coverage: { protected: 1, at_risk: 1, not_protected: 1 }, servers: 3,
+        without_recent_backup: [
+          { server_id: "s2", name: "PG-PROD-02", engine: "postgresql", status: "at_risk", last_backup_at: "2026-10-10T00:00:00Z" },
+          { server_id: "s3", name: "ORA-PROD-01", engine: "oracle", status: "not_protected", last_backup_at: null },
+        ],
+      } };
+      return undefined;
+    });
+    providers(<AppRoutes />, "/platform/backups");
+    expect(await screen.findByText("3 ok · 1 failed")).toBeInTheDocument();
+    const list = await screen.findByTestId("without-recent-backup");
+    expect(within(list).getByText("PG-PROD-02")).toBeInTheDocument();
+    expect(within(list).getByText("never backed up")).toBeInTheDocument();
+    expect(within(list).getByText("Not protected")).toBeInTheDocument();
+  });
+});
+
 describe("backup history", () => {
   it("deletes only after typing the first 8 characters of the id", async () => {
     const calls = stub((path, method) => {

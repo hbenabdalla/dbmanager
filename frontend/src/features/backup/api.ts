@@ -50,6 +50,8 @@ export interface Policy {
 }
 
 export interface Overview {
+  last_24_hours?: Record<string, number>;
+  without_recent_backup?: { server_id: string; name: string; engine: string; status: "at_risk" | "not_protected"; last_backup_at: string | null }[];
   last_30_days: Record<string, number>; last_platform_backup_at: string | null;
   platform_protection: { protected: boolean; last_backup_at: string | null };
   recent_failures: Backup[]; stored_bytes: number; running_jobs: Job[];

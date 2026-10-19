@@ -57,7 +57,8 @@ function OverviewTab() {
   const bad = (o.last_30_days.FAILED ?? 0) + (o.last_30_days.CORRUPTED ?? 0);
   return (
     <div className="space-y-4">
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        <Stat label="Last 24 hours" value={`${o.last_24_hours?.SUCCESS ?? 0} ok · ${(o.last_24_hours?.FAILED ?? 0) + (o.last_24_hours?.CORRUPTED ?? 0)} failed`} />
         <Stat label="Successful (30 days)" value={ok} tone={ok ? "ok" : undefined} />
         <Stat label="Failed or corrupted (30 days)" value={bad} tone={bad ? "crit" : undefined} />
         <Stat label="Last platform backup" value={o.last_platform_backup_at ? relTime(o.last_platform_backup_at) : "never"}
@@ -70,6 +71,20 @@ function OverviewTab() {
           <Badge tone="ok">{o.coverage.protected} protected</Badge>
           <Badge tone="warn">{o.coverage.at_risk} at risk (no recent backup)</Badge>
           <Badge tone="crit">{o.coverage.not_protected} not protected</Badge>
+          {!!o.without_recent_backup?.length && (
+            <div className="w-full">
+              <div className="mb-1 text-[12px] font-medium text-muted">Assets without a recent backup</div>
+              <ul className="space-y-1" data-testid="without-recent-backup">
+                {o.without_recent_backup.map((a) => (
+                  <li key={a.server_id} className="flex flex-wrap items-center gap-2">
+                    <Badge tone={a.status === "at_risk" ? "warn" : "crit"}>{a.status === "at_risk" ? "At risk" : "Not protected"}</Badge>
+                    <span>{a.name}</span><span className="text-muted">{a.engine}</span>
+                    <span className="text-muted">{a.last_backup_at ? `last backup ${relTime(a.last_backup_at)}` : "never backed up"}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </CardBody>
       </Card>
       <div className="grid gap-4 lg:grid-cols-2">

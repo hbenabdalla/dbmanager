@@ -5,7 +5,7 @@ Run before tagging any `v0.x.y` / `v1.x.y` release. Commands are from the reposi
 | # | Item | How to verify | State (0.12.0) |
 |---|---|---|---|
 | 1 | Backend unit + API tests pass | `cd backend && pytest tests/unit tests/api` (API tests need `DBM_TEST_DATABASE_URL`, a scratch PostgreSQL) | Passing — 444 unit + API + migration tests (2026-10-19) |
-| 2 | Frontend tests pass | `cd frontend && npm ci && npx vitest run` | Passing — 109 tests in 14 files |
+| 2 | Frontend tests pass | `cd frontend && npm ci && npx vitest run` | Passing — 110 tests in 14 files |
 | 3 | Frontend production build | `cd frontend && npm run build` | Passing |
 | 4 | Lint | `cd backend && ruff check app tests && ruff format --check app tests`; `cd frontend && npx tsc -b --noEmit` | Passing (`ruff check .` clean, including `backend/alembic/`) |
 | 5 | Real-engine integration tests | `scripts/integration-test.sh` (or `.ps1`); inspect `integration-results/real-engine-matrix.md` | Engine adapters passing 2026-10-18 (75 passed, 1 documented skip). New in 0.12: backup round trips run against PostgreSQL 16 and MariaDB 10.11, identity against OpenLDAP 2.6; SQL Server / Oracle / Db2 / MySQL backup and Keycloak / Vault targets still to run (`scripts/integration-test` on a Docker host) |

@@ -1090,6 +1090,15 @@ async def overview(db: DB, p: CurrentPrincipal) -> dict[str, Any]:
             )
         ).all()
     )
+    last_24h = dict(
+        (
+            await db.execute(
+                select(Backup.status, func.count())
+                .where(Backup.created_at >= now - timedelta(hours=24))
+                .group_by(Backup.status)
+            )
+        ).all()
+    )
     last_platform = (
         await db.execute(
             select(func.max(Backup.created_at)).where(Backup.kind == "platform", Backup.status == "SUCCESS")
@@ -1123,7 +1132,24 @@ async def overview(db: DB, p: CurrentPrincipal) -> dict[str, Any]:
     for v in prot.values():
         coverage[v["status"]] += 1
     names = await _names(db)
+    by_id = {str(x.id): x for x in servers}
+    unprotected = sorted(
+        (
+            {
+                "server_id": sid,
+                "name": by_id[sid].name,
+                "engine": by_id[sid].engine,
+                "status": v["status"],
+                "last_backup_at": v["last_backup_at"],
+            }
+            for sid, v in prot.items()
+            if v["status"] != "protected"
+        ),
+        key=lambda x: (x["status"] != "at_risk", x["name"]),
+    )
     return {
+        "last_24_hours": last_24h,
+        "without_recent_backup": unprotected[:50],
         "last_30_days": by_status,
         "last_platform_backup_at": last_platform,
         "platform_protection": await service.platform_protection(db),

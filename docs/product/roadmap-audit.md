@@ -68,6 +68,26 @@ Docker isn't available in the build environment, so the container-based integrat
 | API | Connection test before registration ignored env / file / Vault references | — | Missing | `app/api/v1/servers.py`, `onboarding.py`, `tests/api/test_vault.py` | Resolve the reference | Implemented |
 | API | A wrong password on the MFA endpoints returned 401, which signed users out | — | Bug | `app/api/v1/mfa.py` | Return 422 | Fixed |
 
+## Unfinished-work markers
+
+`backend/app` and `frontend/src` were searched for `TODO`, `FIXME`, `HACK`, `XXX`,
+`NotImplementedError`, `pass`-only bodies, "placeholder", "stub", "mock", "coming soon", "hard-coded"
+and "not yet". What was found, and what it means:
+
+- **`NotImplementedError`** appears only in abstract hooks of the adapter base classes
+  (`adapters/dbapi.py`, the MySQL family mixins). Each engine adapter overrides them. They are legitimate.
+- **"placeholder"** refers to SQL bind-parameter placeholders, form `placeholder=` attributes,
+  react-query `placeholderData`, and the `CHANGE_ME` checks on `.env` values. None of these are unfinished features.
+- **`PLANNED` capability level and the "inventory-only stub" flag** (`adapters/base.py`) describe
+  engines declared but not implemented. They are shown honestly in the UI and API, and every
+  supported engine is implemented.
+- **"or later" version notes** (e.g. "EXPLAIN ANALYZE requires MySQL 8.0.18 or later") are real
+  engine limits, reported as NOT SUPPORTED on older versions.
+- **No `TODO` / `FIXME` / `HACK` / `XXX`** markers remain in the application code.
+- **Simulation-only data paths** are confined to `app/simulation` and `adapters/demo`. They are
+  labelled as simulated and are never mixed with real servers; the backup service excludes
+  simulated servers.
+
 ## Milestone 0.12 — Asset Protection: Backup & Restore (new)
 
 Inserted as milestone 0.12 because it builds on 0.10 (notifications), 0.11.4 (audit) and 0.11.5
@@ -86,7 +106,7 @@ Inserted as milestone 0.12 because it builds on 0.10 (notifications), 0.11.4 (au
 | 0.12 | 0.12.3 | SQL Server native, Oracle Data Pump, Db2 LUW online backup | new | Implemented | `engines.SQLServerProvider`, `OracleProvider`, `Db2LUWProvider`; integration tests written | Real runs | BLOCKED (needs `scripts/integration-test mssql`, `oracle`, `db2`) |
 | 0.12 | 0.12.3 | Db2 for z/OS | new | External tool required | `engines.Db2ZOSProvider` | — | NOT APPLICABLE for DB Manager execution (z/OS utilities); reported honestly |
 | 0.12 | 0.12.4 | Policies, scheduler, retention, bulk with per-asset progress, cancel, notifications, metrics, RBAC, audit | new | Implemented | `service.schedule`, `apply_retention`, `tests/api/test_backup.py` (S3 policy, retention, scheduler, partial success, RBAC) | — | VERIFIED COMPLETE |
-| 0.12 | 0.12.4 | Backup & Restore UI, asset protection status | new | Implemented | `frontend/src/features/backup/`, frontend tests | — | VERIFIED COMPLETE |
+| 0.12 | 0.12.4 | Backup & Restore UI, dashboard (last 24 h, 30 days, storage used, upcoming runs, protected / at risk / unprotected assets and the list without a recent backup), asset protection status | new | Implemented | `frontend/src/features/backup/`, frontend tests | — | VERIFIED COMPLETE |
 | 0.12 | 0.12.5 | Disaster recovery: scan a target into an empty catalog, runbook, automated restore test | new | Implemented | `service.scan_target`; DR part of the S3 API test; `docs/backup-restore/disaster-recovery.md` | — | VERIFIED COMPLETE |
 | 0.12 | 0.12.7 | Point-in-time recovery | new | Not implemented | — | Log-chain management | PLANNED; no feature claims PITR |
 
