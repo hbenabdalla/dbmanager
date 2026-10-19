@@ -36,6 +36,10 @@ def sanitize(value: Any, depth: int = 0) -> Any:
     return value
 
 
+#: audit event categories (SIEM destinations filter on these)
+CATEGORIES = ("auth", "admin", "security", "platform", "alerting", "query", "backup", "collector", "operations", "report")
+
+
 async def record(
     action: str,
     *,

@@ -29,7 +29,8 @@ remaining risks.
 * **Rotation**: set a new key and id, move the old one to `DBM_PREVIOUS_MASTER_KEYS=old_id:base64`,
   restart, run `python -m app.cli rotate-master-key` (re-wraps DEKs only), then remove the old key.
 * **Providers**: `local` (encrypted in DB), `env` (environment variable name), `file` (mounted file
-  under an allow-listed directory, `DBM_SECRET_FILE_DIRS`). `vault` is reserved in the schema.
+  under an allow-listed directory, `DBM_SECRET_FILE_DIRS`), `vault` (HashiCorp Vault KV v2, only the
+  reference `[mount:]path#key` is stored). See [Secret providers](../administration/secret-providers.md).
 * Identity-provider secrets (LDAP bind password, OIDC client secret) use the same envelope scheme
   (`idp:<id>` AAD) and are never returned by the API.
 

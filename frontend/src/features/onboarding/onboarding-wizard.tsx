@@ -16,6 +16,7 @@ import { Field, Input, Select, Textarea } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { ChoiceCard, StageList, SuccessPanel, Wizard, type Stage, type StageStatus, type WizardStep } from "@/components/wizard";
 import { DEPLOYMENTS, MON_HINT, optionPayload } from "@/features/fleet/register-server";
+import { PROVIDER_LABEL, SecretSourceFields, secretRefError, type SecretProvider } from "@/features/shared/secret-source";
 import { DATABASE_FIELD, ERROR_LABEL, LEVEL_LABEL, LEVEL_TONE, SUPPORT_LABEL } from "@/lib/capabilities";
 import { cn } from "@/lib/utils";
 import { postNdjson } from "./stream";
@@ -43,14 +44,23 @@ export interface OnboardingForm {
   options: Record<string, string | boolean>; licensed_features: string[];
   tls_mode: string; tls_ca_pem: string;
   mon_user: string; mon_password: string; admin_user: string; admin_password: string;
+  /** where the monitoring password comes from; non-local sources only store a reference */
+  mon_provider: SecretProvider; mon_ref: string;
   management_mode: "monitoring" | "administration";
   environment_id: string; site_id: string; cluster_id: string; cluster_role: string; application_id: string; owner: string; tags: string;
   monitoring_enabled: boolean; collection_interval_s: string;
 }
 
+/** Monitoring credential payload: a password, or only a reference for env/file/vault. */
+export function monitoringCredential(f: Pick<OnboardingForm, "mon_user" | "mon_password" | "mon_provider" | "mon_ref">) {
+  return f.mon_provider === "local"
+    ? { username: f.mon_user, password: f.mon_password || null }
+    : { username: f.mon_user, password: null, provider: f.mon_provider, secret_ref: f.mon_ref.trim() };
+}
+
 const EMPTY: OnboardingForm = {
   engine: "", name: "", host: "", port: "", default_database: "", description: "", deployment: "self-managed", options: {}, licensed_features: [],
-  tls_mode: "verify-full", tls_ca_pem: "", mon_user: "", mon_password: "", admin_user: "", admin_password: "", management_mode: "monitoring",
+  tls_mode: "verify-full", tls_ca_pem: "", mon_user: "", mon_password: "", admin_user: "", admin_password: "", mon_provider: "local", mon_ref: "", management_mode: "monitoring",
   environment_id: "", site_id: "", cluster_id: "", cluster_role: "", application_id: "", owner: "", tags: "", monitoring_enabled: true,
   collection_interval_s: "60",
 };
@@ -148,6 +158,7 @@ export function OnboardingWizard({ open, onOpenChange, defaultEnvironmentId }: {
     if (id === "tls" && (f.tls_mode === "verify-ca") && !f.tls_ca_pem.trim()) e.tls_ca_pem = "verify-ca needs the CA certificate";
     if (id === "tls" && f.tls_ca_pem.trim() && !f.tls_ca_pem.includes("BEGIN CERTIFICATE")) e.tls_ca_pem = "Paste a PEM certificate";
     if (id === "credentials" && f.monitoring_enabled && !f.mon_user.trim()) e.mon_user = "A monitoring account is needed to collect metrics";
+    if (id === "credentials" && f.mon_user.trim()) { const r = secretRefError(f.mon_provider, f.mon_ref); if (r) e.mon_ref = r; }
     if (id === "management" && f.management_mode === "administration" && !f.admin_user.trim()) e.admin_user = "Administration needs a separate administration account";
     return e;
   };
@@ -167,7 +178,8 @@ export function OnboardingWizard({ open, onOpenChange, defaultEnvironmentId }: {
 
   const body = () => ({
     engine: f.engine, host: f.host.trim(), port: Number(f.port), default_database: f.default_database || null, tls_mode: f.tls_mode,
-    tls_ca_pem: f.tls_ca_pem || null, username: f.mon_user, password: f.mon_password || null, connection_options: options,
+    tls_ca_pem: f.tls_ca_pem || null, username: f.mon_user, connection_options: options,
+    ...(f.mon_provider === "local" ? { password: f.mon_password || null } : { provider: f.mon_provider, secret_ref: f.mon_ref.trim() }),
     licensed_features: f.licensed_features,
   });
 
@@ -205,7 +217,7 @@ export function OnboardingWizard({ open, onOpenChange, defaultEnvironmentId }: {
       owner: f.owner || null, deployment: f.deployment, tls_mode: f.tls_mode, tls_ca_pem: f.tls_ca_pem || null,
       monitoring_enabled: f.monitoring_enabled, collection_interval_s: Number(f.collection_interval_s), licensed_features: f.licensed_features,
       management_mode: f.management_mode, connection_options: options, tags: parseTags(f.tags),
-      monitoring_credential: f.mon_user ? { username: f.mon_user, password: f.mon_password || null } : null,
+      monitoring_credential: f.mon_user ? monitoringCredential(f) : null,
       admin_credential: f.management_mode === "administration" && f.admin_user ? { username: f.admin_user, password: f.admin_password || null } : null,
     }),
     onSuccess: (s) => {
@@ -229,7 +241,7 @@ export function OnboardingWizard({ open, onOpenChange, defaultEnvironmentId }: {
     ["Engine", engine ? <EngineMark engine={engine.engine} withLabel /> : "—"],
     ["Name", f.name], ["Address", `${f.host}:${f.port}${f.default_database ? ` / ${f.default_database}` : ""}`],
     ["TLS", f.tls_mode + (f.tls_ca_pem ? " (private CA)" : "")],
-    ["Monitoring account", f.mon_user ? <span>{f.mon_user} <span className="text-muted">{f.mon_password ? "(password set, encrypted on save)" : "(no password)"}</span></span> : "none"],
+    ["Monitoring account", f.mon_user ? <span>{f.mon_user} <span className="text-muted">{f.mon_provider !== "local" ? `(${PROVIDER_LABEL[f.mon_provider]}: ${f.mon_ref.trim()})` : f.mon_password ? "(password set, encrypted on save)" : "(no password)"}</span></span> : "none"],
     ["Management mode", f.management_mode === "monitoring" ? "Monitoring Only" : <span className="text-warn">Administration Enabled ({f.admin_user})</span>],
     ["Environment", envName ?? "Unassigned"],
     ["Collection", f.monitoring_enabled ? `every ${Number(f.collection_interval_s) >= 60 ? `${Number(f.collection_interval_s) / 60} min` : `${f.collection_interval_s} s`}` : "off"],
@@ -306,7 +318,9 @@ export function OnboardingWizard({ open, onOpenChange, defaultEnvironmentId }: {
         return (
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="Monitoring user" hint={MON_HINT[f.engine] ?? "Read-only monitoring account"} error={errors.mon_user}><Input autoComplete="off" value={f.mon_user} onChange={(e) => set("mon_user", e.target.value)} /></Field>
-            <Field label="Monitoring password" hint="Encrypted before it is stored; never displayed again."><Input type="password" autoComplete="new-password" value={f.mon_password} onChange={(e) => set("mon_password", e.target.value)} /></Field>
+            <SecretSourceFields provider={f.mon_provider} onProvider={(v) => set("mon_provider", v)} secretRef={f.mon_ref} onSecretRef={(v) => set("mon_ref", v)}
+              password={f.mon_password} onPassword={(v) => set("mon_password", v)} passwordLabel="Monitoring password" passwordHint="Encrypted before it is stored; never displayed again." />
+            {errors.mon_ref && <p role="alert" className="text-[12px] text-crit sm:col-span-2">{errors.mon_ref}</p>}
             <div className="flex items-center gap-3 text-[13px]"><Switch checked={f.monitoring_enabled} onCheckedChange={(v) => set("monitoring_enabled", v)} label="Collect metrics" /> Collect metrics in the background</div>
             <Field label="Collection interval">
               <Select value={f.collection_interval_s} onChange={(e) => set("collection_interval_s", e.target.value)}>
@@ -352,7 +366,7 @@ export function OnboardingWizard({ open, onOpenChange, defaultEnvironmentId }: {
         return (
           <div className="space-y-4">
             <div className="flex flex-wrap items-center gap-2">
-              {testing ? <Button onClick={stopTest}><Square /> Stop</Button> : <Button variant="primary" onClick={runTest}><Play /> {stages.length ? "Run again" : "Run test"}</Button>}
+              {testing ? <Button onClick={stopTest}><Square /> Stop</Button> : <Button variant="primary" disabled={f.mon_provider !== "local" && !f.mon_ref.trim()} onClick={runTest}><Play /> {stages.length ? "Run again" : "Run test"}</Button>}
               <span className="text-[12.5px] text-muted">As {f.mon_user || "no user"} → {f.host}:{f.port}</span>
             </div>
             {stages.length > 0 && <StageList stages={stages} labels={STAGE_LABELS} />}
@@ -363,7 +377,7 @@ export function OnboardingWizard({ open, onOpenChange, defaultEnvironmentId }: {
               </div>
             )}
             {result?.ok && result.capabilities && <CapabilityGroups caps={result.capabilities} />}
-            {!stages.length && <p className="text-[12.5px] text-muted">The test is optional, but it shows exactly what DB Manager can see with this account before you register the server.</p>}
+            {!stages.length && f.mon_provider === "local" && <p className="text-[12.5px] text-muted">The test is optional, but it shows exactly what DB Manager can see with this account before you register the server.</p>}
           </div>
         );
       case "review":

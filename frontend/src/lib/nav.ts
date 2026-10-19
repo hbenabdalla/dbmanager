@@ -98,7 +98,7 @@ export const NAV_GROUPS: NavGroup[] = [
       },
       {
         label: "Configuration", icon: Settings2,
-        perm: ["users.manage", "roles.manage", "rbac.manage", "idp.manage", "credentials.manage", "collectors.view", "settings.manage", "simulation.view", "channels.manage"],
+        perm: ["users.manage", "roles.manage", "rbac.manage", "idp.manage", "credentials.manage", "collectors.view", "settings.manage", "simulation.view", "channels.manage", "audit.forward"],
         items: [
           { label: "Users", to: "/platform/users", perm: ["users.manage", "rbac.manage"] },
           { label: "Roles", to: "/platform/roles", perm: ["roles.manage", "rbac.manage"] },
@@ -112,6 +112,7 @@ export const NAV_GROUPS: NavGroup[] = [
           { label: "Settings", to: "/platform/settings", perm: "settings.manage", platform: true },
           { label: "Simulation", to: "/platform/simulation", perm: "simulation.view", platform: true },
           { label: "Notification channels", to: "/platform/notifications", perm: "channels.manage", platform: true },
+          { label: "Audit forwarding", to: "/platform/audit-forwarding", perm: "audit.forward", platform: true },
           { label: "About", to: "/platform/about" },
         ],
       },

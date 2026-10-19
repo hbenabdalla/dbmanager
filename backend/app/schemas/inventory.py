@@ -203,6 +203,9 @@ class TestConnectionRequest(BaseModel):
     tls_ca_pem: str | None = None
     username: str
     password: str | None = None
+    #: test with a secret reference instead of a password (env / file / vault), as registered later
+    provider: Literal["local", "env", "file", "vault"] = "local"
+    secret_ref: str | None = Field(None, max_length=512)
     connection_options: dict[str, Any] = Field(default_factory=dict)
     licensed_features: list[str] = Field(default_factory=list)
 

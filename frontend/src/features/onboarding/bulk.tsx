@@ -28,6 +28,7 @@ export const CREDENTIAL_HELP: [string, string][] = [
   ["server:<registered server>", "reuse that server's monitoring credential"],
   ["env:<VARIABLE>@<username>", "password read by the backend from an environment variable (DBM_*, PG*, AWS_* names are refused)"],
   ["file:<path>@<username>", "password read by the backend from a mounted secret file"],
+  ["vault:<[mount:]path#key>@<username>", "password read from HashiCorp Vault KV v2 at connection time (needs DBM_VAULT_ADDR)"],
 ];
 
 export type Row = Record<string, string>;

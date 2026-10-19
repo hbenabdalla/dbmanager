@@ -215,10 +215,11 @@ async def test_syslog_over_tls_verifies_the_server(admin, tmp_path) -> None:  # 
         assert res["ok"] is True, res
         import asyncio
 
-        for _ in range(50):
+        for _ in range(200):  # the receiver thread may lag behind on a busy machine
             if got:
                 break
             await asyncio.sleep(0.1)
+        assert got, "the TLS receiver got nothing"
         n, _, msg = got[-1].partition(b" ")
         assert int(n) == len(msg) and b"siem.test" in msg
         # without the CA the server is not trusted

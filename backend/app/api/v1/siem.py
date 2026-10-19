@@ -33,6 +33,9 @@ class DestinationIn(BaseModel):
 
     @model_validator(mode="after")
     def _check(self) -> DestinationIn:
+        unknown = sorted(set(self.categories) - set(audit.CATEGORIES))
+        if unknown:
+            raise ValueError(f"unknown audit categories {', '.join(unknown)} (known: {', '.join(audit.CATEGORIES)})")
         cfg = self.config
         bad = [k for k in cfg if any(s in k.lower() for s in ("password", "secret", "token"))]
         if bad:
@@ -55,8 +58,11 @@ class DestinationIn(BaseModel):
             from app.services import notify
 
             notify.validate_webhook_url(str(cfg.get("url") or ""))
-            if any(k.lower() == "authorization" for k in (cfg.get("headers") or {})):
-                raise ValueError("an Authorization header would be stored unencrypted: use signing_secret instead")
+            for k in cfg.get("headers") or {}:
+                if k.lower() in ("authorization", "proxy-authorization", "cookie") or any(
+                    w in k.lower() for w in ("password", "secret", "token", "api-key", "apikey")
+                ):
+                    raise ValueError(f"header {k!r} would be stored unencrypted: use signing_secret instead")
         return self
 
 
@@ -88,6 +94,12 @@ def _stored_config(body: DestinationIn) -> dict[str, Any]:
         "url": body.config["url"],
         "headers": {str(k): str(v) for k, v in (body.config.get("headers") or {}).items()},
     }
+
+
+@router.get("/categories", summary="Audit event categories a destination can filter on")
+async def categories(p: CurrentPrincipal) -> list[str]:
+    p.authz.require("audit.forward")
+    return list(audit.CATEGORIES)
 
 
 @router.get("", summary="Audit forwarding destinations with their position and backlog")

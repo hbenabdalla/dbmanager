@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Real-engine integration tests for DB Manager adapters (Linux / macOS / WSL).
 # See scripts/integration-test.ps1 for the description; usage:
-#   scripts/integration-test.sh [postgresql mysql mariadb mssql oracle db2 timeseries]
+#   scripts/integration-test.sh [postgresql mysql mariadb mssql oracle db2 timeseries identity vault]
 #   scripts/integration-test.sh --down
 # Starting a vendor image means accepting that vendor's license (SQL Server Developer EULA,
 # Oracle Free Use Terms for XE, IBM Db2 Community Edition).

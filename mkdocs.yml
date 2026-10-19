@@ -163,7 +163,9 @@ nav:
       - LDAP / Active Directory: administration/ldap.md
       - OpenID Connect: administration/oidc.md
       - Security settings: administration/security.md
+      - Secret providers: administration/secret-providers.md
       - Audit: administration/audit.md
+      - Audit forwarding (SIEM): administration/siem.md
       - Notifications: administration/notifications.md
       - Monitoring storage: administration/monitoring-storage.md
       - Retention: administration/retention.md

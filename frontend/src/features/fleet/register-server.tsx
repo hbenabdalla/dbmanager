@@ -11,12 +11,13 @@ import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { Field, Input, Select, Textarea } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
+import { SecretSourceFields, secretRefError, type SecretProvider } from "@/features/shared/secret-source";
 import { DATABASE_FIELD, ERROR_LABEL, SUPPORT_LABEL } from "@/lib/capabilities";
 
 interface Form {
   name: string; engine: string; host: string; port: string; default_database: string; description: string;
   environment_id: string; site_id: string; cluster_id: string; cluster_role: string; application_id: string; owner: string;
-  deployment: string; tls_mode: string; tls_ca_pem: string; mon_user: string; mon_password: string; admin_user: string;
+  deployment: string; tls_mode: string; tls_ca_pem: string; mon_user: string; mon_password: string; mon_provider: SecretProvider; mon_ref: string; admin_user: string;
   admin_password: string; monitoring_enabled: boolean; collection_interval_s: string; tags: string; licensed_features: string[];
   management_mode: "monitoring" | "administration"; options: Record<string, string | boolean>;
 }
@@ -24,7 +25,7 @@ interface Form {
 const EMPTY: Form = {
   name: "", engine: "postgresql", host: "", port: "5432", default_database: "postgres", description: "", environment_id: "",
   site_id: "", cluster_id: "", cluster_role: "", application_id: "", owner: "", deployment: "self-managed",
-  tls_mode: "verify-full", tls_ca_pem: "", mon_user: "", mon_password: "", admin_user: "", admin_password: "",
+  tls_mode: "verify-full", tls_ca_pem: "", mon_user: "", mon_password: "", mon_provider: "local", mon_ref: "", admin_user: "", admin_password: "",
   monitoring_enabled: true, collection_interval_s: "60", tags: "", licensed_features: [], management_mode: "monitoring", options: {},
 };
 
@@ -92,7 +93,8 @@ export function RegisterServerDialog({ open, onOpenChange }: { open: boolean; on
   const testConn = useMutation({
     mutationFn: () => post<TestConnectionResult>("/servers/test-connection", {
       engine: f.engine, host: f.host, port: Number(f.port), default_database: f.default_database || null, tls_mode: f.tls_mode,
-      tls_ca_pem: f.tls_ca_pem || null, username: f.mon_user, password: f.mon_password || null,
+      tls_ca_pem: f.tls_ca_pem || null, username: f.mon_user,
+      ...(f.mon_provider === "local" ? { password: f.mon_password || null } : { provider: f.mon_provider, secret_ref: f.mon_ref.trim() }),
       connection_options: options, licensed_features: f.licensed_features,
     }),
     onSuccess: setTest,
@@ -108,7 +110,9 @@ export function RegisterServerDialog({ open, onOpenChange }: { open: boolean; on
       monitoring_enabled: f.monitoring_enabled, collection_interval_s: Number(f.collection_interval_s), licensed_features: f.licensed_features,
       management_mode: f.management_mode, connection_options: options,
       tags: f.tags.split(",").map((t) => t.trim()).filter(Boolean).map((t) => { const [key, ...v] = t.split("="); return { key: key.trim(), value: v.join("=").trim() }; }),
-      monitoring_credential: f.mon_user ? { username: f.mon_user, password: f.mon_password || null } : null,
+      monitoring_credential: !f.mon_user ? null : f.mon_provider === "local"
+        ? { username: f.mon_user, password: f.mon_password || null }
+        : { username: f.mon_user, password: null, provider: f.mon_provider, secret_ref: f.mon_ref.trim() },
       admin_credential: f.admin_user ? { username: f.admin_user, password: f.admin_password || null } : null,
     }),
     onSuccess: (s) => {
@@ -137,8 +141,8 @@ export function RegisterServerDialog({ open, onOpenChange }: { open: boolean; on
             {test && (test.ok ? <span className="flex items-center gap-1.5 text-ok"><CheckCircle2 className="size-4" /> Connected{test.version ? `, version ${test.version}` : ""}{test.latency_ms ? ` in ${Math.round(test.latency_ms)} ms` : ""}</span>
               : <span className="flex items-center gap-1.5 text-crit"><XCircle className="size-4 shrink-0" /> <span>{test.error_code && <span className="font-medium">{ERROR_LABEL[test.error_code] ?? test.error_code}: </span>}{test.message}</span></span>)}
           </div>
-          <Button onClick={() => testConn.mutate()} disabled={!f.host || !f.mon_user || testConn.isPending}><Plug /> {testConn.isPending ? "Testing…" : "Test connection"}</Button>
-          <Button variant="primary" onClick={() => create.mutate()} disabled={!f.name || !f.host || create.isPending}>Register server</Button>
+          <Button onClick={() => testConn.mutate()} disabled={!f.host || !f.mon_user || (f.mon_provider !== "local" && !f.mon_ref.trim()) || testConn.isPending}><Plug /> {testConn.isPending ? "Testing…" : "Test connection"}</Button>
+          <Button variant="primary" onClick={() => create.mutate()} disabled={!f.name || !f.host || (!!f.mon_user && !!secretRefError(f.mon_provider, f.mon_ref)) || create.isPending}>Register server</Button>
         </>
       }>
       <div className="space-y-5">
@@ -253,7 +257,8 @@ export function RegisterServerDialog({ open, onOpenChange }: { open: boolean; on
 
         <Section title="Credentials">
           <Field label="Monitoring user" hint={MON_HINT[f.engine] ?? "Read-only monitoring account"}><Input autoComplete="off" value={f.mon_user} onChange={(e) => set("mon_user", e.target.value)} /></Field>
-          <Field label="Monitoring password"><Input type="password" autoComplete="new-password" value={f.mon_password} onChange={(e) => set("mon_password", e.target.value)} /></Field>
+          <SecretSourceFields provider={f.mon_provider} onProvider={(v) => set("mon_provider", v)} secretRef={f.mon_ref} onSecretRef={(v) => set("mon_ref", v)}
+            password={f.mon_password} onPassword={(v) => set("mon_password", v)} passwordLabel="Monitoring password" />
           <Field label="Administration user" hint="Optional. Only used for confirmed changes."><Input autoComplete="off" value={f.admin_user} onChange={(e) => set("admin_user", e.target.value)} /></Field>
           <Field label="Administration password"><Input type="password" autoComplete="new-password" value={f.admin_password} onChange={(e) => set("admin_password", e.target.value)} /></Field>
         </Section>

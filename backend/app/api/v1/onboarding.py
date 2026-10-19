@@ -17,7 +17,7 @@ from app.api.deps import DB, CurrentPrincipal, load_server, rate_limit
 from app.core.errors import ValidationFailed
 from app.models import Server
 from app.schemas.inventory import TestConnectionRequest
-from app.services import audit, inventory, onboarding
+from app.services import audit, inventory, onboarding, secrets
 from app.services.authz import server_ref
 from app.services.connections import adapter_for, build_spec
 
@@ -52,6 +52,11 @@ async def stream_new_connection(body: TestConnectionRequest, p: CurrentPrincipal
         engine = normalize_engine(body.engine)
     except ValueError:
         engine, validation_error = body.engine, f"unsupported engine {body.engine!r}"
+    if validation_error is None and body.provider != "local":
+        try:
+            body.password = await secrets.resolve_reference(body.provider, body.secret_ref)
+        except ValidationFailed as exc:
+            validation_error = exc.message
     if validation_error is None:
         try:
             tmp = Server(

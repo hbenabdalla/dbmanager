@@ -144,6 +144,15 @@ async def resolve_password_async(cred: Credential) -> str | None:
     return resolve_password(cred)
 
 
+async def resolve_reference(provider: str, secret_ref: str | None) -> str | None:
+    """Resolve a reference that is not stored yet (connection test before registration)."""
+    if provider == "local":
+        return None
+    if not secret_ref:
+        raise ValidationFailed("a secret reference is required for this secret source")
+    return await resolve_password_async(Credential(provider=provider, secret_ref=secret_ref, purpose="test"))
+
+
 def describe(cred: Credential | None) -> dict[str, object] | None:
     """Safe, secret-free description for API responses."""
     if cred is None:

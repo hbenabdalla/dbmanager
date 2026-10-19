@@ -12,7 +12,7 @@ from sqlalchemy import func, or_, select
 from app.api import source as fleet_source
 from app.api.deps import DB, CurrentPrincipal, load_server, rate_limit
 from app.api.source import SourceQuery
-from app.core.errors import ConfirmationRequired, Conflict
+from app.core.errors import ConfirmationRequired, Conflict, ValidationFailed
 from app.domain.scopes import ResourceRef
 from app.jobs.handlers import JOB_KINDS
 from app.jobs.runner import enqueue
@@ -160,7 +160,12 @@ async def register_server(body: ServerCreate, db: DB, p: CurrentPrincipal) -> Se
 )
 async def test_new_connection(body: TestConnectionRequest, p: CurrentPrincipal) -> TestConnectionResult:
     p.authz.require_anywhere("server.register")
-    res = await inventory.test_connection_params(body)
+    try:
+        if body.provider != "local":
+            body.password = await secrets.resolve_reference(body.provider, body.secret_ref)
+        res = await inventory.test_connection_params(body)
+    except ValidationFailed as exc:
+        res = {"ok": False, "engine": body.engine, "error_code": "CREDENTIAL_UNAVAILABLE", "message": exc.message}
     await audit.record(
         "server.test_connection",
         actor=p,

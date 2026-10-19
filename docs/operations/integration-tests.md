@@ -11,7 +11,7 @@ backend image (all drivers, including Microsoft ODBC Driver 18) and writes the v
 .\scripts\integration-test.ps1 -Down           # remove the test containers and volumes
 ```
 ```bash
-scripts/integration-test.sh [postgresql mysql mariadb mssql oracle db2 timeseries]
+scripts/integration-test.sh [postgresql mysql mariadb mssql oracle db2 timeseries identity vault]
 ```
 
 | Engine | Image (registry) | License you accept by starting it | First start |
@@ -23,6 +23,9 @@ scripts/integration-test.sh [postgresql mysql mariadb mssql oracle db2 timeserie
 | Oracle 21c EE (`oracle-ee` profile, opt-in) | `container-registry.oracle.com/database/enterprise:21.3.0.0` | Oracle license; `docker login container-registry.oracle.com` after accepting it on the registry | 10–30 min |
 | Db2 11.5 Community Edition | `icr.io/db2_community/db2` (IBM Container Registry, privileged) | IBM license (`LICENSE=accept`) | 5–10 min |
 | VictoriaMetrics | `victoriametrics/victoria-metrics` (Docker Hub) | Apache-2.0 | seconds |
+| OpenLDAP (`identity`) | `osixia/openldap:1.5.0` (Docker Hub) | OpenLDAP Public License | seconds |
+| Keycloak 26 (`identity`) | `quay.io/keycloak/keycloak:26.0.7` (Quay) | Apache-2.0 | < 1 min |
+| HashiCorp Vault 1.17 dev server (`vault`) | `hashicorp/vault:1.17.6` (Docker Hub) | Business Source License 1.1 | seconds |
 
 DB Manager never downloads or redistributes Oracle software itself: the script pulls the image on
 your machine, under your acceptance. Enterprise Edition does not change DB Manager's licensing
@@ -40,6 +43,42 @@ the monitoring user never queried AWR, ASH, ADDM, SQL Monitor or the SQL Tuning 
   into `backend/app/data/real_engine_validation.json`, which **Platform → Engine support** shows
   (a capability is only shown as plain FULL once the suite validated it; otherwise `FULL*`).
 * Db2 for z/OS cannot run in a container: it stays "external validation required".
+
+## Identity providers and Vault
+
+Two targets test the platform's own integrations instead of a database engine:
+
+* **`identity`** starts OpenLDAP and Keycloak with fixed test directories from
+  `backend/tests/integration/identity/` (`ldap/50-dbm-it.ldif`: service account `svc-dbm`, users
+  `alice` and `bob`, groups `dbadmins` and `developers`; `keycloak/dbm-realm.json`: realm `dbm`
+  with the confidential client `dbmanager` and the same users and groups). `tests/integration/test_identity.py`
+  checks the LDAP service bind, user search, password bind, group search, StartTLS (and that a
+  self-signed certificate is refused with verification on), wrong passwords and an LDAP-injection
+  attempt; and the OpenID Connect authorization-code flow with PKCE through Keycloak's real login
+  form, ID-token validation, the group claim, replayed codes, a forged state, `require_mfa` without
+  MFA evidence and a wrong client secret.
+* **`vault`** starts a Vault **dev** server (in memory, root token from `.env.test`).
+  `tests/integration/test_vault_real.py` writes KV v2 secrets, reads them with token auth, sets up
+  AppRole with a policy for one path and checks that reads outside it are denied.
+
+The passwords in these fixtures are fixed test values for the test containers
+only. Results appear in the matrix as `openldap`, `keycloak` and `vault` with the capabilities
+`authentication`, `group_mapping`, `mfa` and `secrets`.
+
+## `.env.test`
+
+The script creates `.env.test` with random values on first run and, when a newer version needs
+more keys, **appends** the missing ones to an existing file (existing values are kept):
+
+| Key | Used by |
+|---|---|
+| `IT_PG_PASSWORD`, `IT_MYSQL_PASSWORD`, `IT_MARIADB_PASSWORD`, `IT_MSSQL_SA_PASSWORD`, `IT_ORACLE_PASSWORD` | the engine containers' administrator accounts |
+| `IT_DB2_PASSWORD`, `IT_DB2_MON_PASSWORD`, `IT_DB2_ADM_PASSWORD`, `IT_DB2_RO_PASSWORD` | Db2 instance owner and the OS users of the least-privilege accounts |
+| `IT_LDAP_ADMIN_PASSWORD` | OpenLDAP `cn=admin` (`identity`) |
+| `IT_KEYCLOAK_ADMIN_PASSWORD` | Keycloak bootstrap administrator (`identity`) |
+| `IT_VAULT_TOKEN` | root token of the Vault dev server (`vault`) |
+
+`.env.test` is git-ignored; never commit it.
 
 The test layout, markers and how to run individual suites are described in
 [Testing](../development/testing.md).

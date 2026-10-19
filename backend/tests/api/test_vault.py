@@ -111,6 +111,20 @@ async def test_kv2_read_auth_methods_cache_and_errors(vault, monkeypatch) -> Non
 
 async def test_registered_server_connects_with_a_vault_secret(admin, vault) -> None:  # type: ignore[no-untyped-def]
     u = make_url(os.environ["DBM_TEST_DATABASE_URL"])
+    # the connection test before registration resolves the reference too
+    pre = {
+        "engine": "postgresql",
+        "host": u.host or "localhost",
+        "port": u.port or 5432,
+        "default_database": u.database,
+        "tls_mode": "disable",
+        "username": u.username,
+        "provider": "vault",
+    }
+    ok = (await admin.post("/api/v1/servers/test-connection", json={**pre, "secret_ref": "databases/pg-it#password"})).json()
+    assert ok["ok"] is True, ok
+    bad = (await admin.post("/api/v1/servers/test-connection", json={**pre, "secret_ref": "databases/nope#password"})).json()
+    assert bad["ok"] is False and bad["error_code"] == "CREDENTIAL_UNAVAILABLE"
     r = await admin.post(
         "/api/v1/servers",
         json={

@@ -22,6 +22,7 @@ import { AboutPage } from "@/features/platform/about";
 import { ApiTokensPage } from "@/features/account/api-tokens";
 import { SecurityPage } from "@/features/account/security";
 import { NotificationChannelsPage } from "@/features/platform/channels";
+import { SiemDestinationsPage } from "@/features/platform/siem";
 import { IdentityProvidersPage } from "@/features/platform/idp";
 import { CollectorsPage, CredentialsPage, SettingsPage } from "@/features/platform/ops";
 import { MonitoringStoragePage } from "@/features/platform/monitoring-storage";
@@ -111,6 +112,7 @@ export function AppRoutes() {
         <Route path="alerts/rules" element={<AlertRulesPage />} />
         <Route path="alerts/maintenance" element={<MaintenanceWindowsPage />} />
         <Route path="platform/notifications" element={<NotificationChannelsPage />} />
+        <Route path="platform/audit-forwarding" element={<SiemDestinationsPage />} />
         <Route path="platform/about" element={<AboutPage />} />
         <Route path="account/tokens" element={<ApiTokensPage />} />
         <Route path="account/security" element={<SecurityPage />} />

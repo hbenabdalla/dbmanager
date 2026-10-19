@@ -10,6 +10,7 @@ import { ConfirmDialog } from "@/components/confirm";
 import { StageList, type Stage, type StageStatus } from "@/components/wizard";
 import { Dialog } from "@/components/ui/dialog";
 import { STAGE_LABELS } from "@/features/onboarding/onboarding-wizard";
+import { SecretSourceFields, secretRefError, type SecretProvider } from "@/features/shared/secret-source";
 import { postNdjson } from "@/features/onboarding/stream";
 import { Button } from "@/components/ui/button";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
@@ -20,11 +21,11 @@ import { relTime } from "@/lib/format";
 function CredentialEditor({ server, purpose, info }: { server: ServerDetail; purpose: "monitoring" | "admin" | "readonly"; info: CredentialInfo | null }) {
   const [username, setUsername] = useState(info?.username ?? "");
   const [password, setPassword] = useState("");
-  const [provider, setProvider] = useState(info?.provider ?? "local");
+  const [provider, setProvider] = useState<SecretProvider>((info?.provider as SecretProvider | undefined) ?? "local");
   const [ref, setRef] = useState(info?.secret_ref ?? "");
   const qc = useQueryClient();
   const save = useMutation({
-    mutationFn: () => put(`/servers/${server.id}/credentials/${purpose}`, { username, password: password || null, provider, secret_ref: provider === "local" ? null : ref }),
+    mutationFn: () => put(`/servers/${server.id}/credentials/${purpose}`, { username, password: password || null, provider, secret_ref: provider === "local" ? null : ref.trim() }),
     onSuccess: () => { toast.success("Credential saved"); setPassword(""); qc.invalidateQueries({ queryKey: ["server", server.id] }); },
     onError: (e: ApiError) => toast.error(e.message),
   });
@@ -40,22 +41,12 @@ function CredentialEditor({ server, purpose, info }: { server: ServerDetail; pur
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
         <Field label="Username"><Input autoComplete="off" value={username} onChange={(e) => setUsername(e.target.value)} /></Field>
-        <Field label="Secret source">
-          <Select value={provider} onChange={(e) => setProvider(e.target.value)}>
-            <option value="local">Encrypted in DB Manager</option><option value="env">Environment variable</option><option value="file">Mounted secret file</option>
-          </Select>
-        </Field>
-        {provider === "local" ? (
-          <Field label="Password" hint={info?.has_secret ? "Leave empty to keep the current password" : undefined}><Input type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} /></Field>
-        ) : (
-          <Field label={provider === "env" ? "Variable name" : "File path"} hint={provider === "file" ? "Must be under /run/secrets or another allowed directory" : "Read by the backend at connection time"}>
-            <Input value={ref} onChange={(e) => setRef(e.target.value)} placeholder={provider === "env" ? "DBM_SECRET_PG_ORDERS" : "/run/secrets/pg-orders"} />
-          </Field>
-        )}
+        <SecretSourceFields provider={provider} onProvider={setProvider} secretRef={ref} onSecretRef={setRef} password={password} onPassword={setPassword}
+          passwordHint={info?.has_secret ? "Leave empty to keep the current password" : undefined} />
       </div>
       <div className="flex justify-end gap-2">
         {info && <Button size="sm" variant="danger-outline" onClick={() => remove.mutate()}>Remove</Button>}
-        <Button size="sm" variant="primary" disabled={!username || save.isPending} onClick={() => save.mutate()}>Save credential</Button>
+        <Button size="sm" variant="primary" disabled={!username || !!secretRefError(provider, ref) || save.isPending} onClick={() => save.mutate()}>Save credential</Button>
       </div>
     </div>
   );

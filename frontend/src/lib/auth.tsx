@@ -81,6 +81,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 
+/** Like useAuth, but null outside an AuthProvider (shared widgets also rendered stand-alone). */
+export function useOptionalAuth(): AuthCtx | null {
+  return useContext(Ctx);
+}
+
 export function useAuth(): AuthCtx {
   const c = useContext(Ctx);
   if (!c) throw new Error("useAuth outside AuthProvider");

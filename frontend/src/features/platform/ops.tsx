@@ -15,13 +15,38 @@ import { Field, Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { SkeletonRows } from "@/components/ui/states";
 import { dateTime, ms, relTime } from "@/lib/format";
+import { PROVIDER_LABEL, useSecretProviders, vaultStatus, type SecretProvider } from "@/features/shared/secret-source";
 
 interface CredRow { server_id: string; server_name: string; engine: string; is_demo: boolean; environment: string | null; tls_mode: string; connection_status: string; monitoring: CredentialInfo | null; admin: CredentialInfo | null }
+
+/** Credential sources of this installation (GET /platform/secret-providers). */
+export function SecretProvidersCard() {
+  const q = useSecretProviders();
+  if (!q.data) return null;
+  const d = q.data;
+  const v = vaultStatus(d.vault);
+  const rows: [SecretProvider, React.ReactNode][] = [
+    ["local", <Badge tone="ok">available</Badge>],
+    ["env", <Badge tone="ok">available</Badge>],
+    ["file", <span><Badge tone="ok">available</Badge> <span className="text-[12px] text-muted">allowed directories: {d.file.allowed_dirs?.join(", ") || "none"}</span></span>],
+    ["vault", <span><Badge tone={d.vault.available ? (v.tone === "ok" ? "ok" : "crit") : "neutral"}>{d.vault.available ? "configured" : "not configured"}</Badge> <span className="text-[12px] text-muted">{v.text}</span></span>],
+  ];
+  return (
+    <Card className="mb-4">
+      <CardHeader title="Secret sources" description="Where server passwords can come from. Only a reference is stored for environment variables, mounted files and Vault." />
+      <CardBody>
+        <ul className="space-y-1.5 text-[13px]" aria-label="Secret sources">
+          {rows.map(([k, state]) => <li key={k} className="flex flex-wrap items-center gap-2"><span className="w-56 font-medium">{PROVIDER_LABEL[k]}</span>{state}</li>)}
+        </ul>
+      </CardBody>
+    </Card>
+  );
+}
 
 export function CredentialsPage() {
   const q = useQuery({ queryKey: ["credentials"], queryFn: () => get<CredRow[]>("/credentials") });
   const navigate = useNavigate();
-  const cell = (c: CredentialInfo | null) => c ? <span><span className="font-medium">{c.username}</span> <span className="text-[12px] text-muted">{c.provider === "local" ? "encrypted" : c.provider}, rotated {relTime(c.rotated_at)}</span></span> : <span className="text-muted">not set</span>;
+  const cell = (c: CredentialInfo | null) => c ? <span><span className="font-medium">{c.username}</span> <span className="text-[12px] text-muted">{c.provider === "local" ? "encrypted" : c.provider === "vault" ? `vault ${c.secret_ref ?? ""}` : c.provider}, rotated {relTime(c.rotated_at)}</span></span> : <span className="text-muted">not set</span>;
   const columns: ColumnDef<CredRow, unknown>[] = [
     { header: "Server", accessorKey: "server_name", cell: ({ row: { original: r } }) => <span className="flex items-center gap-2"><EngineMark engine={r.engine} /><span className="font-medium">{r.server_name}</span>{r.is_demo && <SimulatedBadge />}</span> },
     { header: "Environment", accessorKey: "environment" },
@@ -32,8 +57,9 @@ export function CredentialsPage() {
   ];
   return (
     <div>
-      <PageHeader title="Credentials" description="Which servers have monitoring and administration credentials. Secrets are AES-256-GCM encrypted (or read from environment variables / mounted files) and never returned by the API."
+      <PageHeader title="Credentials" description="Which servers have monitoring and administration credentials. Secrets are AES-256-GCM encrypted (or read from environment variables, mounted files or HashiCorp Vault) and never returned by the API."
         crumbs={[{ label: "Platform" }, { label: "Credentials" }]} />
+      <SecretProvidersCard />
       <Card><DataTable columns={columns} data={q.data} loading={q.isLoading} error={q.error} dense onRowClick={(r) => navigate(`/servers/${r.server_id}?tab=settings`)} /></Card>
     </div>
   );
