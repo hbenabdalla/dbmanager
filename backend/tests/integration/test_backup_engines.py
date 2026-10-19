@@ -196,7 +196,9 @@ async def test_mysql_family_dump_round_trip(flavor: str, tmp_path: Path) -> None
     srv = _server(flavor, prefix, "3306", tls_mode="prefer")
     tag = uuid.uuid4().hex[:6]
     src, dst, dst3, bk = f"dbm_it_bk_{tag}", f"dbm_it_bkr_{tag}", f"dbm_it_bkq_{tag}", f"dbm_it_bkuser_{tag}"
+    dst0 = f"dbm_it_bkz_{tag}"
     bk_pw = _pw()
+    guarded = False
     c = pymysql.connect(host=srv.host, port=srv.port, user=user, password=pw, autocommit=True)
 
     def run(sql: str, *args: Any) -> Any:
@@ -222,6 +224,19 @@ async def test_mysql_family_dump_round_trip(flavor: str, tmp_path: Path) -> None
             run(f"DELETE FROM `{src}`.t WHERE id > 100")
 
         p = engines.provider(flavor)
+        log_bin, trusted = run("SELECT @@global.log_bin, @@global.log_bin_trust_function_creators")[0]
+        guarded = bool(int(log_bin)) and not bool(int(trusted))
+        if guarded:
+            # Binary logging on (the MySQL 8 default) and routine creators not trusted: the
+            # least-privilege account cannot create the trigger and procedure (error 1419). The
+            # restore refuses before creating anything and names the fix ...
+            first = await p.backup(_ctx(srv, bk, bk_pw, src, tmp_path))
+            rec0 = SimpleNamespace(location=None, database_name=src, engine=flavor)
+            with pytest.raises(engines.BackupProviderError, match="log_bin_trust_function_creators"):
+                await p.restore(_ctx(srv, bk, bk_pw, dst0, tmp_path), rec0, first.file, dst0)
+            assert run("SELECT count(*) FROM information_schema.schemata WHERE schema_name = %s", dst0)[0][0] == 0
+            # ... which is the documented DBA prerequisite (docs/database-permissions/mysql.md)
+            run("SET GLOBAL log_bin_trust_function_creators = ON")
         await _round_trip(p, _ctx(srv, bk, bk_pw, src, tmp_path), _ctx(srv, bk, bk_pw, dst, tmp_path), dst, change)
         n, mx = run(f"SELECT count(*), max(txt) FROM `{dst}`.t")[0]
         assert n == 300 and mx.startswith("é")  # state at backup time, utf8mb4 intact
@@ -244,7 +259,9 @@ async def test_mysql_family_dump_round_trip(flavor: str, tmp_path: Path) -> None
             assert run("SELECT count(*) FROM information_schema.triggers WHERE trigger_schema = %s", dst3)[0][0] == 2
         assert run("SELECT count(*) FROM information_schema.triggers WHERE trigger_schema = %s", src)[0][0] == 2
     finally:
-        for d in (src, dst, dst3):
+        if guarded:
+            run("SET GLOBAL log_bin_trust_function_creators = OFF")
+        for d in (src, dst, dst3, dst0):
             run(f"DROP DATABASE IF EXISTS `{d}`")
         run(f"DROP USER IF EXISTS '{bk}'@'%'")
         c.close()

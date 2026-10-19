@@ -76,3 +76,23 @@ def test_db2_restore_commands_are_complete() -> None:
     assert "LOGTARGET /database/dbm-it-backups/dbm-restore-logs-20261020101500" in cmd
     assert "OVERFLOW LOG PATH (/database/dbm-it-backups/dbm-restore-logs-20261020101500)" in cmd
     assert "(...)" not in cmd
+
+
+def test_mysql_stored_program_detection_and_binlog_verdict(tmp_path) -> None:  # type: ignore[no-untyped-def]
+    from app.backup import engines
+
+    dump = tmp_path / "d.sql"
+    dump.write_bytes(
+        b"-- MySQL dump 10.13\n"
+        b"INSERT INTO t VALUES (1,'CREATE FUNCTION in data');\n"
+        b"/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`%`*/ /*!50003 TRIGGER `trg` BEFORE INSERT ON `t` FOR EACH ROW SET NEW.txt = 1 */;;\n"
+        b"CREATE DEFINER=`root`@`%` PROCEDURE `p_count`()\n"
+        b"/*!50106 CREATE*/ /*!50117 DEFINER=`root`@`%`*/ /*!50106 EVENT `ev` ON SCHEDULE EVERY 1 DAY DO SELECT 1 */ ;;\n"
+    )
+    assert engines.stored_programs(dump) == {"TRIGGER", "PROCEDURE", "EVENT"}
+    assert engines.stored_programs(dump) & engines.BINLOG_GUARDED == {"TRIGGER", "PROCEDURE"}
+    assert engines.binlog_blocks("1\t0\t0\n") is True  # binlog on, not trusted, no SUPER
+    assert engines.binlog_blocks("1\t1\t0\n") is False  # creators trusted
+    assert engines.binlog_blocks("1\t0\t1\n") is False  # SUPER
+    assert engines.binlog_blocks("0\t0\t0\n") is False  # no binary log
+    assert engines.binlog_blocks("") is False  # unexpected output: let the server answer

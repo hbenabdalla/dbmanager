@@ -114,10 +114,32 @@
           "failed": 0,
           "skipped": 0,
           "skip_reasons": []
+        },
+        "authentication": {
+          "status": "not_tested"
+        },
+        "group_mapping": {
+          "status": "not_tested"
+        },
+        "mfa": {
+          "status": "not_tested"
+        },
+        "secrets": {
+          "status": "not_tested"
+        },
+        "backup": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "restore": {
+          "status": "not_tested"
         }
       },
       "result": "passed",
-      "validated_at": "2026-10-18T08:02:08.725237+00:00"
+      "validated_at": "2026-10-19T20:32:49.651313+00:00"
     },
     "mssql": {
       "version": "16.0.4305.5",
@@ -212,10 +234,36 @@
           "failed": 0,
           "skipped": 0,
           "skip_reasons": []
+        },
+        "authentication": {
+          "status": "not_tested"
+        },
+        "group_mapping": {
+          "status": "not_tested"
+        },
+        "mfa": {
+          "status": "not_tested"
+        },
+        "secrets": {
+          "status": "not_tested"
+        },
+        "backup": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "restore": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
         }
       },
       "result": "passed",
-      "validated_at": "2026-10-18T08:02:08.725237+00:00"
+      "validated_at": "2026-10-19T20:32:49.651313+00:00"
     },
     "mysql": {
       "version": "8.4.11",
@@ -310,10 +358,36 @@
           "failed": 0,
           "skipped": 0,
           "skip_reasons": []
+        },
+        "authentication": {
+          "status": "not_tested"
+        },
+        "group_mapping": {
+          "status": "not_tested"
+        },
+        "mfa": {
+          "status": "not_tested"
+        },
+        "secrets": {
+          "status": "not_tested"
+        },
+        "backup": {
+          "status": "failed",
+          "passed": 0,
+          "failed": 1,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "restore": {
+          "status": "failed",
+          "passed": 0,
+          "failed": 1,
+          "skipped": 0,
+          "skip_reasons": []
         }
       },
-      "result": "passed",
-      "validated_at": "2026-10-18T08:02:08.725237+00:00"
+      "result": "failed",
+      "validated_at": "2026-10-19T20:32:49.651313+00:00"
     },
     "mariadb": {
       "version": "11.4.13-MariaDB-ubu2404",
@@ -408,10 +482,36 @@
           "failed": 0,
           "skipped": 0,
           "skip_reasons": []
+        },
+        "authentication": {
+          "status": "not_tested"
+        },
+        "group_mapping": {
+          "status": "not_tested"
+        },
+        "mfa": {
+          "status": "not_tested"
+        },
+        "secrets": {
+          "status": "not_tested"
+        },
+        "backup": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "restore": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
         }
       },
       "result": "passed",
-      "validated_at": "2026-10-18T08:02:08.725237+00:00"
+      "validated_at": "2026-10-19T20:32:49.651313+00:00"
     },
     "oracle": {
       "version": "21.3.0.0.0",
@@ -508,10 +608,36 @@
           "failed": 0,
           "skipped": 0,
           "skip_reasons": []
+        },
+        "authentication": {
+          "status": "not_tested"
+        },
+        "group_mapping": {
+          "status": "not_tested"
+        },
+        "mfa": {
+          "status": "not_tested"
+        },
+        "secrets": {
+          "status": "not_tested"
+        },
+        "backup": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "restore": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
         }
       },
       "result": "passed",
-      "validated_at": "2026-10-18T08:02:08.725237+00:00"
+      "validated_at": "2026-10-19T20:32:49.651313+00:00"
     },
     "postgresql": {
       "version": "16.15",
@@ -606,13 +732,39 @@
           "failed": 0,
           "skipped": 0,
           "skip_reasons": []
+        },
+        "authentication": {
+          "status": "not_tested"
+        },
+        "group_mapping": {
+          "status": "not_tested"
+        },
+        "mfa": {
+          "status": "not_tested"
+        },
+        "secrets": {
+          "status": "not_tested"
+        },
+        "backup": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "restore": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
         }
       },
       "result": "passed",
-      "validated_at": "2026-10-18T08:02:08.725237+00:00"
+      "validated_at": "2026-10-19T20:32:49.651313+00:00"
     },
     "openldap": {
-      "version": "OpenLDAP 2.6.10 (Ubuntu slapd, local test directory)",
+      "version": "OpenLDAP (osixia/openldap 1.5.0)",
       "capabilities": {
         "connection": {
           "status": "not_tested"
@@ -681,18 +833,161 @@
         }
       },
       "result": "passed",
-      "validated_at": "2026-10-19T00:05:37.805170+00:00"
+      "validated_at": "2026-10-19T20:32:49.651313+00:00"
+    },
+    "keycloak": {
+      "version": "Keycloak 26 (http://keycloak:8080/realms/dbm)",
+      "capabilities": {
+        "connection": {
+          "status": "not_tested"
+        },
+        "inventory": {
+          "status": "not_tested"
+        },
+        "users": {
+          "status": "not_tested"
+        },
+        "privileges": {
+          "status": "not_tested"
+        },
+        "sessions": {
+          "status": "not_tested"
+        },
+        "locks": {
+          "status": "not_tested"
+        },
+        "metrics": {
+          "status": "not_tested"
+        },
+        "queries": {
+          "status": "not_tested"
+        },
+        "explain": {
+          "status": "not_tested"
+        },
+        "storage": {
+          "status": "not_tested"
+        },
+        "security": {
+          "status": "not_tested"
+        },
+        "recommendations": {
+          "status": "not_tested"
+        },
+        "administration": {
+          "status": "not_tested"
+        },
+        "authentication": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "group_mapping": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "mfa": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "secrets": {
+          "status": "not_tested"
+        },
+        "backup": {
+          "status": "not_tested"
+        },
+        "restore": {
+          "status": "not_tested"
+        }
+      },
+      "result": "passed",
+      "validated_at": "2026-10-19T20:32:49.651313+00:00"
+    },
+    "vault": {
+      "version": "Vault 1.17.6",
+      "capabilities": {
+        "connection": {
+          "status": "not_tested"
+        },
+        "inventory": {
+          "status": "not_tested"
+        },
+        "users": {
+          "status": "not_tested"
+        },
+        "privileges": {
+          "status": "not_tested"
+        },
+        "sessions": {
+          "status": "not_tested"
+        },
+        "locks": {
+          "status": "not_tested"
+        },
+        "metrics": {
+          "status": "not_tested"
+        },
+        "queries": {
+          "status": "not_tested"
+        },
+        "explain": {
+          "status": "not_tested"
+        },
+        "storage": {
+          "status": "not_tested"
+        },
+        "security": {
+          "status": "not_tested"
+        },
+        "recommendations": {
+          "status": "not_tested"
+        },
+        "administration": {
+          "status": "not_tested"
+        },
+        "authentication": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "group_mapping": {
+          "status": "not_tested"
+        },
+        "mfa": {
+          "status": "not_tested"
+        },
+        "secrets": {
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0,
+          "skip_reasons": []
+        },
+        "backup": {
+          "status": "not_tested"
+        },
+        "restore": {
+          "status": "not_tested"
+        }
+      },
+      "result": "passed",
+      "validated_at": "2026-10-19T20:32:49.651313+00:00"
     }
   },
   "environment": "docker-compose.test.yml via scripts/integration-test.ps1 (Docker Desktop / WSL 2): vendor images from Docker Hub, mcr.microsoft.com, container-registry.oracle.com, icr.io; backend image with Microsoft ODBC Driver 18.7",
   "pending": {
-    "db2zos": "External validation required: Db2 for z/OS cannot run in a container; validate against a z/OS subsystem through Db2 Connect.",
-    "keycloak": "Run scripts/integration-test identity (Keycloak 26 container) to validate the OIDC flow.",
-    "vault": "Run scripts/integration-test vault (Vault dev server container) to validate KV v2 and AppRole."
+    "db2zos": "External validation required: Db2 for z/OS cannot run in a container; validate against a z/OS subsystem through Db2 Connect."
   },
-  "notes": {
-    "oracle": "TCPS not exercised: the Oracle XE image listens on TCP only (set DBM_IT_ORACLE_TCPS_PORT to test a TCPS listener).",
-    "openldap": "Validated with the identity suite against a local OpenLDAP 2.6.10 server holding the tests/integration/identity/ldap fixture (bind, search, group search, StartTLS). Keycloak (OIDC) and the osixia/openldap container run with scripts/integration-test identity."
-  },
-  "generated_at": "2026-10-19T00:05:37.805170+00:00"
+  "notes": {},
+  "generated_at": "2026-10-19T20:32:49.651313+00:00"
 }

@@ -571,6 +571,9 @@ class MySQLFamilyProvider(DatabaseBackupProvider):
             )
             if exists.read_text().strip() not in ("0", ""):
                 raise BackupProviderError(f"database {target!r} already exists: restores never overwrite a database")
+            programs = stored_programs(local) & BINLOG_GUARDED
+            if programs:
+                await self._binlog_preflight(path, defaults, ctx, programs)
             await run_tool(
                 [
                     path,
@@ -587,15 +590,45 @@ class MySQLFamilyProvider(DatabaseBackupProvider):
                 # DEFINER would need SUPER / SET_USER_ID, which a backup operator should not hold
                 script = ctx.workdir / "restore.sql"
                 stripped = strip_definers(local, script)
-            await run_tool(
-                [path, f"--defaults-extra-file={defaults}", "--default-character-set=utf8mb4", target],
-                stdin=script,
-                cancelled=ctx.cancelled,
-                secrets=(ctx.password,),
-            )
+            try:
+                await run_tool(
+                    [path, f"--defaults-extra-file={defaults}", "--default-character-set=utf8mb4", target],
+                    stdin=script,
+                    cancelled=ctx.cancelled,
+                    secrets=(ctx.password,),
+                )
+            except BackupProviderError as exc:
+                if "ERROR 1419" in str(exc):
+                    raise BackupProviderError(f"{exc}\n{BINLOG_HINT}") from exc
+                raise
         finally:
             defaults.unlink(missing_ok=True)
         return {"database": target, "tool": version, "definers_removed": stripped}
+
+    async def _binlog_preflight(self, client: str, defaults: Path, ctx: Context, programs: set[str]) -> None:
+        """With binary logging on, creating triggers and routines needs SUPER unless the server
+        trusts routine creators (error 1419). Refuse before anything is created, with the fix."""
+        out = ctx.workdir / "binlog.txt"
+        await run_tool(
+            [
+                client,
+                f"--defaults-extra-file={defaults}",
+                "--batch",
+                "--skip-column-names",
+                "-e",
+                BINLOG_QUERY,
+            ],
+            stdout=out,
+            secrets=(ctx.password,),
+        )
+        verdict = binlog_blocks(out.read_text())
+        if verdict:
+            kinds = ", ".join(sorted(k.lower() + "s" for k in programs))
+            raise BackupProviderError(
+                f"the dump contains {kinds}, and the target server has binary logging on with "
+                "log_bin_trust_function_creators = OFF: the restoring account would need SUPER (error 1419). "
+                f"Nothing was created. {BINLOG_HINT}"
+            )
 
 
 _DEFINER = re.compile(
@@ -614,6 +647,45 @@ def strip_definers(src: Path, dst: Path) -> int:
                 n += k
             w.write(line)
     return n
+
+
+#: stored programs whose creation is restricted by binary logging (MySQL error 1419)
+BINLOG_GUARDED = {"TRIGGER", "PROCEDURE", "FUNCTION"}
+BINLOG_HINT = (
+    "Either a DBA sets log_bin_trust_function_creators = ON on the target server (SET PERSIST "
+    "log_bin_trust_function_creators = ON; see the MySQL documentation on binary logging of stored "
+    "programs), or the restore runs with an account that holds SUPER."
+)
+#: binary logging, routine-creator trust and whether the current account holds SUPER
+BINLOG_QUERY = (
+    "SELECT @@global.log_bin, @@global.log_bin_trust_function_creators, "
+    "(SELECT COUNT(*) FROM information_schema.user_privileges WHERE privilege_type = 'SUPER' AND grantee = "
+    "CONCAT(CHAR(39), SUBSTRING_INDEX(CURRENT_USER(), '@', 1), CHAR(39), '@', CHAR(39), "
+    "SUBSTRING_INDEX(CURRENT_USER(), '@', -1), CHAR(39)))"
+)
+_PROGRAM = re.compile(rb"^(?:/\*!\d+ )?CREATE\b.*?\b(TRIGGER|PROCEDURE|FUNCTION|EVENT)\b")
+
+
+def binlog_blocks(output: str) -> bool:
+    """Whether the ``BINLOG_QUERY`` result means stored programs cannot be created (binary
+    logging on, creators not trusted, no SUPER). Unexpected output → ``False``: the restore then
+    reports the server's own error."""
+    fields = output.split()
+    if len(fields) != 3:
+        return False
+    log_bin, trusted, has_super = (f.strip().upper() for f in fields)
+    return log_bin in ("1", "ON") and trusted in ("0", "OFF") and has_super == "0"
+
+
+def stored_programs(path: Path) -> set[str]:
+    """Kinds of stored programs a mysqldump / mariadb-dump file creates (triggers, routines,
+    events), from the CREATE statements at the start of a line."""
+    found: set[str] = set()
+    with open(path, "rb") as f:
+        for line in f:
+            if line.startswith((b"CREATE", b"/*!")) and (m := _PROGRAM.match(line)):
+                found.add(m.group(1).decode())
+    return found
 
 
 def _mentions_schema(path: Path, schema: str) -> bool:
