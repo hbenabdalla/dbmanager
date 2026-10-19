@@ -97,13 +97,15 @@ Db2 waits for a lock forever by default, so the next run blocks behind it. The s
 If a container is still stuck from before this fix, restart Db2 once (its data volume is kept):
 
 ```shell
-docker compose -f docker-compose.test.yml --profile db2 restart db2
+docker compose -f docker-compose.test.yml --env-file .env.test --profile db2 restart db2
 ```
+
+**Running `docker compose` yourself:** always pass `--env-file .env.test` (the passwords live there), otherwise Compose stops with "required variable IT_… is missing a value".
 
 **Containers are still running after an interrupted run.** The script only stops the engines at
 the end of a complete run. To stop them, or to start from empty databases:
 
 ```shell
-docker compose -f docker-compose.test.yml --profile all stop      # keep data
-docker compose -f docker-compose.test.yml --profile all down -v   # remove data too
+docker compose -f docker-compose.test.yml --env-file .env.test --profile all stop   # keep data
+scripts/integration-test.sh --down        # remove containers and data (Windows: .\scripts\integration-test.ps1 -Down)
 ```
