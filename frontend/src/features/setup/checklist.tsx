@@ -84,7 +84,7 @@ export function SetupChecklistPage() {
   return (
     <div>
       <PageHeader title="Setup checklist" crumbs={[{ label: "Platform" }, { label: "Setup checklist" }]}
-        description="What is left to get the most out of DB Manager. Items tick themselves off as the platform detects them."
+        description="What is left to get the most out of DBManager. Items tick themselves off as the platform detects them."
         actions={<Button asChild><Link to="/setup">Open the setup wizard</Link></Button>}
         meta={q.data && <Badge tone={q.data.done === q.data.total ? "ok" : "neutral"}>{q.data.done} / {q.data.total}</Badge>} />
       {q.isLoading ? <SkeletonRows rows={8} /> : q.error || !q.data ? <ErrorState error={q.error} onRetry={() => q.refetch()} /> : (

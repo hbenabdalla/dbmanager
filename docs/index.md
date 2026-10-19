@@ -1,6 +1,8 @@
-# DB Manager
+# DBManager
 
-**DB Manager** is a self-hosted platform for administering, monitoring and securing a fleet of
+![DBManager](assets/brand/dbmanager-logo.png){ width="280" }
+
+**DBManager** is a self-hosted platform for administering, monitoring and securing a fleet of
 relational databases from one place: PostgreSQL, MySQL, MariaDB, Microsoft SQL Server, Oracle
 Database, IBM Db2 LUW and (partially) IBM Db2 for z/OS.
 
@@ -34,7 +36,7 @@ control and a complete audit trail.
 detection, capacity forecasting, query and plan comparison, recommendation outcomes (see the
 [release notes](release-notes/0.13.0.md), the
 [changelog](https://github.com/hbenabdalla/dbmanager/blob/main/CHANGELOG.md) and
-[versioning](product/roadmap.md#versioning)). DB Manager is pre-1.0 software. The capability status of every area is tracked honestly in the
+[versioning](product/roadmap.md#versioning)). DBManager is pre-1.0 software. The capability status of every area is tracked honestly in the
 [capability matrix](product/capability-matrix.md) and the [roadmap](product/roadmap.md):
 PostgreSQL, MySQL, MariaDB, SQL Server, Oracle and Db2 LUW are validated against real engines
 (see [Database engines](database-engines/index.md)); Db2 for z/OS is partial and still needs

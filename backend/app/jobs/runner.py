@@ -254,6 +254,10 @@ async def run_job(job_id: uuid.UUID) -> None:
                     from app.backup import service as backup_service
 
                     result = await backup_service.schedule(db)
+                elif job.kind == "report_scheduler":
+                    from app.services import report_schedules
+
+                    result = await report_schedules.due(db)
                 elif job.kind == "validate_recommendations":
                     from app.services import advisor
 

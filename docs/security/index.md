@@ -1,6 +1,6 @@
 # Security model
 
-DB Manager holds credentials for production databases, so it is designed so that it never
+DBManager holds credentials for production databases, so it is designed so that it never
 becomes an easy path to privilege escalation. This document describes the controls and the
 remaining risks.
 

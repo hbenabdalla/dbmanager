@@ -10,7 +10,7 @@ import { useNavigate } from "react-router-dom";
 import { get } from "@/api/client";
 import type { Page, Server } from "@/api/types";
 import { PageHeader } from "@/components/page";
-import { EngineMark, HealthDot } from "@/components/status";
+import { DatabaseEngineIcon, HealthDot } from "@/components/status";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Select } from "@/components/ui/input";
@@ -35,7 +35,7 @@ const ReplNodeView = memo(function ReplNodeView({ data }: NodeProps<Node<ReplNod
   const content = (
     <>
       <div className="flex items-center gap-1.5 text-[12.5px] font-medium">
-        {n.server ? <EngineMark engine={n.server.engine} /> : <ExternalLink className="size-3.5 text-muted" aria-hidden />}
+        {n.server ? <DatabaseEngineIcon engine={n.server.engine} /> : <ExternalLink className="size-3.5 text-muted" aria-hidden />}
         <span className="truncate">{n.label}</span>
         {n.server && <HealthDot health={health} className="ml-auto" />}
       </div>

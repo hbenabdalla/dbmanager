@@ -32,7 +32,7 @@ async def main() -> None:
     get_writer().start()  # collectors hand samples to the batch writer → time-series DB
     job_runner.runner = BackgroundRunner()
     job_runner.runner.start()
-    probe = FastAPI(title="DB Manager worker", docs_url=None, redoc_url=None, openapi_url=None)
+    probe = FastAPI(title="DBManager worker", docs_url=None, redoc_url=None, openapi_url=None)
     probe.include_router(ops_router)
     server = uvicorn.Server(
         uvicorn.Config(

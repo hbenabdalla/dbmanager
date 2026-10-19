@@ -17,7 +17,7 @@ export interface SecretProviders {
 }
 
 export const PROVIDER_LABEL: Record<SecretProvider, string> = {
-  local: "Encrypted in DB Manager",
+  local: "Encrypted in DBManager",
   env: "Environment variable",
   file: "Mounted secret file",
   vault: "HashiCorp Vault (KV v2)",

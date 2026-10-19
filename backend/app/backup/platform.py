@@ -61,7 +61,7 @@ COMPONENTS: dict[str, tuple[str, ...]] = {
         "api_tokens",
     ),
     "findings": ("recommendations", "security_findings", "query_plan_snapshots"),
-    "alerting": ("alert_rules", "maintenance_windows", "notification_channels"),
+    "alerting": ("alert_rules", "maintenance_windows", "notification_channels", "report_schedules"),
     "settings": ("app_settings", "siem_destinations"),
     "backup_config": ("backup_targets", "backup_policies"),
     "audit": ("audit_events", "query_history"),
@@ -71,7 +71,7 @@ COMPONENT_LABELS = {
     "inventory": "Registered servers, tags, encrypted credential references, discovered databases and accounts",
     "identity": "Users, groups, roles, role assignments, identity providers, group mappings, API tokens",
     "findings": "Recommendations and security findings with their triage state",
-    "alerting": "Alert rules, maintenance windows and notification channels",
+    "alerting": "Alert rules, maintenance windows, notification channels and report schedules",
     "settings": "Platform settings and audit forwarding destinations",
     "backup_config": "Backup storage targets and policies",
     "audit": "Audit log and SQL workspace history (merged on restore, never deleted)",
@@ -94,6 +94,7 @@ EXCLUDED: dict[str, str] = {
     "notification_deliveries": "notification delivery log",
     "backup_jobs": "backup job history stays with the running platform",
     "backups": "the backup catalog stays with the running platform",
+    "report_runs": "report delivery history",
 }
 
 TABLE_COMPONENT = {t: c for c, ts in COMPONENTS.items() for t in ts}
@@ -333,7 +334,7 @@ def compatibility(manifest: dict[str, Any]) -> dict[str, Any]:
             "status": "unsupported",
             "notes": [
                 f"Schema {rev!r} is unknown to this version (the backup was made by a newer or different build). "
-                f"Restore it with DB Manager {manifest.get('dbm_version')} or later."
+                f"Restore it with DBManager {manifest.get('dbm_version')} or later."
             ],
         }
     current = tables()

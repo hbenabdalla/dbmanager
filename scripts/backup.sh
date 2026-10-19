@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Back up a Docker Compose installation of DB Manager.
+# Back up a Docker Compose installation of DBManager.
 #   scripts/backup.sh [--with-metrics] [output-dir]
 # Writes <output-dir>/dbmanager-<UTC timestamp>.dump (pg_dump custom format of the control-plane
 # database: identity, inventory, encrypted credentials, findings, audit, settings) and, with
@@ -12,7 +12,7 @@ METRICS=0
 if [ "${1:-}" = "--with-metrics" ]; then METRICS=1; shift; fi
 OUT="${1:-backups}"
 mkdir -p "$OUT"
-set -a; [ -f .env ] && . ./.env; set +a
+. scripts/lib/dotenv.sh; load_dotenv .env
 TS=$(date -u +%Y%m%dT%H%M%SZ)
 PGU="${POSTGRES_USER:-dbmanager}"; PGD="${POSTGRES_DB:-dbmanager}"
 

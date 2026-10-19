@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { ApiError, get, put } from "@/api/client";
 import type { CredentialInfo, Job, Page } from "@/api/types";
 import { KeyValue, PageHeader, Stat } from "@/components/page";
-import { EngineMark, SimulatedBadge } from "@/components/status";
+import { DatabaseEngineIcon, SimulatedBadge } from "@/components/status";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
@@ -48,7 +48,7 @@ export function CredentialsPage() {
   const navigate = useNavigate();
   const cell = (c: CredentialInfo | null) => c ? <span><span className="font-medium">{c.username}</span> <span className="text-[12px] text-muted">{c.provider === "local" ? "encrypted" : c.provider === "vault" ? `vault ${c.secret_ref ?? ""}` : c.provider}, rotated {relTime(c.rotated_at)}</span></span> : <span className="text-muted">not set</span>;
   const columns: ColumnDef<CredRow, unknown>[] = [
-    { header: "Server", accessorKey: "server_name", cell: ({ row: { original: r } }) => <span className="flex items-center gap-2"><EngineMark engine={r.engine} /><span className="font-medium">{r.server_name}</span>{r.is_demo && <SimulatedBadge />}</span> },
+    { header: "Server", accessorKey: "server_name", cell: ({ row: { original: r } }) => <span className="flex items-center gap-2"><DatabaseEngineIcon engine={r.engine} /><span className="font-medium">{r.server_name}</span>{r.is_demo && <SimulatedBadge />}</span> },
     { header: "Environment", accessorKey: "environment" },
     { header: "Monitoring credential", accessorFn: (r) => r.monitoring?.username ?? "", cell: ({ row: { original: r } }) => cell(r.monitoring) },
     { header: "Admin credential", accessorFn: (r) => r.admin?.username ?? "", cell: ({ row: { original: r } }) => cell(r.admin) },

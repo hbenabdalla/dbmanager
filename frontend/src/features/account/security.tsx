@@ -25,7 +25,7 @@ export function qrDataUrl(svg: string): string {
 }
 
 function downloadCodes(codes: string[], username: string) {
-  const text = `DB Manager recovery codes for ${username}\nEach code works once. Keep them somewhere safe.\n\n${codes.join("\n")}\n`;
+  const text = `DBManager recovery codes for ${username}\nEach code works once. Keep them somewhere safe.\n\n${codes.join("\n")}\n`;
   const url = URL.createObjectURL(new Blob([text], { type: "text/plain" }));
   const a = document.createElement("a");
   a.href = url;
@@ -181,11 +181,11 @@ export function SecurityPage() {
   return (
     <div>
       <PageHeader title="Security" crumbs={[{ label: "Account" }, { label: "Security" }]}
-        description="Protect your DB Manager account with a second factor." />
+        description="Protect your DBManager account with a second factor." />
       {me?.mfa_enrollment_required && (
         <div role="alert" className="mb-4 flex items-start gap-2 rounded-md border border-warn/40 bg-warn-soft px-4 py-3 text-[13px] text-warn">
           <ShieldAlert className="mt-0.5 size-4 shrink-0" />
-          <span>Your administrator requires multi-factor authentication for your account. Set up an authenticator app to continue using DB Manager.</span>
+          <span>Your administrator requires multi-factor authentication for your account. Set up an authenticator app to continue using DBManager.</span>
         </div>
       )}
       <Card>

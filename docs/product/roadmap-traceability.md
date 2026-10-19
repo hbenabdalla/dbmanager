@@ -69,14 +69,20 @@ the repository root; "—" means not yet created.
 | Query comparison (period and plan) | G-28 | 0.13.4 | `perf_intel.compare_periods`, `compare_plans`; `query_plan_snapshots` (migration `0011`); explain `save_label` | unit + API tests (RBAC, audit) | [comparison](../performance/regressions-and-comparison.md#period-vs-period-comparison) | DONE |
 | Recommendation validation | G-29 | 0.13.5 | `perf_intel.start_validation`, `complete_validation`; `recommendations.validation`; job `validate_recommendations`; Outcomes page | unit + API tests | [validation](../performance/regressions-and-comparison.md#recommendation-validation-before-after) | DONE |
 
+## Milestone 0.14 — Reporting (DONE)
+
+| Capability | Gap | Sprint | Code | Tests | Documentation | Status |
+|---|---|---|---|---|---|---|
+| Security-findings, query-statistics, regression and forecast reports; parameters; preview | G-32 | 0.14.1 | `backend/app/services/reports.py` (`ReportParams`, `REPORTS`, `produce`), `backend/app/api/v1/reports.py`, `frontend/src/features/reports/reports.tsx` | `tests/api/test_reports.py` (catalog, every report as CSV and PDF, parameters, RBAC scope, masking), `frontend/src/test/reports.test.tsx` | [reports](../user-guide/reports.md) | DONE |
+| Scheduled reports by e-mail | G-30 | 0.14.2 | `app/services/report_schedules.py`, `app/models/reporting.py`, migration `0012`, job `report_scheduler`, `notify.send_file_email`, permission `reports.schedule`, `features/reports/schedules.tsx` | `tests/api/test_reports.py` (aiosmtpd delivery, owner disabled, scheduler job, validation), `tests/migrations`, `frontend/src/test/reports.test.tsx` | [scheduled reports](../user-guide/reports.md#scheduled-reports) | DONE |
+| Server-side PDF | G-31 | 0.14.3 | `app/services/report_pdf.py` | `tests/unit/test_report_pdf.py`, `tests/api/test_reports.py` | [reports](../user-guide/reports.md#generating-a-report) | DONE |
+| Branding and engine identity | — | 0.14.4 | `frontend/src/components/brand.tsx`, `engine-icon.tsx`, `lib/engines.ts`, `app/api/v1/branding.py`, `frontend/public/*` icons | `frontend/src/test/engine-icon.test.tsx`, `tests/api/test_branding.py` | [brand assets](../development/brand-assets.md) | DONE |
+
 ## Later milestones
 
 | Capability | Gap | Sprint | Status |
 |---|---|---|---|
-| Security & query reports | G-32 | 0.14.1 | PLANNED |
-| Scheduled reports | G-30 | 0.14.2 | PLANNED |
-| PDF export | G-31 | 0.14.3 | PLANNED |
-| Helm, images, manifest CI, HA/TLS reference | G-41, G-42, G-44, G-45 | 0.15.x | PLANNED |
+| Helm, images, manifest CI, HA/TLS reference | G-41, G-42, G-44, G-45 | 0.15.x | NEXT |
 | Scale, security, accessibility, upgrade drill, RC | G-54, G-58, G-22 | 1.0.x | PLANNED |
 | Oracle TCPS validation | G-55 | Future | PLANNED |
 | Db2 for z/OS validation and deep monitoring | G-56 | Future | BLOCKED |

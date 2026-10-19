@@ -14,7 +14,7 @@ import type { ExplainResult, Finding, ServerDetail } from "@/api/types";
 import { ForecastChart, type ForecastBandPoint } from "@/components/charts";
 import { PageHeader, Stat } from "@/components/page";
 import { PlanViewer } from "@/components/plan-graph";
-import { EngineMark, SeverityBadge, SimulatedBadge } from "@/components/status";
+import { DatabaseEngineIcon, SeverityBadge, SimulatedBadge } from "@/components/status";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
@@ -330,7 +330,7 @@ export function CapacityForecastPage() {
   const [selected, setSelected] = useState<Forecast | null>(null);
   const q = useQuery({ queryKey: ["capacity-forecast", scope, source], queryFn: () => get<{ items: Forecast[]; total: number }>("/capacity/forecast", { scope, source, limit: 500 }) });
   const columns: ColumnDef<Forecast, unknown>[] = [
-    { header: "Server", accessorKey: "server_name", cell: ({ row: { original: f } }) => <span className="flex items-center gap-2 whitespace-nowrap">{f.engine && <EngineMark engine={f.engine} />}{f.server_name}</span> },
+    { header: "Server", accessorKey: "server_name", cell: ({ row: { original: f } }) => <span className="flex items-center gap-2 whitespace-nowrap">{f.engine && <DatabaseEngineIcon engine={f.engine} />}{f.server_name}</span> },
     ...(scope !== "server" ? [{ header: scope === "database" ? "Database" : "Tablespace", accessorKey: "object" } as ColumnDef<Forecast, unknown>] : []),
     { header: "Size", accessorKey: "current_bytes", meta: { align: "right" }, cell: ({ getValue }) => bytes(getValue() as number | null) },
     { header: "Growth / day (90% band)", accessorKey: "growth_bytes_per_day", meta: { align: "right" }, cell: ({ row: { original: f } }) => f.growth_bytes_per_day === null ? "—"
@@ -400,7 +400,7 @@ export function RecommendationValidationPage() {
   const columns: ColumnDef<Finding & { validation: Validation }, unknown>[] = [
     { header: "Outcome", id: "outcome", cell: ({ row: { original: f } }) => <ValidationBadge v={f.validation} /> },
     { header: "Recommendation", accessorKey: "title", cell: ({ row: { original: f } }) => <div className="min-w-[260px]"><div className="flex items-center gap-2"><SeverityBadge severity={f.severity} /><span className="font-medium">{f.title}</span></div><div className="font-mono text-[11.5px] text-muted">{f.rule_id}</div></div> },
-    { header: "Server", accessorKey: "server_name", cell: ({ row: { original: f } }) => <span className="flex items-center gap-2 whitespace-nowrap"><EngineMark engine={f.engine} />{f.server_name}{f.is_demo && <SimulatedBadge />}</span> },
+    { header: "Server", accessorKey: "server_name", cell: ({ row: { original: f } }) => <span className="flex items-center gap-2 whitespace-nowrap"><DatabaseEngineIcon engine={f.engine} />{f.server_name}{f.is_demo && <SimulatedBadge />}</span> },
     { header: "Before → after", id: "ba", meta: { align: "right" }, cell: ({ row: { original: f } }) => <span className="tabular whitespace-nowrap">{num(f.validation.before?.value ?? null, 2)} → {num(f.validation.after?.value ?? null, 2)}</span> },
     { header: "Change", id: "chg", meta: { align: "right" }, cell: ({ row: { original: f } }) => pctText(f.validation.change_pct) },
     { header: "Resolved", accessorKey: "resolved_at", cell: ({ getValue }) => <span className="whitespace-nowrap text-[12px]">{dateTime(getValue() as string)}</span> },

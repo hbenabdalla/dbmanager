@@ -7,7 +7,7 @@ write-only and encrypted.
 ```mermaid
 sequenceDiagram
   participant U as User
-  participant DBM as DB Manager
+  participant DBM as DBManager
   participant D as LDAP / IdP
   U->>DBM: sign in
   DBM->>D: authenticate (bind / code+PKCE)

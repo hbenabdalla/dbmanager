@@ -20,7 +20,7 @@ or `collectors.view`.
 
 ## Configuration
 
-DB Manager is configured in two places:
+DBManager is configured in two places:
 
 * **Environment variables** (`DBM_*`, read at start-up; in Docker Compose from `.env`). The full
   list is in [Deployment → environment variables](../deployment/index.md#environment-variables-backend).

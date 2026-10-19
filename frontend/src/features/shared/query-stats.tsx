@@ -7,7 +7,7 @@ import { get } from "@/api/client";
 import type { QueryStat } from "@/api/types";
 import { MetricChart } from "@/components/charts";
 import { CodeBlock } from "@/components/page";
-import { EngineMark, SimulatedBadge } from "@/components/status";
+import { DatabaseEngineIcon, SimulatedBadge } from "@/components/status";
 import { useSourceParam } from "@/lib/fleet-source";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -123,7 +123,7 @@ export function QueryStatsTable({ serverId, slowOnly, fleet }: { serverId?: stri
       <div className="min-w-[320px] max-w-[620px]"><code className="block truncate font-mono text-[12px]">{r.query_text}</code>
         <div className="mt-0.5 flex gap-2 text-[11.5px] text-muted">{r.database}{r.username ? <span>as {r.username}</span> : null}</div></div>
     ) },
-    ...(fleet || !serverId ? [{ header: "Server", accessorKey: "server_name", cell: ({ row: { original: r } }: { row: { original: QueryStat } }) => <span className="flex items-center gap-1.5 whitespace-nowrap"><EngineMark engine={r.engine ?? ""} />{r.server_name}{r.is_demo && <SimulatedBadge />}</span> } as ColumnDef<QueryStat, unknown>] : []),
+    ...(fleet || !serverId ? [{ header: "Server", accessorKey: "server_name", cell: ({ row: { original: r } }: { row: { original: QueryStat } }) => <span className="flex items-center gap-1.5 whitespace-nowrap"><DatabaseEngineIcon engine={r.engine ?? ""} />{r.server_name}{r.is_demo && <SimulatedBadge />}</span> } as ColumnDef<QueryStat, unknown>] : []),
     { header: "Calls", accessorKey: "calls", meta: { align: "right" }, cell: ({ getValue }) => compactNum(getValue() as number) },
     { header: "Mean", accessorKey: "mean_ms", meta: { align: "right" }, cell: ({ row: { original: r } }) => <span className={r.mean_ms > 1000 ? "font-medium text-warn" : ""}>{ms(r.mean_ms)}</span> },
     { header: "Exec/s", id: "cps", accessorFn: (r) => r.interval?.calls_per_sec ?? null, meta: { align: "right" }, cell: ({ getValue }) => compactNum(getValue() as number | null) },

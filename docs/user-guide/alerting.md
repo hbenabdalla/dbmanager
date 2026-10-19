@@ -1,6 +1,6 @@
 # Alerting
 
-DB Manager raises alerts when a rule's condition holds on a monitored server, shows them under **Operations → Alerts**, and optionally sends notifications through [notification channels](../administration/notifications.md).
+DBManager raises alerts when a rule's condition holds on a monitored server, shows them under **Operations → Alerts**, and optionally sends notifications through [notification channels](../administration/notifications.md).
 
 ## How evaluation works
 

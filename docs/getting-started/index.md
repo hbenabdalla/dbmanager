@@ -1,6 +1,6 @@
 # Introduction
 
-DB Manager gives database administrators, platform teams and auditors one web application for a
+DBManager gives database administrators, platform teams and auditors one web application for a
 heterogeneous database estate:
 
 * **Fleet inventory** — servers, clusters, databases, schemas, objects, users and grants, organized

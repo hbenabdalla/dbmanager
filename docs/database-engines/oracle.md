@@ -58,7 +58,7 @@ ALTER USER c##dbm_monitor SET CONTAINER_DATA = ALL CONTAINER = CURRENT;   -- see
 
 The adapter reads only views that need no management pack (see [Licensed features](#licensed-features-diagnostics-and-tuning-pack)).
 It never queries AWR, ASH, ADDM, SQL Monitoring or the SQL Tuning Advisor, whatever the account's
-privileges, so `SELECT_CATALOG_ROLE` does not lead to Diagnostics/Tuning Pack usage by DB Manager.
+privileges, so `SELECT_CATALOG_ROLE` does not lead to Diagnostics/Tuning Pack usage by DBManager.
 The server's *Diagnostics Pack* and *Tuning Pack* flags stay **disabled** unless an administrator
 records that the database is licensed.
 
@@ -91,7 +91,7 @@ for a registered server, on its **Overview → Capabilities** (runtime discovery
 
 ## Licensed features (Diagnostics and Tuning Pack)
 
-DB Manager **does not include, assume or enable** any Oracle option or management pack.
+DBManager **does not include, assume or enable** any Oracle option or management pack.
 
 * The adapter never queries AWR (`DBA_HIST_*`), ASH (`V$ACTIVE_SESSION_HISTORY`), ADDM, SQL
   Monitoring (`V$SQL_MONITOR`), the SQL Tuning Advisor (`DBMS_SQLTUNE`) or the metric views
@@ -102,7 +102,7 @@ DB Manager **does not include, assume or enable** any Oracle option or managemen
   and in the support matrix, but this release does not unlock pack-licensed views even then.
 * An Enterprise Edition database does not change this policy: the edition is never taken as
   evidence of a pack licence.
-* Active Data Guard is a separate licence; DB Manager only reads `V$DATAGUARD_STATS`.
+* Active Data Guard is a separate licence; DBManager only reads `V$DATAGUARD_STATS`.
 
 ## Known limitations
 
@@ -149,7 +149,7 @@ privileged accounts) also apply.
 | `ORA-PERF-009` | Database in NOARCHIVELOG mode |
 
 Plus the common performance rules `GEN-PERF-001` … `GEN-PERF-010`. Recommendations are advice with
-evidence; DB Manager never executes them.
+evidence; DBManager never executes them.
 
 ## Troubleshooting
 

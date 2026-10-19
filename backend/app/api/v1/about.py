@@ -19,10 +19,9 @@ from app.core.config import get_settings
 
 router = APIRouter(tags=["about"])
 
-PRODUCT = "DB Manager"
+PRODUCT = "DBManager"
 #: the roadmap milestone this build belongs to (kept in step with ROADMAP.md)
-#: this release (roadmap milestones 0.9–0.12, see docs/product/roadmap.md "Versioning")
-CURRENT_MILESTONE = {"version": "v0.12", "name": "First public release — asset protection"}
+CURRENT_MILESTONE = {"version": "v0.14", "name": "Reporting"}
 _SAFE = re.compile(r"[^0-9A-Za-z.+_:\-]")
 
 

@@ -16,6 +16,8 @@ import { type Backup, COMPAT_LABEL, type DatabasePreview, errMsg, type Job, PLAT
 import { asset } from "./pages";
 import { useBackupServers } from "./policies";
 import { JobProgress, KeyInput, StatusBadge, useJob } from "./shared";
+import { DatabaseEngineIcon } from "@/components/engine-icon";
+import { engineLabel } from "@/lib/engines";
 
 const STEPS: WizardStep[] = [
   { id: "select", title: "Select backup" }, { id: "manifest", title: "Validate manifest" }, { id: "integrity", title: "Verify integrity" },
@@ -104,7 +106,7 @@ function RestoreFlow({ backup }: { backup: Backup }) {
   const sameEngine = (servers.data ?? []).filter((s) => s.engine === backup.engine);
   return (
     <div>
-      <PageHeader title={`Restore ${platform ? "DB Manager platform" : asset(backup)}`}
+      <PageHeader title={`Restore ${platform ? "DBManager platform" : asset(backup)}`}
         crumbs={[{ label: "Platform" }, { label: "Backup & Restore", to: "/platform/backups?tab=history" }, { label: "Restore" }]}
         description={`Backup ${backup.id.slice(0, 8)} from ${dateTime(backup.created_at)}`} />
       <Card className="p-4">
@@ -121,7 +123,7 @@ function RestoreFlow({ backup }: { backup: Backup }) {
               {backup.encrypted && <KeyInput mode={backup.encryption.mode} identity={identity} passphrase={passphrase} onIdentity={setIdentity} onPassphrase={setPassphrase} />}
               {!platform && (
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <Field label={`Restore to server (${backup.engine})`}>
+                  <Field label={`Restore to server (${engineLabel(backup.engine ?? "")})`}>
                     <Select value={serverId} onChange={(e) => setServerId(e.target.value)}>
                       {sameEngine.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
                       {!sameEngine.some((s) => s.id === serverId) && <option value={serverId}>{backup.server_name ?? serverId}</option>}
@@ -134,10 +136,10 @@ function RestoreFlow({ backup }: { backup: Backup }) {
           {step === "manifest" && (pp ? (
             <KeyValue items={[
               ["Format", pp.manifest.format], ["Created", `${dateTime(pp.manifest.created_at)}${pp.manifest.created_by ? ` by ${pp.manifest.created_by}` : ""}`],
-              ["DB Manager version", pp.manifest.dbm_version], ["Schema", pp.manifest.schema_version], ["Components", pp.manifest.components.join(", ")],
+              ["DBManager version", pp.manifest.dbm_version], ["Schema", pp.manifest.schema_version], ["Components", pp.manifest.components.join(", ")],
             ]} />
           ) : dp ? (
-            <KeyValue items={[["Engine", backup.engine ?? "—"], ["Method", `${backup.method} (${backup.tool ?? ""})`], ["Source database", backup.database ?? "—"], ["Location", backup.location ?? "—"]]} />
+            <KeyValue items={[["Engine", backup.engine ? <DatabaseEngineIcon engine={backup.engine} withLabel /> : "—"], ["Method", `${backup.method} (${backup.tool ?? ""})`], ["Source database", backup.database ?? "—"], ["Location", backup.location ?? "—"]]} />
           ) : null)}
           {step === "integrity" && (pp ? (
             <p className="text-[13px] text-ok" role="status">The stored archive matches its SHA-256 and all {pp.integrity.tables} tables match their checksums.</p>
@@ -147,7 +149,7 @@ function RestoreFlow({ backup }: { backup: Backup }) {
           {step === "compat" && (pp ? (
             <div className="space-y-2 text-[13px]">
               <div className="flex items-center gap-2">Compatibility <Badge tone={pp.compatibility.status === "compatible" ? "ok" : pp.compatibility.status === "migration_required" ? "warn" : "crit"}>{COMPAT_LABEL[pp.compatibility.status]}</Badge></div>
-              <p className="text-muted">Backup: DB Manager {pp.compatibility.backup_version}, schema {pp.compatibility.backup_schema}. This installation: {pp.compatibility.current_version}, schema {pp.compatibility.current_schema}.</p>
+              <p className="text-muted">Backup: DBManager {pp.compatibility.backup_version}, schema {pp.compatibility.backup_schema}. This installation: {pp.compatibility.current_version}, schema {pp.compatibility.current_schema}.</p>
               {pp.compatibility.notes.map((n) => <p key={n}>{n}</p>)}
               {pp.keys.missing.length > 0 && <p className="text-crit">Master keys not configured: {pp.keys.missing.join(", ")} (set DBM_PREVIOUS_MASTER_KEYS)</p>}
             </div>
@@ -194,7 +196,7 @@ function RestoreFlow({ backup }: { backup: Backup }) {
           {step === "confirm" && (
             <div className="space-y-3 text-[13px]">
               <p className="flex gap-2 rounded-md border border-crit/30 bg-crit-soft px-3 py-2 text-crit"><AlertTriangle className="mt-0.5 size-4 shrink-0" />
-                {platform ? "The selected components of DB Manager's configuration are replaced by the backup. This is recorded in the audit log." : "A new database is created from the backup and recorded in the audit log."}</p>
+                {platform ? "The selected components of DBManager's configuration are replaced by the backup. This is recorded in the audit log." : "A new database is created from the backup and recorded in the audit log."}</p>
               {platform && <label className="flex items-center gap-2"><input type="checkbox" checked={preBackup} onChange={(e) => setPreBackup(e.target.checked)} />Take a safety backup of the current platform first (recommended)</label>}
               {pp?.compatibility.status === "migration_required" && <label className="flex items-center gap-2"><input type="checkbox" checked={acceptMigration} onChange={(e) => setAcceptMigration(e.target.checked)} />I accept that columns added since the backup take their default values</label>}
               {!!pp?.keys.missing.length && <label className="flex items-center gap-2"><input type="checkbox" checked={acceptKeys} onChange={(e) => setAcceptKeys(e.target.checked)} />Restore anyway: encrypted values that need {pp.keys.missing.join(", ")} cannot be decrypted</label>}

@@ -65,7 +65,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     if s.runs_worker:
         job_runner.runner = job_runner.BackgroundRunner()
         job_runner.runner.start()
-    log.info("DB Manager started", extra={"version": __version__, "role": s.process_role, "env": s.env})
+    log.info("DBManager started", extra={"version": __version__, "role": s.process_role, "env": s.env})
     try:
         yield
     finally:
@@ -80,7 +80,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 def create_app(*, with_lifespan: bool = True) -> FastAPI:
     s = get_settings()
     app = FastAPI(
-        title="DB Manager API",
+        title="DBManager API",
         version=__version__,
         description=(
             "Unified administration, monitoring, security and performance analysis for heterogeneous relational "

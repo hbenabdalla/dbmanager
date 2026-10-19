@@ -34,6 +34,7 @@ from app.models.inventory import (
     ServerTag,
     Site,
 )
+from app.models.reporting import ReportRun, ReportSchedule
 from app.models.simulation import SimulationRun
 from app.models.telemetry import CollectorJob, MetricSample, QueryFingerprint, QueryStatSnapshot
 
@@ -73,6 +74,8 @@ __all__ = [
     "QueryStatSnapshot",
     "QueryPlanSnapshot",
     "Recommendation",
+    "ReportRun",
+    "ReportSchedule",
     "Role",
     "RoleAssignment",
     "SecurityFinding",

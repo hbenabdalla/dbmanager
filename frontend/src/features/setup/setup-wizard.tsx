@@ -5,6 +5,7 @@ import { Building2, CheckCircle2, Database, Gauge, KeyRound, Layers, MapPin, Plu
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { BrandLogo } from "@/components/brand";
 import { ApiError, get, post, put } from "@/api/client";
 import { useEnvironments, useSites } from "@/api/hooks";
 import { PageHeader } from "@/components/page";
@@ -24,12 +25,12 @@ export interface SetupState {
 }
 
 export const SETUP_STEPS: WizardStep[] = [
-  { id: "welcome", title: "Welcome", description: "A few minutes to get DB Manager ready for your team. Progress is saved after every step." },
+  { id: "welcome", title: "Welcome", description: "A few minutes to get DBManager ready for your team. Progress is saved after every step." },
   { id: "admin", title: "Administrator", description: "Secure the bootstrap administrator account." },
   { id: "organization", title: "Organization", description: "Your organization's name and the time zone reports and schedules use." },
   { id: "sites", title: "Sites", description: "Data centers, cloud regions or locations your servers run in.", optional: true },
   { id: "environments", title: "Environments", description: "Production, DR, UAT, development… Environments drive risk levels and approvals." },
-  { id: "authentication", title: "Sign-in", description: "How people sign in to DB Manager.", optional: true },
+  { id: "authentication", title: "Sign-in", description: "How people sign in to DBManager.", optional: true },
   { id: "monitoring", title: "Monitoring profile", description: "How often servers are sampled by default." },
   { id: "retention", title: "Retention", description: "How long metric history is kept." },
   { id: "database", title: "First database", description: "Register the first server to monitor.", optional: true },
@@ -185,6 +186,10 @@ export function SetupWizardPage() {
     switch (step) {
       case "welcome": return (
         <div className="grid gap-2 sm:grid-cols-2">
+          <div className="mb-2 flex flex-wrap items-center gap-4 sm:col-span-2">
+            <BrandLogo width={150} />
+            <p className="max-w-sm text-[13px] text-muted">Welcome to DBManager. These steps prepare the platform; each one can be changed later under Platform.</p>
+          </div>
           <Row icon={<UserCog />} title="Secure the administrator">Replace the bootstrap password.</Row>
           <Row icon={<Building2 />} title="Organization and time zone">Used by reports, schedules and the audit trail.</Row>
           <Row icon={<Layers />} title="Sites and environments">Where servers live and how critical they are.</Row>
@@ -232,7 +237,7 @@ export function SetupWizardPage() {
         </div>);
       case "authentication": return (
         <div className="space-y-2" role="radiogroup" aria-label="Sign-in method">
-          <ChoiceCard name="auth" selected={auth === "local"} onSelect={() => setAuth("local")} icon={<UserCog />} title="Local accounts only">Users are created in DB Manager. You can add a directory later.</ChoiceCard>
+          <ChoiceCard name="auth" selected={auth === "local"} onSelect={() => setAuth("local")} icon={<UserCog />} title="Local accounts only">Users are created in DBManager. You can add a directory later.</ChoiceCard>
           <ChoiceCard name="auth" selected={auth === "ldap"} onSelect={() => setAuth("ldap")} icon={<ShieldCheck />} title="LDAP / Active Directory">Users sign in with their directory account; groups map to roles.</ChoiceCard>
           <ChoiceCard name="auth" selected={auth === "oidc"} onSelect={() => setAuth("oidc")} icon={<KeyRound />} title="Single sign-on (OpenID Connect)">Keycloak, Microsoft Entra ID, Okta or any OIDC provider.</ChoiceCard>
           {auth !== "local" && <Button onClick={() => setIdpDialog(auth as "ldap" | "oidc")}>Configure {auth === "ldap" ? "LDAP" : "OIDC"} now</Button>}
@@ -264,7 +269,7 @@ export function SetupWizardPage() {
         return <dl className="divide-y divide-border rounded-md border border-border text-[13px]">{items.map(([k, v]) => <div key={k} className="grid grid-cols-[170px_1fr] gap-3 px-3 py-2"><dt className="text-muted">{k}</dt><dd>{v}</dd></div>)}</dl>;
       }
       case "complete": return (
-        <SuccessPanel title="DB Manager is ready" actions={<><Button variant="primary" onClick={() => navigate("/")}><Rocket /> Go to the dashboard</Button><Button asChild><Link to="/setup/checklist">Open the checklist</Link></Button></>}>
+        <SuccessPanel title="DBManager is ready" actions={<><Button variant="primary" onClick={() => navigate("/")}><Rocket /> Go to the dashboard</Button><Button asChild><Link to="/setup/checklist">Open the checklist</Link></Button></>}>
           Setup is complete. The checklist shows what is left to make the most of the platform.
         </SuccessPanel>);
       default: return null;

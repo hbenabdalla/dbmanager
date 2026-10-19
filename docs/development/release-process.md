@@ -11,7 +11,7 @@
 
 ## Versions and tags
 
-DB Manager uses [Semantic Versioning](https://semver.org/); before 1.0, minor versions may contain
+DBManager uses [Semantic Versioning](https://semver.org/); before 1.0, minor versions may contain
 breaking changes, listed in `CHANGELOG.md` with migration notes. A release is an annotated tag
 `vX.Y.Z` on `main`:
 
@@ -20,7 +20,7 @@ breaking changes, listed in `CHANGELOG.md` with migration notes. A release is an
 3. Tag and push:
 
     ```bash
-    git tag -a vX.Y.Z -m "DB Manager vX.Y.Z"
+    git tag -a vX.Y.Z -m "DBManager vX.Y.Z"
     git push origin vX.Y.Z
     ```
 

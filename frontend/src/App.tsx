@@ -2,10 +2,11 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { type ReactNode } from "react";
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { Toaster } from "sonner";
+import { BrandLoading } from "@/components/brand";
 import { retryDelay, shouldRetry } from "@/api/client";
 import { AppShell } from "@/components/app-shell";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { EmptyState, SkeletonRows } from "@/components/ui/states";
+import { EmptyState } from "@/components/ui/states";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import { ThemeProvider, useTheme } from "@/lib/theme";
 import { AdminDatabasesPage, AdminObjectsPage, AdminPrivilegesPage, AdminSchemasPage, AdminUsersPage } from "@/features/admin/admin";
@@ -60,7 +61,7 @@ export const queryClient = new QueryClient({
 function RequireAuth({ children }: { children: ReactNode }) {
   const { me, loading } = useAuth();
   const loc = useLocation();
-  if (loading) return <div className="p-8"><SkeletonRows rows={8} /></div>;
+  if (loading) return <BrandLoading />;
   if (!me) return <Navigate to={`/login?next=${encodeURIComponent(loc.pathname + loc.search)}`} replace />;
   return <>{children}</>;
 }

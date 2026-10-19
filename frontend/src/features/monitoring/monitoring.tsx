@@ -7,7 +7,7 @@ import { useAllServers } from "@/api/hooks";
 import type { SeriesResponse, Server } from "@/api/types";
 import { Meter, MetricChart } from "@/components/charts";
 import { PageHeader } from "@/components/page";
-import { EngineMark, HealthBadge, SimulatedBadge } from "@/components/status";
+import { DatabaseEngineIcon, HealthBadge, SimulatedBadge } from "@/components/status";
 import { AutoRefreshPicker } from "@/components/auto-refresh";
 import { TimeRangePicker, type RangeValue } from "@/components/time-range";
 import { Badge } from "@/components/ui/badge";
@@ -30,7 +30,7 @@ export function MonitoringOverviewPage() {
   const navigate = useNavigate();
   const rows = (servers.data?.items ?? []).filter((s) => s.implementation !== "planned");
   const columns: ColumnDef<Server, unknown>[] = [
-    { header: "Server", accessorKey: "name", cell: ({ row: { original: s } }) => <span className="flex items-center gap-2 whitespace-nowrap"><EngineMark engine={s.engine} /><span className="font-medium">{s.name}</span>{s.is_demo && <SimulatedBadge />}</span> },
+    { header: "Server", accessorKey: "name", cell: ({ row: { original: s } }) => <span className="flex items-center gap-2 whitespace-nowrap"><DatabaseEngineIcon engine={s.engine} /><span className="font-medium">{s.name}</span>{s.is_demo && <SimulatedBadge />}</span> },
     { header: "Health", accessorKey: "health_status", cell: ({ row: { original: s } }) => <HealthBadge health={s.health_status} reasons={s.health_reasons} /> },
     { header: "Conn. use", accessorFn: (s) => k(s, "connections.utilization"), meta: { align: "right" }, cell: ({ row: { original: s } }) => { const v = k(s, "connections.utilization"); return v == null ? "—" : <div className="ml-auto w-20"><div className="text-right text-[12px]">{pct(v, 0)}</div><Meter value={v} /></div>; } },
     { header: "Active", accessorFn: (s) => k(s, "connections.active"), meta: { align: "right" }, cell: ({ getValue }) => compactNum(getValue() as number) },
@@ -101,7 +101,7 @@ export function PerformanceComparePage() {
               <li key={s.id}>
                 <label className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-[13px] hover:bg-surface-2">
                   <input type="checkbox" checked={chosen.includes(s.id)} onChange={() => toggle(s.id)} />
-                  <EngineMark engine={s.engine} /> <span className="truncate">{s.name}</span>
+                  <DatabaseEngineIcon engine={s.engine} /> <span className="truncate">{s.name}</span>
                 </label>
               </li>
             ))}
@@ -134,7 +134,7 @@ export function ReplicationPage() {
         <DataTable data={rows} loading={servers.isLoading} dense onRowClick={(s) => navigate(`/servers/${s.id}?tab=replication`)}
           empty={<EmptyState title="No replicated servers">Servers appear here when they belong to a cluster or report replication lag.</EmptyState>}
           columns={[
-            { header: "Server", accessorKey: "name", cell: ({ row: { original: s } }) => <span className="flex items-center gap-2"><EngineMark engine={s.engine} /><span className="font-medium">{s.name}</span>{s.is_demo && <SimulatedBadge />}</span> },
+            { header: "Server", accessorKey: "name", cell: ({ row: { original: s } }) => <span className="flex items-center gap-2"><DatabaseEngineIcon engine={s.engine} /><span className="font-medium">{s.name}</span>{s.is_demo && <SimulatedBadge />}</span> },
             { header: "Cluster", accessorFn: (s) => s.cluster?.name ?? "" },
             { header: "Role", accessorKey: "cluster_role" },
             { header: "Environment", accessorFn: (s) => s.environment?.name ?? "" },

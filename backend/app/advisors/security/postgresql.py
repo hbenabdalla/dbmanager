@@ -329,7 +329,7 @@ def pg_monitor_superuser(ctx: EvidenceContext) -> list[RuleFinding]:
         return []
     return [
         RuleFinding(
-            title="DB Manager connects with a superuser account",
+            title="DBManager connects with a superuser account",
             finding=f"The monitoring credential ({ctx.security.get('current_user')}) is a superuser.",
             evidence={"monitoring_user": ctx.security.get("current_user")},
             recommendation="Create a dedicated role: CREATE ROLE dbm_monitor LOGIN; GRANT pg_monitor TO dbm_monitor; "

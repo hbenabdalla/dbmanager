@@ -1,9 +1,9 @@
 """Backup encryption with `age <https://age-encryption.org>`_ (format v1) through ``pyrage``.
 
-DB Manager implements no cryptography of its own. Two modes:
+DBManager implements no cryptography of its own. Two modes:
 
 * **recipient** — the archive is encrypted to an age X25519 public key (``age1…``). Only the
-  holder of the matching identity (``AGE-SECRET-KEY-1…``) can decrypt it; DB Manager needs the
+  holder of the matching identity (``AGE-SECRET-KEY-1…``) can decrypt it; DBManager needs the
   identity only to verify contents or restore (supplied for that run, or
   ``DBM_BACKUP_IDENTITY_FILE``).
 * **passphrase** — the archive is encrypted (streaming) to a fresh X25519 identity generated
@@ -15,7 +15,7 @@ DB Manager implements no cryptography of its own. Two modes:
      age -d -o identity.txt key.age          # asks for the passphrase
      age -d -i identity.txt -o archive.tar archive.tar.age
 
-The DB Manager master key (``DBM_MASTER_KEY``) is never written into a backup. Platform backups
+The DBManager master key (``DBM_MASTER_KEY``) is never written into a backup. Platform backups
 contain the platform's envelope-encrypted secrets as they are stored (still encrypted with the
 master key): restoring them requires the same master key (or it listed in
 ``DBM_PREVIOUS_MASTER_KEYS``). Keys and passphrases are never logged or stored in plain text.

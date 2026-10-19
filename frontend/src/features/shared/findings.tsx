@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { ApiError, get, patch } from "@/api/client";
 import type { Finding, Page } from "@/api/types";
 import { CodeBlock } from "@/components/page";
-import { EngineMark, SeverityBadge, SimulatedBadge } from "@/components/status";
+import { DatabaseEngineIcon, SeverityBadge, SimulatedBadge } from "@/components/status";
 import { useSourceParam } from "@/lib/fleet-source";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -73,7 +73,7 @@ function FindingDialog({ f, kind, onClose }: { f: Finding; kind: Kind; onClose: 
         {(f.guidance || f.remediation) && <section><h4 className="mb-1.5 font-semibold">Implementation guidance</h4><CodeBlock code={(f.remediation ?? f.guidance)!} /></section>}
         {f.validation && <ValidationDetail v={f.validation} />}
         <p className="rounded-md border border-border bg-surface-2 px-3 py-2 text-[12.5px] text-muted">
-          DB Manager never applies recommendations automatically. Make the change through your change process or the SQL workspace, which asks for confirmation and records it in the audit log.
+          DBManager never applies recommendations automatically. Make the change through your change process or the SQL workspace, which asks for confirmation and records it in the audit log.
         </p>
         <div className="flex flex-wrap gap-x-4 gap-y-1 text-[12px] text-muted">
           <span>First seen {dateTime(f.first_seen_at)}</span><span>Last evaluated {relTime(f.last_seen_at)}</span>
@@ -113,7 +113,7 @@ export function FindingsList({ kind, serverId, group, defaultStatus = "open" }: 
     { header: "Finding", accessorKey: "title", cell: ({ row: { original: f } }) => (
       <div className="min-w-[280px]"><div className="font-medium">{f.title}</div><div className="max-w-[560px] truncate text-[12px] text-muted">{f.finding}</div></div>
     ) },
-    ...(!serverId ? [{ header: "Server", accessorKey: "server_name", cell: ({ row: { original: f } }: { row: { original: Finding } }) => <span className="flex items-center gap-2 whitespace-nowrap"><EngineMark engine={f.engine} />{f.server_name}{f.is_demo && <SimulatedBadge />}</span> } as ColumnDef<Finding, unknown>] : []),
+    ...(!serverId ? [{ header: "Server", accessorKey: "server_name", cell: ({ row: { original: f } }: { row: { original: Finding } }) => <span className="flex items-center gap-2 whitespace-nowrap"><DatabaseEngineIcon engine={f.engine} />{f.server_name}{f.is_demo && <SimulatedBadge />}</span> } as ColumnDef<Finding, unknown>] : []),
     { header: "Category", accessorKey: "category", cell: ({ getValue }) => <span className="capitalize text-text-2">{getValue() as string}</span> },
     { header: "Rule", accessorKey: "rule_id", cell: ({ getValue }) => <span className="font-mono text-[12px] text-muted">{getValue() as string}</span> },
     { header: "Confidence", accessorKey: "confidence", meta: { align: "right" }, cell: ({ getValue }) => `${Math.round((getValue() as number) * 100)}%` },

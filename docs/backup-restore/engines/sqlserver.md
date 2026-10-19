@@ -5,7 +5,7 @@
   The file is written **by SQL Server on its own host or container**, into the instance default
   backup directory (`SERVERPROPERTY('InstanceDefaultBackupPath')`, SQL Server 2019+) or the
   validated *server directory* of the policy (absolute Windows or Linux path, no quotes or shell
-  characters). DB Manager records size, checksum flag and finish time from
+  characters). DBManager records size, checksum flag and finish time from
   `RESTORE HEADERONLY` of the written file (no `msdb` access needed).
 * **Verification:** `RESTORE VERIFYONLY … WITH CHECKSUM`.
 * **Restore:** refused when the target database exists; `RESTORE VERIFYONLY`, `RESTORE

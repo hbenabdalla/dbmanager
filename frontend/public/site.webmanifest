@@ -1,0 +1,12 @@
+{
+  "name": "DBManager",
+  "short_name": "DBManager",
+  "description": "Unified administration, monitoring, performance, security and backup for relational database fleets",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ],
+  "theme_color": "#0e1a29",
+  "background_color": "#ffffff",
+  "display": "browser"
+}

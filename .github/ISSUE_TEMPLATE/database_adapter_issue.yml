@@ -36,7 +36,7 @@ body:
     id: privileges
     attributes:
       label: Monitoring account privileges
-      description: The grants of the account DB Manager uses (compare with the engine page under docs/database-engines/).
+      description: The grants of the account DBManager uses (compare with the engine page under docs/database-engines/).
   - type: textarea
     id: details
     attributes:

@@ -6,7 +6,7 @@ import { ApiError, post } from "@/api/client";
 import { capUsable, serverCan, useServer } from "@/api/hooks";
 import type { ServerDetail } from "@/api/types";
 import { PageHeader } from "@/components/page";
-import { EngineMark, HealthBadge, SimulatedBadge } from "@/components/status";
+import { DatabaseEngineIcon, HealthBadge, SimulatedBadge } from "@/components/status";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ErrorState, SkeletonRows } from "@/components/ui/states";
@@ -93,7 +93,7 @@ export function ServerPage() {
         title={<span className="flex flex-wrap items-center gap-2.5">{s.name}<HealthBadge health={s.health_status} reasons={s.health_reasons} />{s.is_demo && <SimulatedBadge />}<ServerAlertBadge serverId={s.id} />{planned && <Badge tone="neutral">No adapter</Badge>}{!s.is_demo && !planned && (s.management_mode === "administration" ? <Badge tone="warn">Administration enabled</Badge> : <Badge tone="outline">Monitoring only</Badge>)}</span>}
         description={s.description ?? undefined}
         meta={<>
-          <EngineMark engine={s.engine} withLabel />
+          <DatabaseEngineIcon engine={s.engine} size="md" withLabel labelClassName="font-medium text-text-2" />
           <span>{s.version ?? "version unknown"}</span>
           <span>{s.environment?.name ?? "No environment"}</span>
           {s.cluster && <span>{s.cluster.name}{s.cluster_role ? ` (${s.cluster_role})` : ""}</span>}
@@ -107,7 +107,7 @@ export function ServerPage() {
           <SimulatedBadge />
           <span>
             Simulated server{s.simulation ? <> from the <span className="font-medium">{s.simulation.profile}</span> profile (seed {s.simulation.seed}). {s.simulation.story}</> : null}.
-            {" "}Every value is generated; DB Manager never connects to it and SQL is never executed.
+            {" "}Every value is generated; DBManager never connects to it and SQL is never executed.
           </span>
         </div>
       )}

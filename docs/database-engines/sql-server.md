@@ -123,7 +123,7 @@ privileged accounts) also apply.
 | `MSSQL-PERF-010` | Parallelism settings at defaults |
 
 Plus the common performance rules `GEN-PERF-001` … `GEN-PERF-010`. Recommendations are advice with
-evidence; DB Manager never executes them.
+evidence; DBManager never executes them.
 
 ## Troubleshooting
 

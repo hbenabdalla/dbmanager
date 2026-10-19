@@ -55,4 +55,4 @@ def test_build_metadata_passes_through_sanitized(monkeypatch: pytest.MonkeyPatch
 async def test_public_version_endpoint_exposes_only_product_and_version() -> None:
     from app import __version__
 
-    assert await about.version() == {"product": "DB Manager", "version": __version__}
+    assert await about.version() == {"product": "DBManager", "version": __version__}

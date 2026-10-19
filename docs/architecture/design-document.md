@@ -1,4 +1,4 @@
-# DB Manager — Product Requirements & Architecture
+# DBManager — Product Requirements & Architecture
 
 This document covers Steps 1–8 of the delivery workflow: normalized requirements,
 architecture, technology decisions, data model, API surface, UX architecture,
@@ -68,10 +68,10 @@ repository layout and the phased implementation plan. Companion documents:
 
 ```mermaid
 flowchart LR
-    DBA[DBAs / Operators] -->|HTTPS| UI[DB Manager Web UI]
+    DBA[DBAs / Operators] -->|HTTPS| UI[DBManager Web UI]
     SEC[Security auditors] -->|HTTPS| UI
     PERF[Performance engineers] -->|HTTPS| UI
-    UI -->|REST /api/v1| BE[DB Manager Backend]
+    UI -->|REST /api/v1| BE[DBManager Backend]
     BE -->|LDAP/LDAPS| AD[(LDAP / Active Directory)]
     BE -->|OIDC| IDP[Identity Provider<br/>Keycloak · Entra ID · Okta]
     BE -->|vendor drivers, TLS| FLEET[(Database fleet<br/>PostgreSQL · MySQL · MariaDB<br/>SQL Server · Oracle · Db2 · Cloud)]

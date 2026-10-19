@@ -1,5 +1,5 @@
-site_name: DB Manager
-copyright: DB Manager is licensed under the Apache License 2.0
+site_name: DBManager
+copyright: DBManager is licensed under the Apache License 2.0
 site_url: !ENV [READTHEDOCS_CANONICAL_URL, "https://db-manager.readthedocs.io/en/latest/"]
 site_description: Monitoring, performance analysis, security posture and safe administration for PostgreSQL, MySQL, MariaDB, SQL Server, Oracle and Db2.
 repo_url: https://github.com/hbenabdalla/dbmanager
@@ -11,6 +11,9 @@ strict: true
 theme:
   name: material
   language: en
+  # the DBManager logo as provided, on a light plate so it stays legible on the coloured header
+  logo: assets/brand/dbmanager-mark-plate.png
+  favicon: assets/brand/favicon-32.png
   features:
     - navigation.tabs
     - navigation.sections
@@ -222,6 +225,7 @@ nav:
       - Adding metrics and rules: development/adding-metrics-and-rules.md
       - Documentation: development/documentation.md
       - Release process: development/release-process.md
+      - Brand assets: development/brand-assets.md
   - Troubleshooting:
       - troubleshooting/index.md
       - Connections: troubleshooting/connections.md
@@ -240,6 +244,7 @@ nav:
       - Real-engine validation: product/real-engine-validation.md
       - Roadmap traceability: product/roadmap-traceability.md
       - Roadmap audit: product/roadmap-audit.md
+      - Release notes 0.14.0: release-notes/0.14.0.md
       - Release notes 0.13.0: release-notes/0.13.0.md
       - Release notes 0.12.0: release-notes/0.12.0.md
       - Release checklist: product/release-checklist.md

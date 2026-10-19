@@ -39,6 +39,17 @@ server {
   location /assets/ {
     expires 1y;
     add_header Cache-Control "public, immutable";
+    # add_header here replaces the server-level headers: keep nosniff on static files
+    add_header X-Content-Type-Options "nosniff" always;
+    try_files $uri =404;
+  }
+
+  # web app manifest (favicon / app icon metadata); not every nginx mime.types maps .webmanifest
+  location = /site.webmanifest {
+    types { }
+    default_type application/manifest+json;
+    add_header Cache-Control "no-cache";
+    add_header X-Content-Type-Options "nosniff" always;
     try_files $uri =404;
   }
 

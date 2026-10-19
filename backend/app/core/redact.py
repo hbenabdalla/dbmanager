@@ -43,7 +43,7 @@ _PATTERNS: list[tuple[re.Pattern[str], str]] = [
     ),
     # HTTP auth headers
     (re.compile(r"(?i)\b(bearer|basic)\s+[A-Za-z0-9._~+/=\-]{8,}"), r"\1 " + MASK),
-    # DB Manager API tokens
+    # DBManager API tokens
     (re.compile(r"\bdbm_[A-Za-z0-9]{6,}_[A-Za-z0-9_\-]{16,}"), "dbm_" + MASK),
 ]
 

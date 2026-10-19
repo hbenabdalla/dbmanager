@@ -8,9 +8,9 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 DUMP="${1:?usage: scripts/restore.sh <dump> --yes}"
-[ "${2:-}" = "--yes" ] || { echo "this replaces the current DB Manager database; re-run with --yes" >&2; exit 2; }
+[ "${2:-}" = "--yes" ] || { echo "this replaces the current DBManager database; re-run with --yes" >&2; exit 2; }
 [ -f "$DUMP" ] || { echo "no such file: $DUMP" >&2; exit 2; }
-set -a; [ -f .env ] && . ./.env; set +a
+. scripts/lib/dotenv.sh; load_dotenv .env
 PGU="${POSTGRES_USER:-dbmanager}"; PGD="${POSTGRES_DB:-dbmanager}"
 
 docker compose stop backend frontend

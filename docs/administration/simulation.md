@@ -1,6 +1,6 @@
 # Demo / simulation data
 
-DB Manager never creates demo data on its own. A new installation contains only what the
+DBManager never creates demo data on its own. A new installation contains only what the
 platform needs to run: the default organization, the five reference environments, the
 system roles and permissions, and the bootstrap administrator. The fleet starts **empty**.
 

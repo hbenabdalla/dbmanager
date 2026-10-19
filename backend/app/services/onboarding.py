@@ -3,7 +3,7 @@
 Staged test stages, in order: validate → driver → dns → tcp → tls → authenticate → version →
 privileges → capabilities, followed by a ``result`` event. Each stage reports ``running`` and
 then a terminal status; the first ``fail`` stops the run and the remaining stages are reported
-``skipped``. DNS and TCP are checked by DB Manager itself; TLS and authentication are negotiated
+``skipped``. DNS and TCP are checked by DBManager itself; TLS and authentication are negotiated
 by the engine driver (TLS precedes authentication in the PostgreSQL, MySQL, TDS, Oracle Net and
 DRDA protocols), so their outcome is derived from the driver's normalized error class.
 """
@@ -223,7 +223,7 @@ async def staged_test(
                 {"requires_privilege": notes},
             )
         else:
-            yield _event("privileges", "ok", "the account has every privilege DB Manager uses", _ms(t1))
+            yield _event("privileges", "ok", "the account has every privilege DBManager uses", _ms(t1))
 
         t1 = time.perf_counter()
         yield _event("capabilities", "running", "summarising capabilities")

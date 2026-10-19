@@ -1,19 +1,19 @@
 # About, version and product links
 
-**Platform → Configuration → About** (also reachable from the **Help** menu in the top bar and the command palette, *About DB Manager*) shows:
+**Platform → Configuration → About** (also reachable from the **Help** menu in the top bar and the command palette, *About DBManager*) shows:
 
 - the application, backend and frontend versions, the build identifier, git commit and build date, and the database schema (Alembic) revision;
 - a warning when the frontend and backend versions differ (rebuild both images from the same release);
 - the status of the API, the application database, the time-series store and the collector scheduler;
 - the configured documentation, source code and roadmap links;
 - the support level of each database engine and the result of the real-engine validation suite shipped with the build;
-- the license (`Apache-2.0`) and the current milestone.
+- the DBManager logo, the license (`Apache-2.0`), the current milestone and the trademark notice for the database engine names (see [brand assets](../development/brand-assets.md)).
 
 Every signed-in user can open the page; it never shows host names, file paths or environment contents.
 
 ## Version source
 
-There is one version per release: `backend/app/__init__.py` (`__version__`) and `frontend/package.json` (`version`) carry the same value (currently `0.13.0`). The frontend embeds its version at build time.
+There is one version per release: `backend/app/__init__.py` (`__version__`) and `frontend/package.json` (`version`) carry the same value (currently `0.14.0`). The frontend embeds its version at build time.
 
 ## Build metadata
 
@@ -26,7 +26,7 @@ Set these at image build time; they are shown as-is after sanitising (printable 
 | `DBM_BUILD_DATE` | backend build arg / env | ISO-8601 build timestamp |
 
 ```bash
-DBM_BUILD_VERSION=0.13.0 DBM_GIT_COMMIT=$(git rev-parse --short HEAD) \
+DBM_BUILD_VERSION=0.14.0 DBM_GIT_COMMIT=$(git rev-parse --short HEAD) \
 DBM_BUILD_DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ) docker compose build
 ```
 
@@ -41,7 +41,7 @@ DBM_BUILD_DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ) docker compose build
 
 ## API
 
-- `GET /api/v1/version` — public, `{"product": "DB Manager", "version": "0.13.0"}`; suitable for load-balancer checks and upgrade scripts.
+- `GET /api/v1/version` — public, `{"product": "DBManager", "version": "0.13.0"}`; suitable for load-balancer checks and upgrade scripts.
 - `GET /api/v1/about` — authenticated; everything shown on the About page.
 
 See also [Notification channels](notifications.md) and [Alerting](../user-guide/alerting.md).

@@ -16,7 +16,7 @@ cd "$(dirname "$0")/.."
 [ "${1:-}" = "--i-understand-this-wipes-the-stack" ] || {
   echo "this deletes the Compose volumes; re-run with --i-understand-this-wipes-the-stack" >&2; exit 2; }
 command -v curl >/dev/null && command -v python3 >/dev/null || { echo "needs curl and python3" >&2; exit 2; }
-set -a; [ -f .env ] && . ./.env; set +a
+. scripts/lib/dotenv.sh; load_dotenv .env
 BASE="${DRILL_BASE_URL:-http://localhost:8080}"
 OUT="$(mktemp -d)"
 JAR="$OUT/cookies"

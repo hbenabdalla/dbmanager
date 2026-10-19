@@ -10,7 +10,7 @@ import { useNavigate } from "react-router-dom";
 import { get } from "@/api/client";
 import { useClusters, useEnvironments, useSites } from "@/api/hooks";
 import { PageHeader } from "@/components/page";
-import { EngineMark, HealthDot } from "@/components/status";
+import { DatabaseEngineIcon, HealthDot } from "@/components/status";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -81,7 +81,7 @@ const TopoNodeView = memo(function TopoNodeView({ data }: NodeProps<Node<TopoDat
           className="nodrag nopan min-w-0 flex-1 rounded-l-lg px-3 py-2 pl-3.5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
         >
           <div className="flex items-center gap-1.5 text-[12.5px] font-medium text-text">
-            {n.kind === "server" && n.server ? <EngineMark engine={n.server.engine} /> : <Icon className="size-3.5 shrink-0 text-muted" aria-hidden />}
+            {n.kind === "server" && n.server ? <DatabaseEngineIcon engine={n.server.engine} /> : <Icon className="size-3.5 shrink-0 text-muted" aria-hidden />}
             <span className="truncate">{n.label}</span>
             {n.kind === "server" && <HealthDot health={n.health} className="ml-auto" />}
           </div>

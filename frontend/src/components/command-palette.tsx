@@ -10,7 +10,7 @@ import { useAbout } from "@/features/platform/about";
 import { useAuth } from "@/lib/auth";
 import { allowed, NAV } from "@/lib/nav";
 import { useTheme } from "@/lib/theme";
-import { EngineMark, HealthDot } from "./status";
+import { DatabaseEngineIcon, HealthDot } from "./status";
 
 export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) {
   const navigate = useNavigate();
@@ -45,7 +45,7 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
     { label: "Run the platform setup wizard", icon: Wand2, run: () => go("/setup"), keywords: "setup onboarding first run checklist", ok: canPlatform("settings.manage") },
     { label: "Show active alerts", icon: BellRing, run: () => go("/alerts"), keywords: "alerts alarms firing incidents notifications", ok: can("alerts.view") },
     { label: "Open the documentation", icon: BookOpen, run: () => { onOpenChange(false); window.open(docs!, "_blank", "noopener,noreferrer"); }, keywords: "help docs documentation manual guide", ok: !!docs },
-    { label: "About DB Manager", icon: Info, run: () => go("/platform/about"), keywords: "about version build license help", ok: true },
+    { label: "About DBManager", icon: Info, run: () => go("/platform/about"), keywords: "about version build license help", ok: true },
     { label: "Toggle light / dark theme", icon: Moon, run: () => { toggle(); onOpenChange(false); }, keywords: "theme dark light mode", ok: true },
   ].filter((a) => a.ok);
   const ql = q.toLowerCase();
@@ -65,7 +65,7 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
                 <Command.Item key={s.id} value={`server-${s.id}`} onSelect={() => go(`/servers/${s.id}`)}
                   className="flex cursor-pointer items-center gap-2.5 rounded-md px-2 py-1.5 text-[13px] data-[selected=true]:bg-surface-3">
                   <HealthDot health={s.health_status} />
-                  <EngineMark engine={s.engine} />
+                  <DatabaseEngineIcon engine={s.engine} />
                   <span className="font-medium">{s.name}</span>
                   <span className="ml-auto text-2xs text-muted">{s.environment?.name}</span>
                 </Command.Item>

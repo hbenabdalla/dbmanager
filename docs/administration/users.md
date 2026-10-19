@@ -1,7 +1,7 @@
 # Users and groups
 
 **Platform → Configuration → Users** (`users.manage`) manages platform accounts — the people who
-sign in to DB Manager, not database accounts.
+sign in to DBManager, not database accounts.
 
 * **Local users** — username, display name, email, active flag. Passwords use Argon2id; the policy
   requires 12+ characters with three character classes. *Reset password* sets a temporary password

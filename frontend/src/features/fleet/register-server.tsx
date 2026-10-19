@@ -13,6 +13,7 @@ import { Field, Input, Select, Textarea } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { SecretSourceFields, secretRefError, type SecretProvider } from "@/features/shared/secret-source";
 import { DATABASE_FIELD, ERROR_LABEL, SUPPORT_LABEL } from "@/lib/capabilities";
+import { DatabaseEngineIcon } from "@/components/engine-icon";
 
 interface Form {
   name: string; engine: string; host: string; port: string; default_database: string; description: string;
@@ -150,7 +151,9 @@ export function RegisterServerDialog({ open, onOpenChange }: { open: boolean; on
           <Field label="Name" hint="Unique; letters, digits, dot, dash, underscore" error={errors.name}>
             <Input value={f.name} onChange={(e) => set("name", e.target.value)} placeholder="pg-orders-prod-01" />
           </Field>
-          <Field label="Engine">
+          <div className="flex items-end gap-2">
+          <span className="mb-1"><DatabaseEngineIcon engine={f.engine} size="md" /></span>
+          <Field label="Engine" className="min-w-0 flex-1">
             <Select value={f.engine} onChange={(e) => {
               const en = engines.data?.find((x) => x.engine === e.target.value);
               const dbf = DATABASE_FIELD[e.target.value] ?? DATABASE_FIELD.postgresql;
@@ -160,6 +163,7 @@ export function RegisterServerDialog({ open, onOpenChange }: { open: boolean; on
               {engines.data?.map((e) => <option key={e.engine} value={e.engine}>{e.display_name}{e.support_level === "partial" ? " (partial support)" : e.implemented ? "" : " (no adapter yet)"}</option>)}
             </Select>
           </Field>
+          </div>
           {engine && (engine.support_level !== "supported" || engine.driver_status !== "installed") && (
             <p className="sm:col-span-2 rounded-md border border-info/30 bg-info-soft px-3 py-2 text-[12.5px] text-info">
               {engine.implemented ? <><Badge tone={SUPPORT_LABEL[engine.support_level ?? "supported"]?.tone ?? "info"}>{SUPPORT_LABEL[engine.support_level ?? "supported"]?.label}</Badge> {engine.support_note}</> : `No ${engine.display_name} adapter is available; the server is kept for inventory only.`}
@@ -264,7 +268,7 @@ export function RegisterServerDialog({ open, onOpenChange }: { open: boolean; on
         </Section>
 
         <Section title="Management">
-          <Field label="Mode" hint={f.management_mode === "monitoring" ? "DB Manager never offers changes on this server, whatever the credentials allow." : "Guarded changes (preview, confirmation, audit) use the administration credential."}>
+          <Field label="Mode" hint={f.management_mode === "monitoring" ? "DBManager never offers changes on this server, whatever the credentials allow." : "Guarded changes (preview, confirmation, audit) use the administration credential."}>
             <Select value={f.management_mode} onChange={(e) => set("management_mode", e.target.value as Form["management_mode"])}>
               <option value="monitoring">Monitoring only</option>
               <option value="administration">Administration enabled</option>

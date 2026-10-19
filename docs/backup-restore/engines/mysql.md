@@ -18,7 +18,7 @@
   restoring account needs no `SUPER` / `SET_USER_ID`: objects are owned by it.
 * **Binary logging:** with binary logging on (the MySQL 8 default) and
   `log_bin_trust_function_creators = OFF`, only an account with `SUPER` can create triggers and
-  routines (error 1419). DB Manager checks this before creating the target database and refuses
+  routines (error 1419). DBManager checks this before creating the target database and refuses
   with the fix: a DBA sets `SET PERSIST log_bin_trust_function_creators = ON` on the target server
   (a deliberate decision: it lets routine creators write non-deterministic routines to the binary
   log), or the restore runs with an account that holds `SUPER`. Dumps without triggers or routines

@@ -382,7 +382,7 @@ async def create_platform_backup(
             policy_id=policy_id,
             target_id=target.id,
             method="platform",
-            tool=f"DB Manager {__version__}",
+            tool=f"DBManager {__version__}",
             app_version=__version__,
             schema_version=schema,
             format_version=platform.FORMAT,
@@ -419,7 +419,7 @@ async def create_platform_backup(
             "files": files,
             "metrics": metrics_info,
             "key_ids": info["key_ids"],
-            "master_key_note": "Encrypted values in this archive need the DB Manager master key(s) listed in "
+            "master_key_note": "Encrypted values in this archive need the DBManager master key(s) listed in "
             "key_ids. The master key itself is not included.",
             "excluded": platform.EXCLUDED,
         }
@@ -671,7 +671,7 @@ async def create_database_backup(
                 size_bytes=outcome.size_bytes,
             )
             details["note"] = (
-                "Written on the database server; DB Manager records and verifies it. Copy it to protected storage."
+                "Written on the database server; DBManager records and verifies it. Copy it to protected storage."
             )
             await _save_backup(bid, **values)
         async with session_scope() as db:
@@ -895,7 +895,7 @@ async def _run_platform_backup(job: BackupJob) -> tuple[str, dict[str, Any]]:
             "step": "done",
             "total": 1,
             "done": 1,
-            "assets": [{"key": "platform", "name": "DB Manager platform", "status": status, "backup_id": str(bid)}],
+            "assets": [{"key": "platform", "name": "DBManager platform", "status": status, "backup_id": str(bid)}],
         },
     )
     if job.policy_id and status == "SUCCESS":
@@ -1370,7 +1370,7 @@ async def delete_backup(backup_id: uuid.UUID, actor: str | None) -> None:
         prov = storage.provider_for(await _target(b.target_id))
         prefix = str(Path(b.location).parent)
         for key in await prov.list(prefix + "/"):
-            # only DB Manager-managed objects of this backup (its own folder)
+            # only DBManager-managed objects of this backup (its own folder)
             if key.startswith(prefix + "/"):
                 await prov.delete(key)
     await _save_backup(b.id, status="DELETED", deleted_at=_now(), deleted_by=actor)
@@ -1556,7 +1556,7 @@ async def notify_policy(db: AsyncSession, policy: BackupPolicy | None, title: st
         "severity": severity,
         "title": title,
         "message": message,
-        "server_name": "DB Manager backup",
+        "server_name": "DBManager backup",
         "engine": policy.kind,
         "environment": None,
         "url": f"{base}/platform/backups",
@@ -1670,7 +1670,7 @@ async def platform_protection(db: AsyncSession) -> dict[str, Any]:
 # ---- disaster recovery: register backups found in a storage target -----------------------------
 async def scan_target(db: AsyncSession, target: BackupTarget, actor: str | None) -> dict[str, int]:
     """Register backups whose catalog entry (``manifest.json``) is in the target but not in this
-    installation's catalog — e.g. after reinstalling DB Manager from scratch."""
+    installation's catalog — e.g. after reinstalling DBManager from scratch."""
     prov = storage.provider_for(target)
     keys = [k for k in await prov.list("") if k.endswith("/manifest.json")]
     known = {str(x) for x in (await db.execute(select(Backup.id))).scalars()}

@@ -21,13 +21,13 @@ Every 5 minutes the collector reads the top `DBM_QUERY_STATS_TOP_N` statements, 
 seen; up to `DBM_QUERY_FINGERPRINTS_MAX_PER_SERVER` per server) and writes the counters to the
 time-series database keyed by fingerprint. Deltas between samples give executions per second and
 mean latency per interval, which is what the statement history chart shows. Statement text is
-parameterized by the engine (or masked by DB Manager for roles without `query.view_text`); full
+parameterized by the engine (or masked by DBManager for roles without `query.view_text`); full
 SQL is never used as a metric label.
 
 ## Why no P95/P99 per statement
 
 The engines' cumulative statement statistics contain a count, a sum and (on most engines) a
-maximum — not a distribution. A percentile cannot be derived from them, so DB Manager shows
+maximum — not a distribution. A percentile cannot be derived from them, so DBManager shows
 **mean** and **max** and does not invent percentiles. Percentile aggregations (`agg=p95` / `p99`)
 *are* available for metric time series (for example p95 of `query.mean_latency_ms` over a range),
 which is a percentile of interval means, not of individual executions.

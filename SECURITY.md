@@ -1,11 +1,11 @@
 # Security policy
 
-DB Manager connects to production databases with stored credentials, so security reports are
+DBManager connects to production databases with stored credentials, so security reports are
 taken seriously and handled privately.
 
 ## Supported versions
 
-DB Manager has not had a stable (1.0) release yet. Until then, only the latest pre-release on the
+DBManager has not had a stable (1.0) release yet. Until then, only the latest pre-release on the
 `main` branch receives security fixes.
 
 | Version | Supported |

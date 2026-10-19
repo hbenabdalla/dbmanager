@@ -14,7 +14,7 @@ RUN python -m venv /opt/venv && /opt/venv/bin/pip install --upgrade pip && /opt/
 # ---------- runtime stage ----------
 FROM python:3.12-slim-bookworm AS runtime
 LABEL org.opencontainers.image.title="database-manager-backend" \
-      org.opencontainers.image.description="DB Manager API, scheduler and collector workers"
+      org.opencontainers.image.description="DBManager API, scheduler and collector workers"
 # build metadata shown on Platform -> About (pass with --build-arg; nothing else is recorded)
 ARG DBM_BUILD_VERSION=""
 ARG DBM_GIT_COMMIT=""

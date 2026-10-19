@@ -4,9 +4,9 @@ Every server credential has a **secret source**. Choose it when registering a se
 onboarding wizard) and on the server's **Settings** tab. **Platform → Configuration → Credentials**
 shows which sources this installation offers and the state of Vault.
 
-| Source | `provider` | What DB Manager stores | Where the password comes from |
+| Source | `provider` | What DBManager stores | Where the password comes from |
 |---|---|---|---|
-| Encrypted in DB Manager | `local` | the password, AES-256-GCM envelope-encrypted with `DBM_MASTER_KEY` | the control-plane database |
+| Encrypted in DBManager | `local` | the password, AES-256-GCM envelope-encrypted with `DBM_MASTER_KEY` | the control-plane database |
 | Environment variable | `env` | the variable name | the backend/worker environment (e.g. a Kubernetes Secret) |
 | Mounted secret file | `file` | the file path | a file under `DBM_SECRET_FILE_DIRS` (default `/run/secrets`, `/var/run/secrets`, `/etc/dbmanager/secrets`) |
 | HashiCorp Vault (KV v2) | `vault` | the reference `[mount:]path#key` | Vault, read when a connection is opened |
@@ -53,8 +53,8 @@ Examples: `databases/pg-prod#password` reads key `password` of `secret/data/data
 | `DBM_VAULT_TIMEOUT_SECONDS` | `10` | per request |
 | `DBM_VAULT_CACHE_SECONDS` | `60` (0–3600) | how long a resolved password is kept in memory; `0` reads Vault for every connection |
 
-With AppRole and Kubernetes auth DB Manager logs in, keeps the issued token in memory and logs in
-again shortly before its lease ends (or once when Vault answers 403). Give the DB Manager role a
+With AppRole and Kubernetes auth DBManager logs in, keeps the issued token in memory and logs in
+again shortly before its lease ends (or once when Vault answers 403). Give the DBManager role a
 policy that allows only `read` on the paths it needs, for example:
 
 ```hcl

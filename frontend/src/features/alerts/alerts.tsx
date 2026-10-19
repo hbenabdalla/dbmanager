@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { ApiError, del, get, post, put } from "@/api/client";
 import type { Page, Server } from "@/api/types";
 import { PageHeader } from "@/components/page";
-import { EngineMark, SeverityBadge, SimulatedBadge } from "@/components/status";
+import { DatabaseEngineIcon, SeverityBadge, SimulatedBadge } from "@/components/status";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -209,7 +209,7 @@ export function AlertsPage() {
       </div>
     ) },
     { header: "Server", accessorKey: "server_name", cell: ({ row: { original: a } }) => (
-      <Link to={`/servers/${a.server_id}`} className="flex items-center gap-1.5 whitespace-nowrap hover:underline"><EngineMark engine={a.engine} />{a.server_name}</Link>
+      <Link to={`/servers/${a.server_id}`} className="flex items-center gap-1.5 whitespace-nowrap hover:underline"><DatabaseEngineIcon engine={a.engine} />{a.server_name}</Link>
     ) },
     { header: "Status", accessorKey: "status", cell: ({ row: { original: a } }) => (
       <div><Badge tone={STATUS_TONE[a.status]}>{a.status}</Badge>{a.acknowledged_by && a.status === "acknowledged" && <div className="mt-0.5 text-2xs text-muted">by {a.acknowledged_by}</div>}</div>

@@ -32,7 +32,7 @@ def user(**kw):  # type: ignore[no-untyped-def]
 def _enrolled():  # type: ignore[no-untyped-def]
     u = user()
     out = mfa.begin_enrollment(u)
-    assert out["otpauth_uri"].startswith("otpauth://totp/") and "issuer=DB%20Manager" in out["otpauth_uri"]
+    assert out["otpauth_uri"].startswith("otpauth://totp/") and "issuer=DBManager" in out["otpauth_uri"]
     assert out["qr_svg"].startswith("<svg") and out["secret"] not in str(u.totp_secret)  # stored encrypted
     return u, pyotp.TOTP(out["secret"])
 
@@ -63,7 +63,7 @@ def test_enrollment_confirmation_and_recovery_codes() -> None:
 
 
 def test_policy(monkeypatch: pytest.MonkeyPatch) -> None:
-    s = SimpleNamespace(mfa_required_for="none", mfa_issuer="DB Manager")
+    s = SimpleNamespace(mfa_required_for="none", mfa_issuer="DBManager")
     monkeypatch.setattr(mfa, "get_settings", lambda: s)
     admin_perms, plain = {"users.manage", "server.view"}, {"server.view"}
     assert not mfa.required(user(), admin_perms)

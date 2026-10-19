@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-  Real-engine integration tests for DB Manager adapters (Windows PowerShell 5.1+ / PowerShell 7).
+  Real-engine integration tests for DBManager adapters (Windows PowerShell 5.1+ / PowerShell 7).
 
 .DESCRIPTION
   1. creates .env.test with generated passwords (once; never committed)

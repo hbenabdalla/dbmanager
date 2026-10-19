@@ -196,7 +196,7 @@ def test_teams_preset_payload_is_an_adaptive_card_message() -> None:
     assert card["type"] == "AdaptiveCard" and card["version"] == "1.4"
     assert card["body"][0]["text"] == "RESOLVED: CPU on ORA-PROD-01"
     assert {"title": "Environment", "value": "Production"} in card["body"][2]["facts"]
-    assert card["actions"][0] == {"type": "Action.OpenUrl", "title": "Open in DB Manager", "url": ALERT["url"]}
+    assert card["actions"][0] == {"type": "Action.OpenUrl", "title": "Open in DBManager", "url": ALERT["url"]}
 
 
 def test_renotification_is_marked_and_test_message_works_for_every_preset() -> None:

@@ -65,6 +65,12 @@ CATALOG: tuple[PermissionDef, ...] = (
     _P("audit.export", "Platform", "Export the audit log", platform_only=True),
     _P("audit.forward", "Platform", "Configure forwarding of audit events to a SIEM", platform_only=True),
     _P("reports.view", "Platform", "Generate and download reports"),
+    _P(
+        "reports.schedule",
+        "Platform",
+        "Schedule reports e-mailed to notification channels (each schedule runs with its owner's access)",
+        platform_only=True,
+    ),
     _P("users.manage", "Platform", "Manage platform users and groups", platform_only=True),
     _P("roles.manage", "Platform", "Create and edit roles", platform_only=True),
     _P("rbac.manage", "Platform", "Assign roles to users and groups"),
@@ -84,7 +90,7 @@ CATALOG: tuple[PermissionDef, ...] = (
     _P(
         "restore.platform",
         "Backup",
-        "Restore DB Manager's own configuration from a platform backup",
+        "Restore DBManager's own configuration from a platform backup",
         platform_only=True,
     ),
     _P("restore.database", "Backup", "Restore a managed database from its backup into a new database"),

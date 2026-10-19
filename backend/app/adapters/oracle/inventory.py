@@ -1,4 +1,4 @@
-"""Oracle inventory. In DB Manager terms a *database* is a container: the PDBs of a CDB (or
+"""Oracle inventory. In DBManager terms a *database* is a container: the PDBs of a CDB (or
 the single non-CDB database), and a *schema* is an Oracle user that owns objects.
 
 From ``CDB$ROOT`` a common user sees every open PDB through the ``CDB_*`` views; connected

@@ -146,7 +146,7 @@ checked at discovery; registering a MariaDB server as MySQL is reported as a cap
 - Users are authenticated outside Db2: "users" are the authorization IDs found in the grant catalog,
   and "create user" is not offered.
 - RUNSTATS / REORG: recommendations from catalog statistics (REORGCHK-style F1/F2/F3), the
-  REORG-pending state and stale statistics. **DB Manager never runs them.**
+  REORG-pending state and stale statistics. **DBManager never runs them.**
 - EXPLAIN needs the explain tables (`SYSPROC.SYSINSTALLOBJECTS`); actual row counts need an activity
   event monitor and are not supported.
 
@@ -178,7 +178,7 @@ A separate adapter on the SYSIBM catalog. Classification (z/OS vocabulary):
   **Oracle Diagnostics Pack** and **Oracle Tuning Pack** flags, **disabled by default**; an
   administrator can mark them as licensed, and they are shown on the server and in the matrix, but
   this release does not unlock pack-licensed views even then. Active Data Guard (read-only open
-  standby with apply) is a separate license; DB Manager only reads `V$DATAGUARD_STATS`.
+  standby with apply) is a separate license; DBManager only reads `V$DATAGUARD_STATS`.
 * **SQL Server** — The ODBC driver is Microsoft's (msodbcsql18, installed in the backend image after
   accepting the Microsoft EULA; build with `INSTALL_MSODBC=false` to omit it). Query Store is free.
 * **Db2 for z/OS** — DRDA access from distributed clients needs **Db2 Connect**. Detailed performance

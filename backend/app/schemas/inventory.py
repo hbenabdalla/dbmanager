@@ -124,7 +124,7 @@ class ServerBase(BaseModel):
     collection_interval_s: int = Field(60, ge=15, le=3600)
     licensed_features: list[str] = Field(default_factory=list)
     tags: list[Tag] = Field(default_factory=list)
-    #: monitoring = DB Manager never offers changes for this server, whatever the credentials allow
+    #: monitoring = DBManager never offers changes for this server, whatever the credentials allow
     management_mode: ManagementMode = "monitoring"
     #: engine-specific connection settings (Oracle service name/SID, SQL Server encryption, Db2 security…)
     connection_options: dict[str, Any] = Field(default_factory=dict)

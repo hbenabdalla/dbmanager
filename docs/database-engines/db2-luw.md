@@ -80,12 +80,12 @@ GRANT WLMADM ON DATABASE TO USER DBMADM;        -- WLM_CANCEL_ACTIVITY (cancel a
 
 `ACCESSCTRL` grants and revokes object privileges and database authorities (except ACCESSCTRL,
 DATAACCESS, DBADM and SECADM). Creating roles and granting role membership need **SECADM** (or
-`WITH ADMIN OPTION` on the role); DB Manager reports SQL0552N as a permission error if the admin
-account lacks it. Grant SECADM only if you want role management from DB Manager.
+`WITH ADMIN OPTION` on the role); DBManager reports SQL0552N as a permission error if the admin
+account lacks it. Grant SECADM only if you want role management from DBManager.
 
 Forcing applications (`FORCE APPLICATION`) needs SYSMAINT (an OS group in the DBM configuration);
-leave it out unless you want DB Manager to terminate sessions. REORG and RUNSTATS are only ever
-recommended by DB Manager, so no authority for them is required.
+leave it out unless you want DBManager to terminate sessions. REORG and RUNSTATS are only ever
+recommended by DBManager, so no authority for them is required.
 
 See [Least-privilege accounts](permissions.md) for the rules that apply to every engine.
 
@@ -138,7 +138,7 @@ privileged accounts) also apply.
 | `DB2-PERF-009` | Deadlocks and lock timeouts |
 
 Plus the common performance rules `GEN-PERF-001` … `GEN-PERF-010`. Recommendations are advice with
-evidence; DB Manager never executes them.
+evidence; DBManager never executes them.
 
 ## Troubleshooting
 

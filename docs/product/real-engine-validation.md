@@ -1,11 +1,18 @@
 # Real-engine validation report
 
-What DB Manager has been validated against: **real database servers from the vendors' official
+What DBManager has been validated against: **real database servers from the vendors' official
 container images**, driven by the integration suite (`backend/tests/integration/`) through
 `scripts/integration-test.ps1` / `.sh`. Nothing here comes from mocks or the simulation. Results
 also ship in `backend/app/data/real_engine_validation.json` (shown on **Platform → Engine support**).
 
 Last full run: **2026-10-19 20:31 UTC** (pytest JUnit timestamp; matrix written 20:32:49 UTC), release 0.12.0 + the 0.13.0 fixes up to commit `92c9250`. Last full run: **2026-10-19 21:34 UTC** (pytest JUnit timestamp; matrix written 21:36:02 UTC) of release 0.13.0 (commit `43c48a3`). It includes the 0.13.0 real-engine checks: plan identity in Oracle and SQL Server query statistics, database and tablespace size series built from real storage data, MySQL restore with binary logging on, and the Db2 backup as a SYSMAINT operator. The previous run (2026-10-19 20:31 UTC, 84 passed, 1 failed — MySQL backup/restore, error 1419) is superseded.
+
+**Release 0.14.0.** Reporting reads data DBManager has already collected and the branding work is
+front-end only: no adapter, collector or backup provider changed. Before publishing, the
+PostgreSQL 16 adapter suite (12 tests) and the PostgreSQL backup round trip were re-run against a
+local PostgreSQL 16 server (2026-10-19, all passed); the full Docker matrix below is from the
+0.13.0 run and is re-run with `scripts/integration-test` on the 0.14.0 commit before the tag (the
+release checklist records the result). The matrix is not updated from the local run.
 
 ## Status legend
 
@@ -153,7 +160,7 @@ Limitations:
 Limitations:
 
 - Backup validated as the SYSMAINT backup operator `DBMBK` (not SYSADM).
-- Restore EXTERNAL VALIDATION REQUIRED: a Db2 restore runs with the CLP on the Db2 host; DB Manager generates the command (checked by the test) and does not execute it.
+- Restore EXTERNAL VALIDATION REQUIRED: a Db2 restore runs with the CLP on the Db2 host; DBManager generates the command (checked by the test) and does not execute it.
 - TLS NOT TESTED: the container has no SSL listener.
 - Replication PARTIAL: HADR off (standalone).
 

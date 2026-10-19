@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Real-engine integration tests for DB Manager adapters (Linux / macOS / WSL).
+# Real-engine integration tests for DBManager adapters (Linux / macOS / WSL).
 # See scripts/integration-test.ps1 for the description; usage:
 #   scripts/integration-test.sh [postgresql mysql mariadb mssql oracle db2 timeseries identity vault]
 #   scripts/integration-test.sh --down

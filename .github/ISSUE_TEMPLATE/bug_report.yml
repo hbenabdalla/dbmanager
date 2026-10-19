@@ -1,5 +1,5 @@
 name: Bug report
-description: Something in DB Manager does not work as documented.
+description: Something in DBManager does not work as documented.
 labels: [bug, triage]
 body:
   - type: markdown
@@ -27,7 +27,7 @@ body:
   - type: input
     id: version
     attributes:
-      label: DB Manager version
+      label: DBManager version
       description: Platform → About, or the image tag / commit.
     validations:
       required: true

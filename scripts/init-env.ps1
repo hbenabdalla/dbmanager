@@ -99,7 +99,7 @@ Write-Host "Back up DBM_MASTER_KEY separately: stored database credentials canno
 if ($generated.ContainsKey('POSTGRES_PASSWORD')) {
     Write-Host ""
     Write-Host "If you already started the stack once with the placeholder values, recreate the database"
-    Write-Host "volume so the new password applies (this deletes DB Manager's own data):"
+    Write-Host "volume so the new password applies (this deletes DBManager's own data):"
     Write-Host "  docker compose down -v"
 }
 Write-Host "Then start:  docker compose up --build"

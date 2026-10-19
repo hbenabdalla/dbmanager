@@ -24,7 +24,7 @@ engine, connection, TLS, credentials, management mode, placement, live test, rev
 * The **live test** streams each stage — validation, driver, DNS, TCP, TLS, authentication,
   version, privileges, capabilities — so a failure points at the exact layer.
 * **Monitoring only** is the default management mode. Choose *Administration enabled* only when DBAs
-  will run guarded changes from DB Manager; it needs a separate administration credential.
+  will run guarded changes from DBManager; it needs a separate administration credential.
 
 Details: [Database onboarding](../user-guide/onboarding/database-onboarding.md).
 

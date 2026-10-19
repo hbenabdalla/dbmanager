@@ -52,6 +52,8 @@ GLOBAL_JOBS: dict[str, int] = {
     "backup_scheduler": 60,
     # before/after measurement of resolved recommendations (app.services.perf_intel)
     "validate_recommendations": 900,
+    # scheduled reports due: generated with the owner's access and e-mailed (app.services.report_schedules)
+    "report_scheduler": 60,
 }
 
 

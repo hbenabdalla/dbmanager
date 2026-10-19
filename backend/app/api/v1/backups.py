@@ -704,7 +704,7 @@ async def get_backup(backup_id: uuid.UUID, db: DB, p: CurrentPrincipal) -> dict[
     return out
 
 
-@router.post("/backups/platform", status_code=202, summary="Back up DB Manager itself (asynchronous)")
+@router.post("/backups/platform", status_code=202, summary="Back up DBManager itself (asynchronous)")
 async def create_platform_backup(body: PlatformBackupIn, db: DB, p: CurrentPrincipal) -> dict[str, Any]:
     p.authz.require("backup.create")
     await _get_target(db, body.target_id)
@@ -987,7 +987,7 @@ async def restore(backup_id: uuid.UUID, body: RestoreIn, db: DB, p: CurrentPrinc
     if b.kind == "platform":
         if body.confirm != PLATFORM_CONFIRM:
             raise ConfirmationRequired(
-                f"Restoring replaces DB Manager's configuration. Type {PLATFORM_CONFIRM!r} to confirm.",
+                f"Restoring replaces DBManager's configuration. Type {PLATFORM_CONFIRM!r} to confirm.",
                 details={"expected": PLATFORM_CONFIRM},
             )
         components = body.components or list((b.manifest or {}).get("components") or [])
@@ -1168,7 +1168,7 @@ async def overview(db: DB, p: CurrentPrincipal) -> dict[str, Any]:
     }
 
 
-@router.get("/backup/capabilities", summary="What DB Manager can back up and restore per engine")
+@router.get("/backup/capabilities", summary="What DBManager can back up and restore per engine")
 async def capabilities(db: DB, p: CurrentPrincipal, server_id: uuid.UUID | None = None) -> dict[str, Any]:
     p.authz.require_anywhere("backup.view")
     found = await engines.tools()
@@ -1223,6 +1223,6 @@ async def generate_key(p: CurrentPrincipal) -> dict[str, str]:
     return {
         "recipient": recipient,
         "identity": identity,
-        "note": "Store the identity (AGE-SECRET-KEY-1…) in your password manager or vault NOW: DB Manager does not keep it, "
+        "note": "Store the identity (AGE-SECRET-KEY-1…) in your password manager or vault NOW: DBManager does not keep it, "
         "and backups encrypted to this recipient cannot be restored without it.",
     }

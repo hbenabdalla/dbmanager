@@ -7,7 +7,7 @@ import { get } from "@/api/client";
 import type { Page } from "@/api/types";
 import { Meter } from "@/components/charts";
 import { PageHeader } from "@/components/page";
-import { EngineMark, SeverityBadge, SimulatedBadge } from "@/components/status";
+import { DatabaseEngineIcon, SeverityBadge, SimulatedBadge } from "@/components/status";
 import { useSourceParam } from "@/lib/fleet-source";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
@@ -76,7 +76,7 @@ export function PosturePage() {
   if (q.error) return <ErrorState error={q.error} onRetry={() => q.refetch()} />;
   const p = q.data;
   const columns: ColumnDef<Posture["servers"][number], unknown>[] = [
-    { header: "Server", accessorKey: "server_name", cell: ({ row: { original: s } }) => <span className="flex items-center gap-2"><EngineMark engine={s.engine} /><span className="font-medium">{s.server_name}</span>{s.is_demo && <SimulatedBadge />}</span> },
+    { header: "Server", accessorKey: "server_name", cell: ({ row: { original: s } }) => <span className="flex items-center gap-2"><DatabaseEngineIcon engine={s.engine} /><span className="font-medium">{s.server_name}</span>{s.is_demo && <SimulatedBadge />}</span> },
     { header: "Environment", accessorKey: "environment" },
     { header: "Score", accessorKey: "score", meta: { align: "right" }, cell: ({ getValue }) => { const v = getValue() as number; return <div className="ml-auto w-28"><div className="text-right font-semibold tabular" style={{ color: scoreTone(v) }}>{v}</div><Meter value={v} tone={scoreTone(v)} /></div>; } },
     ...["critical", "high", "medium", "low"].map((sev) => ({ header: sev[0].toUpperCase() + sev.slice(1), id: sev, accessorFn: (s: Posture["servers"][number]) => s.by_severity[sev] ?? 0, meta: { align: "right" } } as ColumnDef<Posture["servers"][number], unknown>)),
@@ -145,7 +145,7 @@ export function PosturePage() {
           </div>
           <div className="grid gap-4 md:grid-cols-2">
             <Breakdown title="By environment" rows={groupAvg(servers, (s) => s.environment ?? "Unassigned").map((r) => ({ ...r, label: r.key }))} />
-            <Breakdown title="By engine" rows={groupAvg(servers, (s) => s.engine).map((r) => ({ ...r, label: <EngineMark engine={r.key} withLabel /> }))} />
+            <Breakdown title="By engine" rows={groupAvg(servers, (s) => s.engine).map((r) => ({ ...r, label: <DatabaseEngineIcon engine={r.key} withLabel /> }))} />
           </div>
           <Card>
             <CardHeader title={band ? `Servers rated ${BANDS.find((b) => b.key === band)!.label.toLowerCase()}` : "Servers, lowest score first"}
@@ -182,7 +182,7 @@ export function PrivilegedAccountsPage() {
   const navigate = useNavigate();
   const columns: ColumnDef<Account, unknown>[] = [
     { header: "Account", accessorKey: "name", cell: ({ row: { original: a } }) => <span className="font-medium">{a.name}{!a.can_login && <Badge className="ml-2">role</Badge>}</span> },
-    { header: "Server", accessorKey: "server_name", cell: ({ row: { original: a } }) => <span className="flex items-center gap-2 whitespace-nowrap"><EngineMark engine={a.engine} />{a.server_name}{a.is_demo && <SimulatedBadge />}</span> },
+    { header: "Server", accessorKey: "server_name", cell: ({ row: { original: a } }) => <span className="flex items-center gap-2 whitespace-nowrap"><DatabaseEngineIcon engine={a.engine} />{a.server_name}{a.is_demo && <SimulatedBadge />}</span> },
     { header: "Environment", accessorKey: "environment" },
     { header: "Why it's privileged", accessorFn: (a) => a.admin_reasons.join(", "), cell: ({ row: { original: a } }) => <span className="flex flex-wrap gap-1">{a.admin_reasons.map((r) => <Badge key={r} tone="crit"><ShieldAlert className="size-3" />{r}</Badge>)}</span> },
     { header: "Direct grants", accessorKey: "direct_grant_count", meta: { align: "right" } },
@@ -226,7 +226,7 @@ export function CompliancePage() {
         <DataTable data={list} loading={rules.isLoading} dense pageSize={100} columns={[
           { header: "Rule", accessorKey: "rule_id", cell: ({ getValue }) => <span className="font-mono text-[12px]">{getValue() as string}</span> },
           { header: "Check", accessorKey: "title", cell: ({ row: { original: r } }) => <div><div className="font-medium">{r.title}</div>{r.description && <div className="max-w-[520px] truncate text-[12px] text-muted">{r.description}</div>}</div> },
-          { header: "Engines", accessorFn: (r) => r.engines.join(","), cell: ({ row: { original: r } }) => r.engines.includes("*") ? <Badge>all engines</Badge> : <span className="flex gap-1">{r.engines.map((e) => <EngineMark key={e} engine={e} />)}</span> },
+          { header: "Engines", accessorFn: (r) => r.engines.join(","), cell: ({ row: { original: r } }) => r.engines.includes("*") ? <Badge>all engines</Badge> : <span className="flex gap-1">{r.engines.map((e) => <DatabaseEngineIcon key={e} engine={e} />)}</span> },
           { header: "Category", accessorKey: "category", cell: ({ getValue }) => <span className="capitalize">{getValue() as string}</span> },
           { header: "Default severity", accessorKey: "severity", cell: ({ getValue }) => <SeverityBadge severity={getValue() as string} /> },
           ...(kind === "security" ? [{ header: "Failing", id: "failing", accessorFn: (r: Rule) => counts[r.rule_id] ?? 0, meta: { align: "right" }, cell: ({ getValue }: { getValue: () => unknown }) => { const n = getValue() as number; return n ? <Badge tone="crit">{n}</Badge> : <Badge tone="ok">pass</Badge>; } } as ColumnDef<Rule, unknown>] : []),

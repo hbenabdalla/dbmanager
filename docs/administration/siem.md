@@ -1,6 +1,6 @@
 # Audit forwarding (SIEM)
 
-DB Manager keeps its audit log in the control plane (see [Audit](audit.md)). **Platform →
+DBManager keeps its audit log in the control plane (see [Audit](audit.md)). **Platform →
 Configuration → Audit forwarding** sends a copy of every audit event to one or more SIEM
 destinations, over syslog or a webhook. Configuring destinations needs the platform-scope
 permission `audit.forward` (granted to Platform Administrator by default).
@@ -76,7 +76,7 @@ they are at least 5 seconds old. The cursor only moves after a batch was accepte
 the same event can arrive twice after a failure mid-batch. Use the event `id` to de-duplicate.
 
 Audit events never contain passwords or secrets; they pass through the platform's redaction once
-more before they leave DB Manager.
+more before they leave DBManager.
 
 ## Troubleshooting
 

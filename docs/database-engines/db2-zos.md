@@ -18,7 +18,7 @@ TLS through the subsystem's secure DDF port (AT-TLS).
 
 ## Privileges
 
-Authorization IDs are RACF/ACF2/Top Secret identities; DRDA access from DB Manager also needs
+Authorization IDs are RACF/ACF2/Top Secret identities; DRDA access from DBManager also needs
 **Db2 Connect** (a license file on the client, or server-side activation of the subsystem).
 
 ### Minimum inventory / monitoring account
@@ -55,7 +55,7 @@ GRANT EXPLAIN TO DBMMON;
 ### Not covered by SQL
 
 Subsystem performance (statistics and accounting traces, IFCID records, SMF, CPU/zIIP usage) is
-not reachable by a SQL client. DB Manager marks those capabilities **REQUIRES EXTERNAL
+not reachable by a SQL client. DBManager marks those capabilities **REQUIRES EXTERNAL
 MONITORING**; use a z/OS monitor such as OMEGAMON for Db2.
 
 ### DBA management account
@@ -89,7 +89,7 @@ for a registered server, on its **Overview → Capabilities** (runtime discovery
 
 ## Known limitations
 
-* No thread, lock or subsystem performance monitoring: use a z/OS monitor (for example OMEGAMON for Db2). DB Manager does not fabricate these values.
+* No thread, lock or subsystem performance monitoring: use a z/OS monitor (for example OMEGAMON for Db2). DBManager does not fabricate these values.
 * No administration actions.
 * Not validated against a real subsystem.
 
@@ -117,7 +117,7 @@ privileged accounts) also apply.
 | `ZOS-PERF-003` | Image COPY overdue |
 
 Plus the common performance rules `GEN-PERF-001` … `GEN-PERF-010`. Recommendations are advice with
-evidence; DB Manager never executes them.
+evidence; DBManager never executes them.
 
 ## Troubleshooting
 

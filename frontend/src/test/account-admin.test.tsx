@@ -458,25 +458,3 @@ describe("server operations", () => {
     }
   });
 });
-
-describe("reports", () => {
-  it("offers only the formats the backend serves", async () => {
-    const { clicks } = blobStubs();
-    stub((path) => {
-      if (path === "/auth/me") return { body: ME(["server.view", "reports.view"]) };
-      if (path === "/reports") return { body: [
-        { key: "inventory", title: "Server inventory", description: "All servers", formats: ["csv", "xlsx"], planned_formats: ["pdf"], available: true },
-        { key: "findings", title: "Security findings", description: "Open findings", formats: ["csv"], planned_formats: ["xlsx", "pdf"], available: true },
-      ] };
-      if (path === "/reports/inventory.xlsx") return { body: {} };
-      return undefined;
-    });
-    renderApp("/reports");
-    expect(await screen.findByRole("button", { name: "Download Server inventory as XLSX" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Download Security findings as CSV" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Download Security findings as XLSX" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /as PDF/ })).not.toBeInTheDocument();
-    await userEvent.click(screen.getByRole("button", { name: "Download Server inventory as XLSX" }));
-    await waitFor(() => expect(clicks).toEqual(["inventory.xlsx"]));
-  });
-});

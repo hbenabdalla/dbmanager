@@ -4,7 +4,7 @@
   not offered.
 * Db2 does not store users: authentication is external (OS, LDAP, Kerberos). "Create user" is
   therefore not offered; access is granted to an existing authorization ID with GRANT CONNECT.
-* REORG and RUNSTATS are only ever *recommended* by DB Manager, never executed.
+* REORG and RUNSTATS are only ever *recommended* by DBManager, never executed.
 """
 
 from __future__ import annotations
@@ -100,6 +100,6 @@ def build(action: str, p: dict[str, Any]) -> A.AdminStatement:
             [None],
             [sql],
             target_object=f"{schema}.{table}.{name}",
-            notes=["Run RUNSTATS on the table afterwards (DB Manager recommends, it does not run it)."],
+            notes=["Run RUNSTATS on the table afterwards (DBManager recommends, it does not run it)."],
         )
     raise AdapterNotSupported(Capability.ADMINISTRATION, f"{action} is not available for Db2")

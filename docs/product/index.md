@@ -1,6 +1,6 @@
 # Product
 
-Where DB Manager stands, what is missing, and what comes next.
+Where DBManager stands, what is missing, and what comes next.
 
 | Page | What it answers |
 |---|---|

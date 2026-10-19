@@ -1,6 +1,6 @@
 # Roadmap
 
-DB Manager **0.13.0** is the current release (**0.12.0** was the first public release). The
+DBManager **0.14.0** is the current release (**0.12.0** was the first public release). The
 roadmap is milestone-based, and no dates are promised.
 
 - The full roadmap, with sprint objectives, acceptance criteria and Definition of Done, is in [docs/product/roadmap.md](docs/product/roadmap.md).
@@ -25,13 +25,16 @@ roadmap is milestone-based, and no dates are promised.
 | 0.11 | **Enterprise integration**: API tokens, rate limiting, real LDAP / Keycloak (OIDC) / Vault validation, SIEM forwarding, HashiCorp Vault, MFA | DONE. Cloud secret managers are PLANNED (0.11.7). |
 | 0.12 | **Asset protection**: backup and restore of the platform and of managed databases, policies, retention, verification, disaster recovery | DONE. Database backups and restores real-validated for all six engines (Db2 LUW restore is an external step). Native Azure/GCS targets and PITR are PLANNED. |
 | 0.13 | **Performance intelligence**: z-score alert rules, query regression and plan-change detection, capacity forecasting with confidence bands, period and plan comparison, recommendation outcome validation | DONE (0.13.0) |
-| 0.14 | Reporting: more report types, scheduled delivery, PDF | NEXT |
-| 0.15 | Cloud-native: published images, Helm chart, manifest validation, HA and TLS reference | PLANNED |
+| 0.14 | **Reporting**: security-findings, query-statistics, regression and forecast reports with parameters and preview; server-side PDF; schedules e-mailed with the owner's access. **Branding**: DBManager logo, app icons, DBManager engine marks | DONE (0.14.0) |
+| 0.15 | Cloud-native: published images, Helm chart, manifest validation, HA and TLS reference | NEXT |
 | 1.0 | Production release: scale and security testing, accessibility, upgrade drill, release candidate | PLANNED |
 | Future | Anomaly detection beyond z-score rules, custom rules and dashboards, database logs, cloud discovery, Oracle TCPS validation | FUTURE |
 
-**Versioning:** the product version follows the roadmap. `0.13.0` adds milestone 0.13 to
-`0.12.0`, which contained milestones 0.9 to 0.12. Versions 0.9 to 0.11 were development states and
+**Versioning:** the product version follows the roadmap. `0.14.0` adds milestone 0.14 to
+`0.13.0`, which added milestone 0.13 to `0.12.0`, which contained milestones 0.9 to 0.12. 0.14.0 is
+a minor version (semantic versioning, 0.x): new features and an additive schema migration, no
+removed endpoints; the one API change is that `GET /reports` no longer lists `planned_formats` (PDF
+is now served). Versions 0.9 to 0.11 were development states and
 were never released.
 
 **Blocked:** Db2 for z/OS real validation, which needs a z/OS subsystem with Db2 Connect

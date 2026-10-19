@@ -16,6 +16,7 @@ import { Field, Input, Select, Textarea } from "@/components/ui/input";
 import { EmptyState } from "@/components/ui/states";
 import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/lib/auth";
+import { engineLabel } from "@/lib/engines";
 import { dateTime, relTime } from "@/lib/format";
 import {
   cleanEncryption, COMPONENTS, DEFAULT_COMPONENTS, type DatabaseScope, type Encryption, encryptionProblem, errMsg, type Job, type Policy,
@@ -104,7 +105,7 @@ export function DatabaseScopeFields({ f, set }: { f: PolicyForm; set: (p: Partia
   const setScope = (p: Partial<DatabaseScope>) => set({ scope: { ...f.scope, ...p } });
   return (
     <div className="grid gap-3 sm:grid-cols-2">
-      <MultiCheck label="Servers" options={(servers.data ?? []).map((s) => ({ id: s.id, name: `${s.name} (${s.engine})` }))} value={f.scope.server_ids} onChange={(v) => setScope({ server_ids: v })} />
+      <MultiCheck label="Servers" options={(servers.data ?? []).map((s) => ({ id: s.id, name: `${s.name} (${engineLabel(s.engine)})` }))} value={f.scope.server_ids} onChange={(v) => setScope({ server_ids: v })} />
       <div className="space-y-3">
         <MultiCheck label="Environments" options={envs.data ?? []} value={f.scope.environment_ids} onChange={(v) => setScope({ environment_ids: v })} />
         <MultiCheck label="Sites" options={sites.data ?? []} value={f.scope.site_ids} onChange={(v) => setScope({ site_ids: v })} />
@@ -154,7 +155,7 @@ export function PolicyDialog({ policy, prefillServer, onClose }: { policy: Polic
           <Field label="Name"><Input value={f.name} onChange={(e) => set({ name: e.target.value })} placeholder="Nightly platform backup" /></Field>
           <Field label="What to back up">
             <Select value={f.kind} disabled={!!policy} onChange={(e) => set({ kind: e.target.value as PolicyForm["kind"] })}>
-              <option value="platform">DB Manager platform (configuration)</option><option value="database">Managed databases</option>
+              <option value="platform">DBManager platform (configuration)</option><option value="database">Managed databases</option>
             </Select>
           </Field>
           <Field label="Storage target">

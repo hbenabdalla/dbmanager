@@ -10,7 +10,7 @@ import type { MetricPoint } from "@/api/types";
 import { MetricChart } from "@/components/charts";
 import { FleetStrip, type FleetTile } from "@/components/fleet-strip";
 import { PageHeader } from "@/components/page";
-import { EngineMark, HealthBadge, HEALTH_VAR, SeverityBadge, SimulatedBadge } from "@/components/status";
+import { DatabaseEngineIcon, HealthBadge, HEALTH_VAR, SeverityBadge, SimulatedBadge } from "@/components/status";
 import { Button } from "@/components/ui/button";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { EmptyState, ErrorState, Skeleton, StorageUnavailable } from "@/components/ui/states";
@@ -217,7 +217,7 @@ export function DashboardPage() {
         <div className="anim-fade mb-3 flex flex-wrap items-center gap-2 text-[12.5px]" role="status">
           <span className="text-muted">Filtered by</span>
           {filters.health && <button className="rounded-full border border-border bg-surface px-2 py-0.5 hover:border-border-strong" onClick={() => setFilter("health", undefined)}>Health: {HEALTH_LABEL[filters.health] ?? filters.health} ×</button>}
-          {filters.engine && <button className="rounded-full border border-border bg-surface px-2 py-0.5 hover:border-border-strong" onClick={() => setFilter("engine", undefined)}>Engine: {filters.engine} ×</button>}
+          {filters.engine && <button className="rounded-full border border-border bg-surface px-2 py-0.5 hover:border-border-strong" onClick={() => setFilter("engine", undefined)}><span className="inline-flex items-center gap-1">Engine: <DatabaseEngineIcon engine={filters.engine} size="xs" withLabel /> ×</span></button>}
           {filters.environment && <button className="rounded-full border border-border bg-surface px-2 py-0.5 hover:border-border-strong" onClick={() => setFilter("environment", undefined)}>Environment: {filters.environment} ×</button>}
           <span className="tabular text-muted">{fleet.length} of {d?.fleet.length ?? 0} servers</span>
           <Button size="sm" variant="ghost" onClick={clearFilters}><FilterX /> Clear</Button>
@@ -272,7 +272,7 @@ export function DashboardPage() {
               {attention.map((s) => (
                 <li key={s.id}>
                   <Link to={`/servers/${s.id}`} className="flex items-center gap-3 px-4 py-2.5 hover:bg-surface-2">
-                    <EngineMark engine={s.engine} />
+                    <DatabaseEngineIcon engine={s.engine} />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2"><span className="font-medium">{s.name}</span>{s.is_demo && <SimulatedBadge />}</div>
                       <div className="truncate text-[12px] text-muted">{s.reasons.join("; ") || "No collection yet"}</div>
@@ -309,7 +309,7 @@ export function DashboardPage() {
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <Card>
           <CardHeader title="Engines" description="Select one to filter the fleet" />
-          <CardBody>{d && <BarList selected={filters.engine} onSelect={(k) => setFilter("engine", k)} items={d.engines.map((e) => ({ key: e.engine, label: <EngineMark engine={e.engine} withLabel />, value: e.count }))} />}</CardBody>
+          <CardBody>{d && <BarList selected={filters.engine} onSelect={(k) => setFilter("engine", k)} items={d.engines.map((e) => ({ key: e.engine, label: <DatabaseEngineIcon engine={e.engine} withLabel />, value: e.count }))} />}</CardBody>
         </Card>
         <Card>
           <CardHeader title="Environments" description="Select one to filter the fleet" />

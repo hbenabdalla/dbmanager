@@ -47,6 +47,9 @@ The tables below keep each gap as originally assessed. Progress since the audit:
 | G-25 Capacity forecasting beyond linear trend | Closed for robust trends with confidence bands per server, database and tablespace; seasonality is not modelled | sprint 0.13.3 |
 | G-28 Query comparison | Closed — period vs period, and plan vs plan of saved plans | sprint 0.13.4 |
 | G-29 Recommendation outcome validation | Closed — before/after measurement of resolved recommendations | sprint 0.13.5 |
+| G-32 Security and query-statistics reports | Closed — *Security findings*, *Query statistics*, *Query regressions* and *Capacity forecast* report definitions with parameters | sprint 0.14.1 |
+| G-30 Scheduled reports | Closed — schedules e-mailed through e-mail channels with the owner's current access, run history, audit | sprint 0.14.2 |
+| G-31 PDF export | Closed — server-side PDF for every report | sprint 0.14.3 |
 | G-26 Anomaly detection | Open (P3) — z-score rules are the first building block; no automatic anomaly detection | Future |
 
 ## Release blockers (P0)

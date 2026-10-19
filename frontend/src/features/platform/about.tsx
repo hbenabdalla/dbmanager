@@ -1,8 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { BookOpen, ExternalLink, Github, Map as MapIcon } from "lucide-react";
+import { BrandLogo } from "@/components/brand";
 import { get } from "@/api/client";
 import { KeyValue, PageHeader } from "@/components/page";
-import { EngineMark } from "@/components/status";
+import { DatabaseEngineIcon } from "@/components/status";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { ErrorState, SkeletonRows } from "@/components/ui/states";
@@ -60,6 +61,19 @@ export function AboutPage() {
     <div>
       <PageHeader title={`About ${a.product}`} description={a.description} crumbs={[{ label: "Platform" }, { label: "About" }]} />
       <div className="grid gap-4 lg:grid-cols-2">
+        <Card className="lg:col-span-2">
+          <CardBody className="flex flex-wrap items-center gap-6">
+            <BrandLogo width={200} />
+            <div className="min-w-0 max-w-xl space-y-1.5 text-[13px]">
+              <p className="text-[18px] font-semibold">{a.product} <span className="font-mono text-[15px] text-text-2">{v.application}</span></p>
+              <p className="text-text-2">{a.description}</p>
+              <p className="text-[12px] text-muted">
+                PostgreSQL, MySQL, MariaDB, SQL Server, Oracle and Db2 are trademarks of their respective owners. DBManager is not affiliated with or
+                endorsed by them; the engine marks shown in DBManager are its own and are not the vendors' logos.
+              </p>
+            </div>
+          </CardBody>
+        </Card>
         <Card>
           <CardHeader title="Version" description={`Milestone ${a.milestone.version} — ${a.milestone.name}`} />
           <CardBody>
@@ -106,7 +120,7 @@ export function AboutPage() {
                   const val = e.validation ? VALIDATION[e.validation] : null;
                   return (
                     <tr key={e.engine} className="border-b border-border last:border-0">
-                      <td className="px-4 py-2"><EngineMark engine={e.engine} withLabel /></td>
+                      <td className="px-4 py-2"><DatabaseEngineIcon engine={e.engine} withLabel /></td>
                       <td className="px-4 py-2"><Badge tone={SUPPORT_LABEL[e.support_level]?.tone ?? "neutral"}>{SUPPORT_LABEL[e.support_level]?.label ?? e.support_level}</Badge></td>
                       <td className="px-4 py-2">{val ? <><Badge tone={val.tone}>{val.label}</Badge>{e.validated_version && <span className="ml-2 font-mono text-[12px] text-muted">{e.validated_version}</span>}</> : <span className="text-muted">—</span>}</td>
                     </tr>

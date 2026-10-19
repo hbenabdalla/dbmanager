@@ -60,7 +60,7 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON appdb.* TO 'dbm_admin'@'10.0.%' WITH GRA
 GRANT CONNECTION_ADMIN ON *.* TO 'dbm_admin'@'10.0.%';   -- KILL other accounts' sessions
 ```
 
-Grant only the database privileges you want DB Manager to be able to delegate (`WITH GRANT OPTION`
+Grant only the database privileges you want DBManager to be able to delegate (`WITH GRANT OPTION`
 on the schemas concerned). Passwords in `CREATE USER` are sent as bound parameters.
 
 See [Least-privilege accounts](permissions.md) for the rules that apply to every engine.
@@ -116,7 +116,7 @@ privileged accounts) also apply.
 | `MYSQL-PERF-009` | Query cache enabled |
 
 Plus the common performance rules `GEN-PERF-001` … `GEN-PERF-010`. Recommendations are advice with
-evidence; DB Manager never executes them.
+evidence; DBManager never executes them.
 
 ## Troubleshooting
 

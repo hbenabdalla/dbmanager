@@ -31,7 +31,7 @@ from app.models import NotificationChannel
 
 SEVERITY_ORDER = {"info": 0, "low": 1, "medium": 2, "high": 3, "critical": 4}
 KINDS = ("webhook", "email")
-#: webhook payload formats: DB Manager JSON, Slack incoming webhook, Microsoft Teams workflow
+#: webhook payload formats: DBManager JSON, Slack incoming webhook, Microsoft Teams workflow
 #: (Adaptive Card message, as accepted by Teams "Post to a channel when a webhook request is received")
 PRESETS = ("generic", "slack", "teams")
 SMTP_SECURITY = ("starttls", "tls", "none")
@@ -123,10 +123,10 @@ _SEVERITY_COLOR = {"critical": "#b42318", "high": "#d9480f", "medium": "#b7791f"
 
 
 def preset_payload(preset: str, event: str, alert: dict[str, Any] | None) -> dict[str, Any]:
-    """Body for the channel's preset. ``generic`` is the documented DB Manager JSON payload."""
+    """Body for the channel's preset. ``generic`` is the documented DBManager JSON payload."""
     if preset == "generic":
         return payload(event, alert)
-    subject = _subject(event, alert).removeprefix("[DB Manager] ")
+    subject = _subject(event, alert).removeprefix("[DBManager] ")
     text = _text(event, alert)
     url = (alert or {}).get("url")
     facts = []
@@ -151,7 +151,7 @@ def preset_payload(preset: str, event: str, alert: dict[str, Any] | None) -> dic
                 {
                     "type": "actions",
                     "elements": [
-                        {"type": "button", "text": {"type": "plain_text", "text": "Open in DB Manager"}, "url": url}
+                        {"type": "button", "text": {"type": "plain_text", "text": "Open in DBManager"}, "url": url}
                     ],
                 }
             )
@@ -170,7 +170,7 @@ def preset_payload(preset: str, event: str, alert: dict[str, Any] | None) -> dic
             "body": body,
         }
         if url:
-            card["actions"] = [{"type": "Action.OpenUrl", "title": "Open in DB Manager", "url": url}]
+            card["actions"] = [{"type": "Action.OpenUrl", "title": "Open in DBManager", "url": url}]
         return {
             "type": "message",
             "attachments": [{"contentType": "application/vnd.microsoft.card.adaptive", "content": card}],
@@ -180,15 +180,15 @@ def preset_payload(preset: str, event: str, alert: dict[str, Any] | None) -> dic
 
 def _subject(event: str, alert: dict[str, Any] | None) -> str:
     if not alert:
-        return "[DB Manager] Test notification"
+        return "[DBManager] Test notification"
     state = "RESOLVED" if event == "resolved" else alert.get("severity", "").upper()
     again = " (still firing)" if alert.get("renotify") else ""
-    return f"[DB Manager] {state}: {alert.get('title')}{again}"
+    return f"[DBManager] {state}: {alert.get('title')}{again}"
 
 
 def _text(event: str, alert: dict[str, Any] | None) -> str:
     if not alert:
-        return "This is a test notification from DB Manager. The channel is configured correctly."
+        return "This is a test notification from DBManager. The channel is configured correctly."
     lines = [
         alert.get("title", ""),
         "",
@@ -260,12 +260,22 @@ def _tls_context(ca_file: str) -> ssl.SSLContext:
     return ssl.create_default_context(cafile=ca_file or None)
 
 
-def _send_mail_sync(cfg: dict[str, Any], recipients: list[str], subject: str, text: str) -> None:
+def _send_mail_sync(
+    cfg: dict[str, Any],
+    recipients: list[str],
+    subject: str,
+    text: str,
+    attachment: tuple[str, bytes, str] | None = None,
+) -> None:
     msg = EmailMessage()
     msg["From"] = cfg["sender"]
     msg["To"] = ", ".join(recipients)
     msg["Subject"] = subject
     msg.set_content(text)
+    if attachment is not None:
+        name, data, media_type = attachment
+        maintype, _, subtype = media_type.partition("/")
+        msg.add_attachment(data, maintype=maintype, subtype=subtype or "octet-stream", filename=name)
     if cfg["security"] == "tls":  # implicit TLS (SMTPS)
         client: smtplib.SMTP = smtplib.SMTP_SSL(
             cfg["host"], cfg["port"], timeout=cfg["timeout"], context=_tls_context(cfg["ca_file"])
@@ -292,6 +302,26 @@ async def send_email(channel: NotificationChannel, event: str, alert: dict[str, 
     except (smtplib.SMTPException, OSError) as exc:
         raise DeliveryError(f"{type(exc).__name__}: {exc}") from exc
     return 250
+
+
+async def send_file_email(
+    channel: NotificationChannel, subject: str, text: str, attachment: tuple[str, bytes, str]
+) -> int:
+    """E-mail a file (scheduled reports) to an e-mail channel's recipients. Returns the number of
+    recipients. Raises DeliveryError."""
+    if channel.kind != "email":
+        raise DeliveryError("only e-mail channels can receive report files")
+    cfg = _smtp_settings(channel)
+    recipients = [r for r in channel.config.get("recipients") or [] if r]
+    if not cfg["host"] or not cfg["sender"]:
+        raise DeliveryError("SMTP is not configured (DBM_SMTP_HOST / DBM_SMTP_FROM or the channel's SMTP settings)")
+    if not recipients:
+        raise DeliveryError("the channel has no recipients")
+    try:
+        await asyncio.to_thread(_send_mail_sync, cfg, recipients, subject, text, attachment)
+    except (smtplib.SMTPException, OSError) as exc:
+        raise DeliveryError(f"{type(exc).__name__}: {exc}") from exc
+    return len(recipients)
 
 
 async def send(channel: NotificationChannel, event: str, alert: dict[str, Any] | None) -> int | None:

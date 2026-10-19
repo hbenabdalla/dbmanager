@@ -1,6 +1,6 @@
 # Reverse proxy and TLS
 
-DB Manager does not terminate TLS itself. The frontend container (nginx, port 8080) serves the SPA
+DBManager does not terminate TLS itself. The frontend container (nginx, port 8080) serves the SPA
 and proxies `/api/` and `/healthz` to the backend; put your TLS-terminating reverse proxy, load
 balancer, ingress or OpenShift Route in front of it.
 

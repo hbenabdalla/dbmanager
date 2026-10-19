@@ -1,6 +1,6 @@
 # Metrics architecture
 
-How DB Manager stores and serves monitoring telemetry for hundreds to thousands of managed
+How DBManager stores and serves monitoring telemetry for hundreds to thousands of managed
 database servers. Related documents: [monitoring-pipeline.md](pipeline.md) (write
 and read paths), [metrics-catalog.md](metric-catalog.md) (every metric),
 [timeseries-storage.md](timeseries-storage.md) (operating the storage),
@@ -96,7 +96,7 @@ A sample is `name{labels} value timestamp(ms, UTC)`.
 
 ### Naming convention
 
-* prefix `db_` for telemetry of managed databases (`dbm_` is reserved for DB Manager's own
+* prefix `db_` for telemetry of managed databases (`dbm_` is reserved for DBManager's own
   process metrics on `/metrics`);
 * snake_case, base unit suffix: `_bytes`, `_seconds`, `_ms`, `_percent`;
 * `_total` only for counters, `_per_second` for collector-derived rates;

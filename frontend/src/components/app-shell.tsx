@@ -4,7 +4,8 @@ import {
   Search, Server as ServerIcon, ShieldCheck, Sun, UserPlus, UserRound, Wand2, X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Navigate, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Link, Navigate, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { BrandMark } from "@/components/brand";
 import { get } from "@/api/client";
 import { Menu, MenuContent, MenuItem, MenuLabel, MenuSeparator, MenuTrigger } from "@/components/ui/menu";
 import { useAuth } from "@/lib/auth";
@@ -53,7 +54,7 @@ function HelpMenu() {
         {links?.documentation && <MenuItem onSelect={() => open(links.documentation!)}><BookOpen /> Documentation</MenuItem>}
         {links?.github && <MenuItem onSelect={() => open(links.github!)}><Github /> Source code on GitHub</MenuItem>}
         {(links?.documentation || links?.github) && <MenuSeparator />}
-        <MenuItem onSelect={() => navigate("/platform/about")}><Info /> About DB Manager{about.data ? ` ${about.data.version.application}` : ""}</MenuItem>
+        <MenuItem onSelect={() => navigate("/platform/about")}><Info /> About DBManager{about.data ? ` ${about.data.version.application}` : ""}</MenuItem>
       </MenuContent>
     </Menu>
   );
@@ -79,35 +80,22 @@ function writeJson(key: string, v: unknown) {
 }
 
 function Brand({ compact }: { compact?: boolean }) {
+  // the sidebar is dark in both themes: the logo sits on its light plate, unaltered
   if (compact) {
     return (
-      <div className="flex justify-center py-4">
-        <svg viewBox="0 0 32 32" className="size-7" aria-label="DB Manager">
-          <rect width="32" height="32" rx="7" fill="#15243a" />
-          <g fill="none" strokeWidth="2.2">
-            <ellipse cx="16" cy="9.5" rx="8" ry="3.2" stroke="#6c97ff" />
-            <path d="M8 9.5v13c0 1.8 3.6 3.2 8 3.2s8-1.4 8-3.2v-13" stroke="#6c97ff" />
-            <path d="M8 16c0 1.8 3.6 3.2 8 3.2s8-1.4 8-3.2" stroke="#37c48f" />
-          </g>
-        </svg>
-      </div>
+      <Link to="/" className="flex justify-center py-4 transition-opacity duration-150 hover:opacity-90 motion-reduce:transition-none" aria-label="DBManager — dashboard">
+        <BrandMark size={26} plate />
+      </Link>
     );
   }
   return (
-    <div className="flex items-center gap-2.5 px-4 py-4">
-      <svg viewBox="0 0 32 32" className="size-7" aria-hidden>
-        <rect width="32" height="32" rx="7" fill="#15243a" />
-        <g fill="none" strokeWidth="2.2">
-          <ellipse cx="16" cy="9.5" rx="8" ry="3.2" stroke="#6c97ff" />
-          <path d="M8 9.5v13c0 1.8 3.6 3.2 8 3.2s8-1.4 8-3.2v-13" stroke="#6c97ff" />
-          <path d="M8 16c0 1.8 3.6 3.2 8 3.2s8-1.4 8-3.2" stroke="#37c48f" />
-        </g>
-      </svg>
+    <Link to="/" className="flex items-center gap-2.5 px-4 py-4 transition-opacity duration-150 hover:opacity-90 motion-reduce:transition-none" aria-label="DBManager — dashboard">
+      <BrandMark size={26} plate />
       <div className="leading-tight">
-        <div className="text-[14px] font-semibold text-nav-strong">DB Manager</div>
+        <div className="text-[14px] font-semibold text-nav-strong">DBManager</div>
         <div className="text-2xs text-nav-muted">Fleet operations</div>
       </div>
-    </div>
+    </Link>
   );
 }
 
@@ -213,7 +201,7 @@ function AddMenu({ can, canPlatform }: { can: (p: string) => boolean; canPlatfor
         </button>
       </MenuTrigger>
       <MenuContent>
-        <MenuLabel>Add to DB Manager</MenuLabel>
+        <MenuLabel>Add to DBManager</MenuLabel>
         {entries.map((e) => <MenuItem key={e.label} onSelect={() => navigate(e.to)}><e.icon /> {e.label}</MenuItem>)}
       </MenuContent>
     </Menu>
@@ -345,7 +333,7 @@ export function AppShell() {
         {showSetup && (
           <div className="anim-fade flex flex-wrap items-center gap-2 border-b border-accent/25 bg-accent-soft px-5 py-1.5 text-[12.5px] text-text-2">
             <Wand2 className="size-4 text-accent" />
-            <span>DB Manager is not fully set up yet{setup.data?.current_step ? ` (stopped at “${setup.data.current_step}”)` : ""}.</span>
+            <span>DBManager is not fully set up yet{setup.data?.current_step ? ` (stopped at “${setup.data.current_step}”)` : ""}.</span>
             <NavLink to="/setup" className="font-medium text-accent hover:underline">{setup.data?.current_step ? "Resume setup" : "Start setup"}</NavLink>
           </div>
         )}

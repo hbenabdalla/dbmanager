@@ -24,7 +24,7 @@ For support cases, **Server → Settings → Operations → Download diagnostics
   consecutive failures and circuit-breaker state;
 * collector state per component and the detected capabilities;
 * the last 50 collector jobs with kind, status, duration, error and result;
-* driver, DB Manager, Python and database schema versions.
+* driver, DBManager, Python and database schema versions.
 
 Passwords, tokens, keys and `user:password@` in connection strings are replaced by `***` wherever
 they appear, including error messages, options and job results. Review the file before sending it

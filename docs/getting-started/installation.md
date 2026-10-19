@@ -1,6 +1,6 @@
 # Installation
 
-DB Manager ships as four containers started with Docker Compose: frontend (nginx), backend
+DBManager ships as four containers started with Docker Compose: frontend (nginx), backend
 (FastAPI), PostgreSQL (control plane) and VictoriaMetrics (metric history).
 
 ## 1. Get the source

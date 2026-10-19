@@ -228,7 +228,7 @@ export function SiemDestinationsPage() {
       <Card>
         <DataTable columns={columns} data={list.data} loading={list.isLoading} error={list.error} dense
           empty={<EmptyState icon={<Radio />} title="No forwarding destinations" action={<Button variant="primary" onClick={() => setEdit("new")}><Plus /> Add a syslog or webhook destination</Button>}>
-            The audit log is kept in DB Manager either way; forwarding sends a copy to your SIEM.
+            The audit log is kept in DBManager either way; forwarding sends a copy to your SIEM.
           </EmptyState>} />
       </Card>
       {edit && <DestinationDialog dest={edit === "new" ? null : edit} onClose={() => setEdit(null)} />}

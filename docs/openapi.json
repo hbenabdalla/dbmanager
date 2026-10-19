@@ -1,9 +1,9 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "DB Manager API",
+    "title": "DBManager API",
     "description": "Unified administration, monitoring, security and performance analysis for heterogeneous relational databases. Authenticate with `POST /api/v1/auth/login`; unsafe methods require the `X-CSRF-Token` header (value of the `dbm_csrf` cookie).",
-    "version": "0.13.0"
+    "version": "0.14.0"
   },
   "paths": {
     "/healthz": {
@@ -8230,6 +8230,163 @@
         }
       }
     },
+    "/api/v1/reports/{key}/preview": {
+      "get": {
+        "tags": [
+          "reports"
+        ],
+        "summary": "Preview",
+        "operationId": "preview_api_v1_reports__key__preview_get",
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Key"
+            }
+          },
+          {
+            "name": "environment_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Environment Id"
+            }
+          },
+          {
+            "name": "server_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Server Id"
+            }
+          },
+          {
+            "name": "engine",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 32
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Engine"
+            }
+          },
+          {
+            "name": "window_hours",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 744,
+              "minimum": 1,
+              "default": 24,
+              "title": "Window Hours"
+            }
+          },
+          {
+            "name": "statuses",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Statuses"
+            }
+          },
+          {
+            "name": "min_severity",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Min Severity"
+            }
+          },
+          {
+            "name": "scope",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "server",
+                "database",
+                "tablespace"
+              ],
+              "type": "string",
+              "default": "server",
+              "title": "Scope"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Preview Api V1 Reports  Key  Preview Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/reports/{key}.{fmt}": {
       "get": {
         "tags": [
@@ -8255,6 +8412,119 @@
               "type": "string",
               "title": "Fmt"
             }
+          },
+          {
+            "name": "environment_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Environment Id"
+            }
+          },
+          {
+            "name": "server_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Server Id"
+            }
+          },
+          {
+            "name": "engine",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 32
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Engine"
+            }
+          },
+          {
+            "name": "window_hours",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 744,
+              "minimum": 1,
+              "default": 24,
+              "title": "Window Hours"
+            }
+          },
+          {
+            "name": "statuses",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Statuses"
+            }
+          },
+          {
+            "name": "min_severity",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Min Severity"
+            }
+          },
+          {
+            "name": "scope",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "server",
+                "database",
+                "tablespace"
+              ],
+              "type": "string",
+              "default": "server",
+              "title": "Scope"
+            }
           }
         ],
         "responses": {
@@ -8263,6 +8533,277 @@
             "content": {
               "application/json": {
                 "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/report-schedules": {
+      "get": {
+        "tags": [
+          "reports"
+        ],
+        "summary": "List Schedules",
+        "operationId": "list_schedules_api_v1_report_schedules_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "type": "array",
+                  "title": "Response List Schedules Api V1 Report Schedules Get"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "reports"
+        ],
+        "summary": "Create Schedule",
+        "operationId": "create_schedule_api_v1_report_schedules_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/app__api__v1__reports__ScheduleIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Create Schedule Api V1 Report Schedules Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/report-schedules/{schedule_id}": {
+      "put": {
+        "tags": [
+          "reports"
+        ],
+        "summary": "Update Schedule",
+        "operationId": "update_schedule_api_v1_report_schedules__schedule_id__put",
+        "parameters": [
+          {
+            "name": "schedule_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Schedule Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/app__api__v1__reports__ScheduleIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Update Schedule Api V1 Report Schedules  Schedule Id  Put"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "reports"
+        ],
+        "summary": "Delete Schedule",
+        "operationId": "delete_schedule_api_v1_report_schedules__schedule_id__delete",
+        "parameters": [
+          {
+            "name": "schedule_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Schedule Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Delete Schedule Api V1 Report Schedules  Schedule Id  Delete"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/report-schedules/{schedule_id}/run": {
+      "post": {
+        "tags": [
+          "reports"
+        ],
+        "summary": "Run Now",
+        "description": "Generate and send the report now (the regular schedule is unchanged).",
+        "operationId": "run_now_api_v1_report_schedules__schedule_id__run_post",
+        "parameters": [
+          {
+            "name": "schedule_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Schedule Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Run Now Api V1 Report Schedules  Schedule Id  Run Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/report-schedules/{schedule_id}/runs": {
+      "get": {
+        "tags": [
+          "reports"
+        ],
+        "summary": "Schedule Runs",
+        "operationId": "schedule_runs_api_v1_report_schedules__schedule_id__runs_get",
+        "parameters": [
+          {
+            "name": "schedule_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Schedule Id"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 500,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": true
+                  },
+                  "title": "Response Schedule Runs Api V1 Report Schedules  Schedule Id  Runs Get"
+                }
               }
             }
           },
@@ -10249,7 +10790,7 @@
         "tags": [
           "backup"
         ],
-        "summary": "Back up DB Manager itself (asynchronous)",
+        "summary": "Back up DBManager itself (asynchronous)",
         "operationId": "create_platform_backup_api_v1_backups_platform_post",
         "requestBody": {
           "content": {
@@ -10776,7 +11317,7 @@
         "tags": [
           "backup"
         ],
-        "summary": "What DB Manager can back up and restore per engine",
+        "summary": "What DBManager can back up and restore per engine",
         "operationId": "capabilities_api_v1_backup_capabilities_get",
         "parameters": [
           {
@@ -10932,6 +11473,74 @@
                   "additionalProperties": true,
                   "type": "object",
                   "title": "Response About Api V1 About Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/branding/engine-logos": {
+      "get": {
+        "tags": [
+          "branding"
+        ],
+        "summary": "Engines with an operator-supplied logo",
+        "operationId": "engine_logos_api_v1_branding_engine_logos_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "type": "object",
+                  "title": "Response Engine Logos Api V1 Branding Engine Logos Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/branding/engine-logos/{engine}": {
+      "get": {
+        "tags": [
+          "branding"
+        ],
+        "summary": "An operator-supplied engine logo",
+        "operationId": "engine_logo_api_v1_branding_engine_logos__engine__get",
+        "parameters": [
+          {
+            "name": "engine",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Engine"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -14502,7 +15111,7 @@
             ]
           },
           "schedule": {
-            "$ref": "#/components/schemas/ScheduleIn"
+            "$ref": "#/components/schemas/app__api__v1__backups__ScheduleIn"
           },
           "encryption": {
             "$ref": "#/components/schemas/EncryptionIn"
@@ -14617,6 +15226,86 @@
         },
         "type": "object",
         "title": "RegenerateRequest"
+      },
+      "ReportParams": {
+        "properties": {
+          "environment_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Environment Id"
+          },
+          "server_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Server Id"
+          },
+          "engine": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 32
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Engine"
+          },
+          "window_hours": {
+            "type": "integer",
+            "maximum": 744.0,
+            "minimum": 1.0,
+            "title": "Window Hours",
+            "default": 24
+          },
+          "statuses": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Statuses"
+          },
+          "min_severity": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Min Severity"
+          },
+          "scope": {
+            "type": "string",
+            "title": "Scope",
+            "default": "server"
+          }
+        },
+        "type": "object",
+        "title": "ReportParams",
+        "description": "Optional narrowing of a report. Every report still only covers the servers the caller's\nrole allows; parameters can only reduce that set."
       },
       "ResetPassword": {
         "properties": {
@@ -15105,26 +15794,26 @@
         "type": "object",
         "title": "RunSecrets"
       },
-      "ScheduleIn": {
+      "ScheduleSpec": {
         "properties": {
           "frequency": {
             "type": "string",
             "enum": [
-              "manual",
               "daily",
               "weekly",
               "monthly"
             ],
-            "title": "Frequency",
-            "default": "daily"
+            "title": "Frequency"
           },
           "time": {
             "type": "string",
+            "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$",
             "title": "Time",
-            "default": "02:00"
+            "default": "07:00"
           },
           "time_zone": {
             "type": "string",
+            "maxLength": 64,
             "title": "Time Zone",
             "default": "UTC"
           },
@@ -15133,7 +15822,7 @@
             "maximum": 7.0,
             "minimum": 1.0,
             "title": "Weekday",
-            "default": 7
+            "default": 1
           },
           "day_of_month": {
             "type": "integer",
@@ -15144,7 +15833,10 @@
           }
         },
         "type": "object",
-        "title": "ScheduleIn"
+        "required": [
+          "frequency"
+        ],
+        "title": "ScheduleSpec"
       },
       "ServerCreate": {
         "properties": {
@@ -17568,6 +18260,47 @@
         "type": "object",
         "title": "RetentionIn"
       },
+      "app__api__v1__backups__ScheduleIn": {
+        "properties": {
+          "frequency": {
+            "type": "string",
+            "enum": [
+              "manual",
+              "daily",
+              "weekly",
+              "monthly"
+            ],
+            "title": "Frequency",
+            "default": "daily"
+          },
+          "time": {
+            "type": "string",
+            "title": "Time",
+            "default": "02:00"
+          },
+          "time_zone": {
+            "type": "string",
+            "title": "Time Zone",
+            "default": "UTC"
+          },
+          "weekday": {
+            "type": "integer",
+            "maximum": 7.0,
+            "minimum": 1.0,
+            "title": "Weekday",
+            "default": 7
+          },
+          "day_of_month": {
+            "type": "integer",
+            "maximum": 28.0,
+            "minimum": 1.0,
+            "title": "Day Of Month",
+            "default": 1
+          }
+        },
+        "type": "object",
+        "title": "ScheduleIn"
+      },
       "app__api__v1__metrics__RetentionIn": {
         "properties": {
           "days": {
@@ -17582,6 +18315,70 @@
           "days"
         ],
         "title": "RetentionIn"
+      },
+      "app__api__v1__reports__ScheduleIn": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "report_key": {
+            "type": "string",
+            "title": "Report Key"
+          },
+          "format": {
+            "type": "string",
+            "enum": [
+              "csv",
+              "pdf"
+            ],
+            "title": "Format",
+            "default": "pdf"
+          },
+          "params": {
+            "$ref": "#/components/schemas/ReportParams"
+          },
+          "schedule": {
+            "$ref": "#/components/schemas/ScheduleSpec"
+          },
+          "channel_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "maxItems": 10,
+            "minItems": 1,
+            "title": "Channel Ids"
+          },
+          "owner_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Owner Id"
+          },
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "report_key",
+          "schedule",
+          "channel_ids"
+        ],
+        "title": "ScheduleIn"
       }
     }
   }

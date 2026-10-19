@@ -4,7 +4,7 @@ Open a backup in **Backup history → Restore**. The wizard walks through:
 
 1. **Select backup** — and supply its key when it is encrypted (age identity or passphrase; used
    for this run only, never stored).
-2. **Validate manifest** — format, creation date and user, DB Manager and schema versions.
+2. **Validate manifest** — format, creation date and user, DBManager and schema versions.
 3. **Verify integrity** — the stored archive is downloaded, its SHA-256 compared with the catalog
    and every file in it compared with the manifest. A mismatch marks the backup `CORRUPTED` and
    stops the restore.
@@ -13,7 +13,7 @@ Open a backup in **Backup history → Restore**. The wizard walks through:
     * **Migration required** — the backup has an older schema of this product: rows are mapped
       column by column and columns added since then take their defaults. You must confirm this.
     * **Unsupported** — unknown or newer schema, another archive format, or a required column has
-      no value: restore it with the DB Manager version that made it (or newer).
+      no value: restore it with the DBManager version that made it (or newer).
     * Missing master keys (`key_ids` not configured) are reported; you can only continue by
       confirming that those encrypted values will not be decryptable.
 5. **Select components** — any subset of the components in the backup.
@@ -47,7 +47,7 @@ re-checks the stored file's SHA-256 and the engine's own verification before res
   of every file into the instance default data/log directories, `CHECKSUM, RECOVERY`.
 * Oracle: Data Pump import with `REMAP_SCHEMA` into a new schema.
 * Db2 LUW and Db2 for z/OS: **external tool required** — the wizard shows the command to run on the
-  Db2 host; DB Manager does not run it.
+  Db2 host; DBManager does not run it.
 
 ## Safety rules
 

@@ -1,6 +1,6 @@
 # Disaster recovery
 
-Goal: rebuild DB Manager after the loss of its host or database, from backups stored **off the
+Goal: rebuild DBManager after the loss of its host or database, from backups stored **off the
 host**.
 
 ## What you need
@@ -16,7 +16,7 @@ Keep the key and the master key in a vault or password manager, separately from 
 
 ## Procedure
 
-1. **Rebuild the host** and install DB Manager — the same version as the backup or a newer one
+1. **Rebuild the host** and install DBManager — the same version as the backup or a newer one
    (an older version reports the backup as *Unsupported*).
 2. Configure **the same `DBM_MASTER_KEY`** (plus previous keys) before the first start. Start the
    stack; the bootstrap administrator signs in to the empty installation.

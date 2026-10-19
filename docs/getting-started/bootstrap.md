@@ -14,7 +14,7 @@ generated or reset, you are asked to change it immediately (12+ characters, thre
 
 ## Run the setup wizard
 
-Administrators see a banner *DB Manager is not fully set up yet* until the
+Administrators see a banner *DBManager is not fully set up yet* until the
 [Platform setup wizard](../user-guide/onboarding/platform-setup.md) is completed. It is resumable:
 progress is saved after each step.
 

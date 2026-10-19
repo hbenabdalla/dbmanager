@@ -19,14 +19,15 @@ or a page of documentation exists. The task-level evidence is in the
 
 ## Where the product stands
 
-The current version is **0.13.0**. It contains the baseline capability groups below (listed as the
-baseline, not as past releases) and milestones 0.9 – 0.13. **0.12.0** was the first public
+The current version is **0.14.0**. It contains the baseline capability groups below (listed as the
+baseline, not as past releases) and milestones 0.9 – 0.14. **0.12.0** was the first public
 release. The milestone of this release is described in [Current milestone](current-milestone.md).
 
 ### Versioning
 
 Milestone numbers double as version numbers. The product version is the highest milestone with
-completed work: **0.13.0** adds milestone 0.13 (performance intelligence) to **0.12.0**, which
+completed work: **0.14.0** adds milestone 0.14 (reporting, with the branding and engine-identity
+work) to **0.13.0**, which added milestone 0.13 (performance intelligence) to **0.12.0**, which
 contained milestones 0.9 (release foundation), 0.10 (operations & alerting), 0.11 (enterprise
 integration) and 0.12 (asset protection — backup & restore). Versions 0.9, 0.10 and 0.11 were
 development states and were never released.
@@ -160,7 +161,7 @@ capability matrix + changelog.
 
 ## Milestone 0.12 — Asset Protection: Backup & Restore
 
-*Goal: DB Manager protects its own configuration and the databases it manages, and proves every
+*Goal: DBManager protects its own configuration and the databases it manages, and proves every
 backup can be restored.* Details: [Backup & Restore documentation](../backup-restore/index.md).
 
 | Sprint | Scope | Status |
@@ -189,22 +190,28 @@ G-28, G-29.
 | 0.13.4 Query comparison | Period vs period and plan vs plan (saved plans) | DONE |
 | 0.13.5 Recommendation validation | Before/after measurement when a recommendation is resolved; Outcomes page | DONE |
 
-## Milestone 0.14 — Reporting · NEXT
+## Milestone 0.14 — Reporting · DONE (0.14.0)
+
+*Goal: the reports people send around — security findings, query statistics, regressions,
+forecasts — as CSV or PDF, on demand or e-mailed on a schedule, never showing more than the
+recipient's owner may see.* Details: [reports](../user-guide/reports.md),
+[current milestone](current-milestone.md). Closes G-30, G-31, G-32.
 
 | Sprint | Scope | Status |
 |---|---|---|
-| 0.14.1 Report coverage | Security findings and query-statistics report definitions | NEXT |
-| 0.14.2 Scheduled reports | Schedules delivered by SMTP (requires 0.10.2) | NEXT |
-| 0.14.3 PDF export | Server-side PDF rendering of reports | NEXT |
+| 0.14.1 Report coverage | Report definitions *Security findings* (statuses, minimum severity), *Query statistics* (window), *Query regressions*, *Capacity forecast*; parameters (environment, server, engine) for every report; preview; reports grouped by area in the UI | DONE |
+| 0.14.2 Scheduled reports | Daily/weekly/monthly schedules in a time zone, e-mailed as attachments through e-mail channels; runs with the owner's current access (disabled owner or lost access → failed run, nothing sent); attachment size limit; run history per channel; *Send now*; audit; RBAC `reports.schedule`; migration `0012` | DONE |
+| 0.14.3 PDF export | Server-side PDF (ReportLab): logo, scope, generated-for, repeated table header, landscape for wide tables, row cap with the CSV as complete export; CSV formula-injection guard | DONE |
+| 0.14.4 Branding & engine identity | DBManager logo in the product, documentation, README, favicon and app icons; `DatabaseEngineIcon` with DBManager's own engine marks (no vendor logos) everywhere engines are shown; optional operator-supplied licensed logos (`DBM_BRANDING_DIR`); trademark notice | DONE |
 
-## Milestone 0.15 — Cloud-Native Deployment
+## Milestone 0.15 — Cloud-Native Deployment · NEXT
 
 | Sprint | Scope | Status |
 |---|---|---|
-| 0.15.1 Container images | Published, versioned, signed images; SBOM | PLANNED |
-| 0.15.2 Helm chart | Chart with external PostgreSQL/VictoriaMetrics options, migrations hook | PLANNED |
-| 0.15.3 Manifest validation | kubeconform + kind smoke test in CI; OpenShift restricted-v2 check | PLANNED |
-| 0.15.4 HA & TLS reference | Multi-replica API, worker leader failover test, TLS termination and internal TLS guide | PLANNED |
+| 0.15.1 Container images | Published, versioned, signed images; SBOM | NEXT |
+| 0.15.2 Helm chart | Chart with external PostgreSQL/VictoriaMetrics options, migrations hook | NEXT |
+| 0.15.3 Manifest validation | kubeconform + kind smoke test in CI; OpenShift restricted-v2 check | NEXT |
+| 0.15.4 HA & TLS reference | Multi-replica API, worker leader failover test, TLS termination and internal TLS guide | NEXT |
 
 ## Milestone 1.0 — Production Release
 
@@ -234,7 +241,8 @@ G-28, G-29.
 ## Known limitations of the current release
 
 - LDAP/AD were validated against OpenLDAP (no Active Directory server in the test environment); OIDC against Keycloak 26.
-- Reports export CSV only and cannot be scheduled (milestone 0.14).
+- Scheduled reports are delivered by e-mail only (no webhook/file-share delivery); PDF reports list at most 5,000 rows (the CSV has all rows); no Excel format.
+- DBManager shows its own engine marks, not vendor logos; licensed logos can be supplied by the operator (`DBM_BRANDING_DIR`).
 - Kubernetes/OpenShift manifests are provided but not validated in CI; no Helm chart (milestone 0.15).
 - Database backups: real-engine runs passed for all six engines ([validation report](real-engine-validation.md)). No point-in-time recovery; Db2 LUW restores and Oracle RMAN are external.
 - Backup storage targets: local / mounted / NFS directories and S3-compatible buckets; Azure Blob and GCS natively are planned.

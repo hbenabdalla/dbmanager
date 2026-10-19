@@ -1,9 +1,112 @@
 # Changelog
 
-All notable changes to DB Manager are documented here. The format follows
+All notable changes to DBManager are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/). Pre-1.0 minor versions may contain breaking changes;
 they are listed under **Changed** with migration notes.
+
+## [0.14.0] — 2026-10-19
+
+Milestone 0.14 — Reporting — and the DBManager branding and database-engine identity workstream.
+Upgrading from 0.13.0 applies migration `0012` automatically; no configuration change is needed.
+
+### Added
+
+**Reporting** (milestone 0.14)
+- **New reports** (0.14.1): *Security findings* (statuses, minimum severity, affected object,
+  first/last seen, resolution, remediation), *Query statistics* (window 1–744 h, calls, total /
+  mean / max time, share of the server's time, rows, CPU, reads, masked text), *Query regressions*
+  (with plan changes on Oracle and SQL Server) and *Capacity forecast* (per server, database or
+  tablespace).
+- **Report parameters** for every report — environment, server, engine, plus `window_hours`,
+  `statuses`, `min_severity` and `scope` where they apply — and `GET /api/v1/reports/{key}/preview`
+  (first 50 rows and the total). The catalog lists each report's `params`.
+- **Server-side PDF** (0.14.3) for every report (`GET /api/v1/reports/{key}.pdf`), rendered with
+  ReportLab: logo, title, generated-for, time, scope and row count, header repeated on every page,
+  landscape for wide tables, at most 5,000 rows, data-classification footer.
+- **Scheduled reports** (0.14.2): **Reports → Schedules** with a wizard (report and parameters,
+  PDF/CSV, daily / weekly / monthly in a time zone, e-mail channels, owner), *Send now*, run
+  history per channel. API `/api/v1/report-schedules` (CRUD, `/{id}/run`, `/{id}/runs`), permission
+  `reports.schedule` (platform), job `report_scheduler` (every minute on the scheduler leader).
+  Each run uses the owner's current roles; a disabled or deleted owner, or one without the report's
+  permission, fails the run without sending. Audit events `report.delivered`,
+  `report_schedule.create` / `.update` / `.delete`. Setting `DBM_REPORT_MAX_ATTACHMENT_MB`
+  (default 10).
+- Migration `0012`: `report_schedules` (included in platform backups, component *alerting*) and
+  `report_runs` (delivery history, not backed up).
+- Reports page: reports grouped by area as cards, generate dialog with parameters, preview and
+  downloads, *Schedule…* shortcut.
+
+**Branding** (sprint 0.14.4)
+- The DBManager logo on the sign-in page, setup wizard, sidebar (expanded and collapsed), About
+  page, loading and first-run screens, PDF reports, README and documentation site; favicon
+  (`.ico`, 16/32 px), Apple touch icon, 192/512 px app icons and `site.webmanifest`.
+- `DatabaseEngineIcon`: DBManager's own engine marks (PostgreSQL, MySQL, MariaDB, SQL Server,
+  Oracle, Db2 LUW, Db2 for z/OS, unknown fallback) with sizes, accessible names, dark-theme outline,
+  spelling aliases (`sqlserver`, `db2-zos`, …) and detected versions.
+- Optional operator-supplied licensed engine logos: `DBM_BRANDING_DIR`,
+  `GET /api/v1/branding/engine-logos` and `/branding/engine-logos/{engine}` (whitelisted file names,
+  512 KiB limit, no symbolic links, `nosniff`, sandboxing CSP).
+- `docs/development/brand-assets.md` (asset inventory, rules, trademark notice).
+
+### Changed
+- `GET /api/v1/reports` no longer returns `planned_formats`; `formats` is `["csv", "pdf"]` for every
+  report. PDF downloads return `200` instead of `422`.
+- The report scope printed in files and e-mails uses environment and server names instead of ids.
+- Product name *DBManager* everywhere in current text (UI, API title, e-mail subjects, Teams
+  cards, documentation). The default `DBM_MFA_ISSUER` is now `DBManager`; existing authenticator
+  entries keep working.
+- Engine colours were adjusted so that the white monogram has at least 4.5:1 contrast.
+- `scripts/backup.sh`, `restore.sh` and `restore-drill.sh` read `.env` with a parser instead of
+  sourcing it (`scripts/lib/dotenv.sh`).
+
+### Fixed
+- The *Docker Compose* CI workflow failed in the restore drill since 0.11 (exit 127): `.env` was
+  sourced as shell code and the unquoted value `DB Manager` ran `Manager` as a command. The 0.13.0
+  release checklist wrongly listed this workflow as passing; corrected.
+
+### Security
+- CSV exports neutralise values that spreadsheets evaluate as formulas (`=`, `+`, `-`, `@`, tab,
+  carriage return), numbers excepted.
+- Scheduled reports never exceed their owner's current access; choosing another owner requires
+  `users.manage`; only e-mail channels are accepted.
+- Static files under `/assets/` are served with `X-Content-Type-Options: nosniff` (a location-level
+  header had replaced the server-level one); the web manifest has an explicit media type.
+- Licensed-logo files are served only for fixed names with `nosniff` and
+  `Content-Security-Policy: default-src 'none'; sandbox`.
+
+### Database Compatibility
+- No adapter changes. Reports read collected data for every engine; plan-change columns are filled
+  for Oracle and SQL Server only (no plan identity in the other engines' statement statistics).
+- PostgreSQL 16 adapter and backup suites re-run locally for this release.
+
+### User Interface
+- New Reports page and Schedules tab with the shared wizard, history dialog and confirmations.
+- Engine marks in every list, filter and header that shows an engine; the dashboard engine
+  distribution keeps click-to-filter and shows the active filter with its mark.
+- Engines listed with their marks on the sign-in page and the first-run screen; the first-run text
+  no longer says other engines can only be inventoried.
+
+### Branding
+- See *Added → Branding*. Vendor logos are not bundled: their owners' trademark policies require
+  permission. The logo files are derived from `docs/assets/brand/dbmanager-logo-source.png` by
+  cropping and scaling only.
+
+### Documentation
+- Reports guide rewritten (catalog, parameters, PDF, scheduled reports, owner access);
+  `docs/development/brand-assets.md`; release notes 0.14.0; roadmap (0.14 DONE, 0.15 NEXT),
+  current milestone, capability matrix, gap analysis (G-30, G-31, G-32 closed), traceability, roadmap
+  audit (0.13.0 baseline findings and milestone 0.14), configuration reference
+  (`DBM_REPORT_MAX_ATTACHMENT_MB`, `DBM_BRANDING_DIR`, `DBM_MFA_ISSUER`); documentation site logo and
+  favicon; README logo and trademark notice.
+
+### Known Limitations
+- Scheduled reports are e-mailed only; PDF reports list at most 5,000 rows; no Excel format.
+- The full Docker real-engine matrix and the Docker image build run on the owner's Docker host
+  (`scripts/integration-test`); the release-preparation environment cannot pull container images.
+- Unchanged: Active Directory not validated (OpenLDAP only), Oracle TCPS not exercised, TLS
+  certificate verification of target databases not real-validated, Db2 for z/OS external
+  validation, no point-in-time recovery, Kubernetes manifests not validated in CI.
 
 ## [0.13.0] — 2026-10-19
 

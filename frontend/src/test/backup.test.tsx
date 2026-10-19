@@ -41,7 +41,7 @@ function providers(children: React.ReactNode, route = "/") {
 const last = (calls: Call[], method: string, path: string) => [...calls].reverse().find((c) => c.method === method && c.path === path);
 
 const BK = (over: Partial<Backup> = {}): Backup => ({
-  id: "b1b2c3d4-0000-4000-8000-000000000001", kind: "platform", status: "SUCCESS", method: "platform", tool: "DB Manager 0.12.0",
+  id: "b1b2c3d4-0000-4000-8000-000000000001", kind: "platform", status: "SUCCESS", method: "platform", tool: "DBManager 0.12.0",
   server_id: null, server_name: null, engine: null, database: null, policy_id: null, policy_name: null, target_id: "t1", target_name: "Local",
   job_id: "j0", location: "platform/2026/10/b1/archive.tar.age", location_kind: "target", size_bytes: 20480, sha256: "a".repeat(64),
   encrypted: true, encryption: { mode: "recipient", algorithm: "age v1 (X25519, ChaCha20-Poly1305)", recipient: "age1abc…xyz" },
@@ -118,7 +118,7 @@ describe("backup history", () => {
       return undefined;
     });
     providers(<AppRoutes />, "/platform/backups?tab=history");
-    expect(await screen.findByText("DB Manager platform")).toBeInTheDocument();
+    expect(await screen.findByText("DBManager platform")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /^Restore b1b2c3d4/ })).not.toBeInTheDocument(); // no restore.platform
     expect(screen.getByRole("button", { name: /^Verify b1b2c3d4/ })).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: /^Delete b1b2c3d4/ }));

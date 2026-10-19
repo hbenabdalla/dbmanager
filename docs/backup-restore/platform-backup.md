@@ -30,7 +30,7 @@ it requires the VictoriaMetrics time-series backend. Native, server-side Victori
 are not taken by the in-app backup: use VictoriaMetrics' own `vmbackup` (or the snapshot step of
 `scripts/backup.sh`) when you need a full copy of a large telemetry store.
 
-The `inventory` component is DB Manager's **server configuration protection**: it preserves how
+The `inventory` component is DBManager's **server configuration protection**: it preserves how
 each server is registered (connection settings, placement, tags, credential references,
 monitoring settings). It does not back up the servers' operating systems or database files.
 
@@ -51,7 +51,7 @@ See [Encryption](encryption.md).
 
 ## Verification
 
-* At creation: the stored object is read back and its SHA-256 compared. When DB Manager can decrypt
+* At creation: the stored object is read back and its SHA-256 compared. When DBManager can decrypt
   it (unencrypted, passphrase known, or `DBM_BACKUP_IDENTITY_FILE` set), the archive is extracted
   and every file's checksum compared with the manifest (`content` level); otherwise the level is
   `checksum`.

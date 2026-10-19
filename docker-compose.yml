@@ -1,4 +1,4 @@
-# DB Manager — base deployment: frontend, backend, application PostgreSQL and the
+# DBManager — base deployment: frontend, backend, application PostgreSQL and the
 # time-series database for monitoring telemetry (VictoriaMetrics).
 #   scripts\init-env.ps1 (Windows) or ./scripts/init-env.sh   # creates .env with generated secrets
 #   docker compose up --build
@@ -153,7 +153,7 @@ services:
       DBM_NOTIFY_RETRY_BACKOFF_SECONDS: ${DBM_NOTIFY_RETRY_BACKOFF_SECONDS:-60,300,900,3600}
       # multi-factor authentication for local accounts: none | admins | all
       DBM_MFA_REQUIRED_FOR: ${DBM_MFA_REQUIRED_FOR:-none}
-      DBM_MFA_ISSUER: ${DBM_MFA_ISSUER:-DB Manager}
+      DBM_MFA_ISSUER: ${DBM_MFA_ISSUER:-DBManager}
       # HashiCorp Vault credential provider (empty address = not available)
       DBM_VAULT_ADDR: ${DBM_VAULT_ADDR:-}
       DBM_VAULT_NAMESPACE: ${DBM_VAULT_NAMESPACE:-}

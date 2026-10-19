@@ -15,7 +15,7 @@ def _recommend(ctx: EvidenceContext, key: str, utility: str, why: str, rule_risk
             finding=why,
             evidence={"objects": items[:30], "thresholds": ctx.tuning.get("thresholds")},
             recommendation=f"Schedule {utility} for these objects through your z/OS utility jobs "
-            "(DB Manager only recommends; it never runs utilities).",
+            "(DBManager only recommends; it never runs utilities).",
             expected_impact="Keeps access paths and recovery times healthy.",
             risk=rule_risk,
             confidence=0.7,

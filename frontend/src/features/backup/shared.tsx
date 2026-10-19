@@ -76,7 +76,7 @@ function saveText(name: string, text: string) {
   URL.revokeObjectURL(url);
 }
 
-/** POST /backup/keys/generate: the identity is shown once and never stored by DB Manager. */
+/** POST /backup/keys/generate: the identity is shown once and never stored by DBManager. */
 export function KeyPairGenerator({ onRecipient }: { onRecipient: (r: string) => void }) {
   const [key, setKey] = useState<{ recipient: string; identity: string } | null>(null);
   const gen = useMutation({
@@ -88,11 +88,11 @@ export function KeyPairGenerator({ onRecipient }: { onRecipient: (r: string) => 
   return (
     <div className="space-y-2 rounded-md border border-warn/40 bg-warn-soft p-3 text-[13px]" role="alert">
       <div className="flex gap-2 font-medium text-warn"><AlertTriangle className="mt-0.5 size-4 shrink-0" />Save this private key now — it is shown only once.</div>
-      <p className="text-text-2">DB Manager does not keep it. Store it in your password manager or vault, away from the backup storage. Backups encrypted to this recipient cannot be restored without it.</p>
+      <p className="text-text-2">DBManager does not keep it. Store it in your password manager or vault, away from the backup storage. Backups encrypted to this recipient cannot be restored without it.</p>
       <code className="block break-all rounded bg-surface px-2 py-1 font-mono text-[12px]" data-testid="age-identity">{key.identity}</code>
       <div className="flex gap-2">
         <Button size="sm" onClick={() => { void navigator.clipboard?.writeText(key.identity); toast.success("Private key copied"); }}><Copy /> Copy</Button>
-        <Button size="sm" onClick={() => saveText("dbmanager-backup-identity.txt", `# DB Manager backup identity\n# recipient: ${key.recipient}\n${key.identity}\n`)}><Download /> Download</Button>
+        <Button size="sm" onClick={() => saveText("dbmanager-backup-identity.txt", `# DBManager backup identity\n# recipient: ${key.recipient}\n${key.identity}\n`)}><Download /> Download</Button>
         <Button size="sm" variant="ghost" onClick={() => setKey(null)}>I have saved it — hide</Button>
       </div>
     </div>

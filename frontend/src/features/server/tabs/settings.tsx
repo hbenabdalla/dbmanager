@@ -197,7 +197,7 @@ export function SettingsTab({ server }: { server: ServerDetail }) {
           <CardBody className="space-y-3 text-[13px]">
             {serverCan(server, "collectors.manage") && <div className="flex items-center justify-between gap-3"><span className="text-text-2">Run discovery, metrics, query statistics and advisors now.</span><Button size="sm" onClick={() => collect.mutate()}>Collect now</Button></div>}
             {(serverCan(server, "server.modify") || serverCan(server, "collectors.manage")) && (
-              <div className="flex items-center justify-between gap-3"><span className="text-text-2">Check that DB Manager can still reach and sign in to this server.</span><Button size="sm" onClick={() => setTesting(true)}><PlugZap /> Test connection</Button></div>
+              <div className="flex items-center justify-between gap-3"><span className="text-text-2">Check that DBManager can still reach and sign in to this server.</span><Button size="sm" onClick={() => setTesting(true)}><PlugZap /> Test connection</Button></div>
             )}
             {serverCan(server, "security.manage") && (
               <div className="flex items-center justify-between gap-3"><span className="text-text-2">Re-evaluate the security rules now instead of at the next scheduled scan.</span><Button size="sm" disabled={scan.isPending} onClick={() => scan.mutate()}><ShieldCheck /> Scan security now</Button></div>
@@ -207,7 +207,7 @@ export function SettingsTab({ server }: { server: ServerDetail }) {
             )}
             {serverCan(server, "server.delete") && (
               <div className="flex items-center justify-between gap-3 border-t border-border pt-3">
-                <span className="text-text-2">Remove from DB Manager. The database server itself isn't touched.</span>
+                <span className="text-text-2">Remove from DBManager. The database server itself isn't touched.</span>
                 <Button size="sm" variant="danger-outline" onClick={() => setDeleting(true)}><Trash2 /> Remove server</Button>
               </div>
             )}

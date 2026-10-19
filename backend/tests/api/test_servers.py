@@ -101,7 +101,9 @@ async def test_dashboard_and_reports(admin, servers) -> None:  # type: ignore[no
     assert d["top_recommendations"]
     r = await admin.get("/api/v1/reports/fleet-health.csv")
     assert r.status_code == 200 and r.text.startswith("server,engine")
-    assert (await admin.get("/api/v1/reports/fleet-health.pdf")).status_code == 422
+    pdf = await admin.get("/api/v1/reports/fleet-health.pdf")
+    assert pdf.status_code == 200 and pdf.content.startswith(b"%PDF")
+    assert (await admin.get("/api/v1/reports/fleet-health.xlsx")).status_code == 422
 
 
 async def test_recommendation_status_is_audited_not_applied(admin, servers) -> None:  # type: ignore[no-untyped-def]

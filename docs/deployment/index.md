@@ -67,6 +67,8 @@ the host is protected by that proxy.
 | `DBM_RATE_LIMIT_BACKEND`, `DBM_RATE_LIMIT_POOL_SIZE` | `database` / 5 | shared counters in PostgreSQL (or `memory`, per process) |
 | `DBM_TRUSTED_PROXIES` | loopback | CIDRs whose `X-Forwarded-For` is trusted for client IPs |
 | `DBM_CORS_ORIGINS` | — | only needed when the UI is served from another origin |
+| `DBM_REPORT_MAX_ATTACHMENT_MB` | 10 | largest file a [scheduled report](../user-guide/reports.md#scheduled-reports) e-mails |
+| `DBM_BRANDING_DIR` | — | optional licensed engine logos ([brand assets](../development/brand-assets.md#operator-supplied-licensed-logos)) |
 | `DBM_COLLECTOR_CONCURRENCY`, `DBM_COLLECTOR_BATCH_SIZE` | 16 / 32 | concurrent target connections per worker |
 | `DBM_TARGET_CONNECT_TIMEOUT_SECONDS`, `DBM_TARGET_STATEMENT_TIMEOUT_SECONDS` | 8 / 30 | target timeouts |
 | `DBM_CIRCUIT_FAILURE_THRESHOLD` | 3 | failures before collection backs off |

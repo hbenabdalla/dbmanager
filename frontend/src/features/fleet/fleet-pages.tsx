@@ -8,7 +8,7 @@ import { ApiError, get, post } from "@/api/client";
 import { useAllServers, useClusters, useEnvironments } from "@/api/hooks";
 import type { Page, Server } from "@/api/types";
 import { PageHeader } from "@/components/page";
-import { EngineMark, HealthBadge, HealthDot, SimulatedBadge } from "@/components/status";
+import { DatabaseEngineIcon, HealthBadge, HealthDot, SimulatedBadge } from "@/components/status";
 import { useSourceParam } from "@/lib/fleet-source";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -87,7 +87,7 @@ export function ClustersPage() {
                   {list.map((s) => (
                     <li key={s.id}>
                       <Link to={`/servers/${s.id}`} className="flex items-center gap-3 px-4 py-2.5 hover:bg-surface-2">
-                        <EngineMark engine={s.engine} />
+                        <DatabaseEngineIcon engine={s.engine} />
                         <span className="font-medium">{s.name}</span>
                         {s.cluster_role && <Badge tone="outline">{s.cluster_role}</Badge>}
                         <span className="ml-auto text-[12px] text-muted">{s.environment?.name}</span>
@@ -156,7 +156,7 @@ export function FleetDatabasesPage() {
   const data = useQuery({ queryKey: ["fleet-databases", source, q, page], queryFn: () => get<Page<DbRow>>("/databases", { q, source, page, page_size: 50 }), placeholderData: (p) => p });
   const columns: ColumnDef<DbRow, unknown>[] = [
     { header: "Database", accessorKey: "name", cell: ({ row: { original: d } }) => <span className="font-medium">{d.name}</span> },
-    { header: "Server", accessorKey: "server_name", cell: ({ row: { original: d } }) => <span className="flex items-center gap-2"><EngineMark engine={d.engine} />{d.server_name}{d.is_demo && <SimulatedBadge />}</span> },
+    { header: "Server", accessorKey: "server_name", cell: ({ row: { original: d } }) => <span className="flex items-center gap-2"><DatabaseEngineIcon engine={d.engine} />{d.server_name}{d.is_demo && <SimulatedBadge />}</span> },
     { header: "Environment", accessorKey: "environment" },
     { header: "Owner", accessorKey: "owner" },
     { header: "Size", accessorKey: "size_bytes", meta: { align: "right" }, cell: ({ getValue }) => bytes(getValue() as number) },

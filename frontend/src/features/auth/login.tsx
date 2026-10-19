@@ -2,6 +2,9 @@ import { useQuery } from "@tanstack/react-query";
 import { KeyRound } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
+import { DatabaseEngineIcon } from "@/components/engine-icon";
+import { ENGINES } from "@/lib/engines";
+import { BrandLogo } from "@/components/brand";
 import { ApiError, get } from "@/api/client";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/input";
@@ -81,9 +84,8 @@ export function LoginPage() {
     <div className="grid min-h-screen lg:grid-cols-[minmax(420px,1fr)_1.1fr]">
       <div className="flex items-center justify-center bg-bg px-6 py-12">
         <div className="w-full max-w-[360px]">
-          <div className="mb-8 flex items-center gap-2.5">
-            <img src="/favicon.svg" alt="" className="size-8" />
-            <span className="text-[15px] font-semibold">DB Manager</span>
+          <div className="mb-8">
+            <BrandLogo width={168} />
           </div>
           {mfaToken ? (
             <>
@@ -166,6 +168,9 @@ function LoginArt() {
           PostgreSQL, Oracle, SQL Server, Db2 and MySQL fleets with health, query performance, access reviews and
           evidence-based tuning advice. Nothing changes on a server until someone with the right role confirms it.
         </p>
+        <ul className="mt-6 flex flex-wrap gap-x-4 gap-y-2 text-[12.5px] text-nav-text">
+          {Object.keys(ENGINES).map((e) => <li key={e}><DatabaseEngineIcon engine={e} size="sm" withLabel /></li>)}
+        </ul>
       </div>
     </div>
   );

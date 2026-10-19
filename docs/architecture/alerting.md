@@ -97,7 +97,7 @@ is reached (`failed`). Other 4xx answers fail at once. Test sends (`POST
 ## Senders and presets
 
 * **Webhook**: JSON `POST`, optional `X-DBM-Signature: sha256=<HMAC>` over the raw body, SSRF
-  guard on the resolved address. The body depends on the channel `preset`: `generic` (DB Manager
+  guard on the resolved address. The body depends on the channel `preset`: `generic` (DBManager
   JSON), `slack` (incoming-webhook message with blocks) or `teams` (a message with an Adaptive
   Card 1.4 attachment, as accepted by Teams workflow webhooks).
 * **Email**: SMTP with `security` `starttls` (default, port 587), `tls` (implicit TLS, SMTPS,

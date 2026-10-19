@@ -24,7 +24,7 @@ class Settings(BaseSettings):
     process_role: Literal["all", "api", "worker"] = "all"
     log_level: str = "INFO"
     log_json: bool = True
-    app_name: str = "DB Manager"
+    app_name: str = "DBManager"
     public_base_url: str = "http://localhost:8080"
 
     # --- application database -----------------------------------------------------------
@@ -55,7 +55,7 @@ class Settings(BaseSettings):
     #: administrative permission) | all. Users who must use MFA and have not enrolled can only
     #: reach the enrollment endpoints until they do.
     mfa_required_for: Literal["none", "admins", "all"] = "none"
-    mfa_issuer: str = "DB Manager"
+    mfa_issuer: str = "DBManager"
     login_max_failures: int = 5
     login_lockout_minutes: int = 15
     # --- rate limiting (app.services.ratelimit) -------------------------------------------
@@ -186,13 +186,18 @@ class Settings(BaseSettings):
     #: CA bundle to verify the SMTP server certificate (internal CAs); empty = system trust store
     smtp_ca_file: str = ""
     smtp_timeout_seconds: float = 15.0
+    #: largest report file e-mailed by a schedule (larger files fail the run with a clear reason)
+    report_max_attachment_mb: float = 10.0
+    #: directory with operator-supplied, licensed engine logos (<engine>.svg|png); empty = the
+    #: original DBManager engine marks only (see docs/development/brand-assets.md)
+    branding_dir: str = ""
     #: delivery attempts per notification (first try + retries with backoff), and the backoff steps
     notify_max_attempts: int = Field(default=5, ge=1, le=20)
     notify_retry_backoff_seconds: CsvList = Field(default_factory=lambda: ["60", "300", "900", "3600"])
 
     # --- backup & restore (app.backup) -------------------------------------------------------
     #: file-system storage targets (local disk, a mounted volume, an NFS mount) must live under one
-    #: of these directories; DB Manager never writes or deletes outside them
+    #: of these directories; DBManager never writes or deletes outside them
     backup_allowed_roots: CsvList = Field(default_factory=lambda: ["/var/lib/dbmanager/backups"])
     #: scratch space for building and verifying archives (default: the system temp directory)
     backup_work_dir: str = ""
@@ -244,7 +249,7 @@ SETUP_HINT = (
     "Fill .env with generated secrets: on Windows run "
     "'powershell -ExecutionPolicy Bypass -File scripts\\init-env.ps1', elsewhere './scripts/init-env.sh'. "
     "If the database volume was created with the placeholder password, recreate it first with "
-    "'docker compose down -v' (this deletes all DB Manager data)."
+    "'docker compose down -v' (this deletes all DBManager data)."
 )
 
 

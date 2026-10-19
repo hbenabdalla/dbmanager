@@ -108,7 +108,7 @@ services:
     <<: *limits
     # Oracle Database 21c Enterprise Edition (CDB ORCLCDB, PDB ORCLPDB1). Requires
     # `docker login container-registry.oracle.com` and accepting the license on the registry.
-    # DB Manager's licensing policy is unchanged: Diagnostics/Tuning Pack features stay off.
+    # DBManager's licensing policy is unchanged: Diagnostics/Tuning Pack features stay off.
     image: container-registry.oracle.com/database/enterprise:21.3.0.0
     environment:
       ORACLE_SID: ORCLCDB
@@ -181,7 +181,7 @@ services:
     image: osixia/openldap:1.5.0
     command: ["--copy-service"]
     environment:
-      LDAP_ORGANISATION: "DB Manager IT"
+      LDAP_ORGANISATION: "DBManager IT"
       LDAP_DOMAIN: example.org
       LDAP_ADMIN_PASSWORD: "${IT_LDAP_ADMIN_PASSWORD:-}"
       LDAP_TLS_VERIFY_CLIENT: never

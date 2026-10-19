@@ -1,6 +1,6 @@
 # Generate a demo environment
 
-To explore DB Manager without connecting real databases, a Platform Administrator can generate a
+To explore DBManager without connecting real databases, a Platform Administrator can generate a
 **simulated fleet** under **Platform → Simulation** (permissions `simulation.generate`; removal needs `simulation.delete`):
 
 1. choose a profile (`small`, `standard`, `large`) and optionally a seed (same seed ⇒ same estate);

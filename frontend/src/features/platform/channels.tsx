@@ -15,6 +15,7 @@ import { Field, Input, Select } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { EmptyState } from "@/components/ui/states";
 import { dateTime, relTime } from "@/lib/format";
+import { DatabaseEngineIcon } from "@/components/engine-icon";
 
 export type Preset = "generic" | "slack" | "teams";
 export type SmtpSecurity = "starttls" | "tls" | "none";
@@ -26,7 +27,7 @@ export interface NotificationChannel {
   has_signing_secret: boolean; has_smtp_password: boolean; created_by: string | null; created_at: string;
 }
 interface Delivery { id: number; alert_id: string | null; event: string; status: string; attempts: number; response_code: number | null; error: string | null; created_at: string; next_attempt_at?: string | null }
-const PRESET_LABEL: Record<Preset, string> = { generic: "DB Manager JSON", slack: "Slack", teams: "Microsoft Teams" };
+const PRESET_LABEL: Record<Preset, string> = { generic: "DBManager JSON", slack: "Slack", teams: "Microsoft Teams" };
 interface TestResult { status: string; response_code: number | null; error: string | null; attempts: number }
 
 const SEVERITIES = ["info", "low", "medium", "high", "critical"];
@@ -98,7 +99,7 @@ function ChannelDialog({ channel, onClose }: { channel: NotificationChannel | nu
           </Select>
         </Field>
         {f.kind === "webhook" ? <>
-          <Field label="Payload format" hint="Slack incoming webhook or a Teams workflow (Adaptive Card); the generic format is DB Manager JSON">
+          <Field label="Payload format" hint="Slack incoming webhook or a Teams workflow (Adaptive Card); the generic format is DBManager JSON">
             <Select value={f.preset} onChange={(e) => set("preset", e.target.value as Preset)}>
               {(Object.keys(PRESET_LABEL) as Preset[]).map((p) => <option key={p} value={p}>{PRESET_LABEL[p]}</option>)}
             </Select>
@@ -143,7 +144,7 @@ function ChannelDialog({ channel, onClose }: { channel: NotificationChannel | nu
             <div>
               <div className="mb-1 text-[12.5px] font-medium">Only engines</div>
               <div className="flex flex-wrap gap-x-3 gap-y-1 text-[13px]">
-                {(engines.data ?? []).map((e) => <label key={e.engine} className="flex items-center gap-1.5"><input type="checkbox" checked={f.engines.includes(e.engine)} onChange={(ev) => set("engines", toggle(f.engines, e.engine, ev.target.checked))} />{e.display_name}</label>)}
+                {(engines.data ?? []).map((e) => <label key={e.engine} className="flex items-center gap-1.5"><input type="checkbox" checked={f.engines.includes(e.engine)} onChange={(ev) => set("engines", toggle(f.engines, e.engine, ev.target.checked))} /><DatabaseEngineIcon engine={e.engine} size="xs" decorative />{e.display_name}</label>)}
               </div>
             </div>
             <Field label="Only servers with tags (comma separated)" hint="key or key=value; empty = any server" className="sm:col-span-2"><Input value={f.tags} onChange={(e) => set("tags", e.target.value)} placeholder="team=payments, tier" /></Field>

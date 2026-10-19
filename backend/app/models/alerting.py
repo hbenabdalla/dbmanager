@@ -132,7 +132,7 @@ class NotificationChannel(UUIDPk, Timestamps, Base):
     min_severity: Mapped[str] = mapped_column(String(16), default="info", nullable=False)
     #: alerts on simulated servers are only sent when explicitly enabled
     send_for_simulated: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-    #: webhook payload format: generic (DB Manager JSON) | slack | teams
+    #: webhook payload format: generic (DBManager JSON) | slack | teams
     preset: Mapped[str] = mapped_column(String(16), default="generic", server_default="generic", nullable=False)
     #: routing: {"subscribe_all": bool, "environment_ids": [...], "tags": ["k" | "k=v"], "engines": [...]}
     #: — filters narrow what the channel receives; subscribe_all also delivers alerts of rules that

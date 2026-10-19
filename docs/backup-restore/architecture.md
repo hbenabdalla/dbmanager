@@ -53,7 +53,7 @@ Every backup gets its own folder in the target:
 ```
 
 `manifest.json` lets a fresh installation find and register backups without the original
-database ([disaster recovery](disaster-recovery.md)). DB Manager only deletes inside a backup's own
+database ([disaster recovery](disaster-recovery.md)). DBManager only deletes inside a backup's own
 folder.
 
 ## Scheduler

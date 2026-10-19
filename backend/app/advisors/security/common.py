@@ -25,7 +25,7 @@ def platform_tls(ctx: EvidenceContext) -> list[RuleFinding]:
         return []
     return [
         RuleFinding(
-            title="DB Manager's connection to this server is not guaranteed to be encrypted",
+            title="DBManager's connection to this server is not guaranteed to be encrypted",
             finding=f"The server is registered with TLS mode '{ctx.tls_mode}', which permits unencrypted connections.",
             evidence={"tls_mode": ctx.tls_mode},
             recommendation="Set TLS mode to verify-full (or at least require) and provide the CA certificate.",

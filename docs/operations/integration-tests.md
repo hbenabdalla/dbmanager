@@ -27,8 +27,8 @@ scripts/integration-test.sh [postgresql mysql mariadb mssql oracle db2 timeserie
 | Keycloak 26 (`identity`) | `quay.io/keycloak/keycloak:26.0.7` (Quay) | Apache-2.0 | < 1 min |
 | HashiCorp Vault 1.17 dev server (`vault`) | `hashicorp/vault:1.17.6` (Docker Hub) | Business Source License 1.1 | seconds |
 
-DB Manager never downloads or redistributes Oracle software itself: the script pulls the image on
-your machine, under your acceptance. Enterprise Edition does not change DB Manager's licensing
+DBManager never downloads or redistributes Oracle software itself: the script pulls the image on
+your machine, under your acceptance. Enterprise Edition does not change DBManager's licensing
 policy — Diagnostics/Tuning Pack features stay off, and the Oracle suite proves from `V$SQL` that
 the monitoring user never queried AWR, ASH, ADDM, SQL Monitor or the SQL Tuning Advisor.
 

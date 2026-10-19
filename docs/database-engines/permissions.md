@@ -5,7 +5,7 @@ One page per engine with three least-privilege accounts:
 | Account | Used for | Stored as |
 |---|---|---|
 | **Inventory** | metadata only: databases, schemas, objects, users and grants | monitoring credential (minimal) |
-| **Monitoring** | everything DB Manager collects in the background: sessions, locks, metrics, query statistics, security and tuning evidence | monitoring credential |
+| **Monitoring** | everything DBManager collects in the background: sessions, locks, metrics, query statistics, security and tuning evidence | monitoring credential |
 | **DBA management** | guarded administration actions and session termination, only on servers registered as *Administration enabled* | administration credential |
 
 An optional **read-only credential** can be added per server for the SQL workspace.

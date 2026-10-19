@@ -45,7 +45,7 @@ GRANT SELECT ON mysql.roles_mapping TO 'dbm_monitor'@'10.0.%';
 ```
 
 Query statistics need `performance_schema = ON` in the server configuration (restart). Without it
-DB Manager reports query statistics as *Configuration required* and keeps sessions, locks and
+DBManager reports query statistics as *Configuration required* and keeps sessions, locks and
 metrics working. Unused-index detection uses `information_schema.INDEX_STATISTICS` when
 `userstat = 1`.
 
@@ -60,7 +60,7 @@ GRANT CONNECTION ADMIN ON *.* TO 'dbm_admin'@'10.0.%';       -- KILL other sessi
 GRANT SELECT, INSERT, UPDATE, DELETE ON appdb.* TO 'dbm_admin'@'10.0.%' WITH GRANT OPTION;
 ```
 
-MariaDB roles have no host part; DB Manager generates `CREATE ROLE name` accordingly.
+MariaDB roles have no host part; DBManager generates `CREATE ROLE name` accordingly.
 
 See [Least-privilege accounts](permissions.md) for the rules that apply to every engine.
 
@@ -113,7 +113,7 @@ privileged accounts) also apply.
 | `MYSQL-PERF-009` | Query cache enabled |
 
 Plus the common performance rules `GEN-PERF-001` … `GEN-PERF-010`. Recommendations are advice with
-evidence; DB Manager never executes them.
+evidence; DBManager never executes them.
 
 ## Troubleshooting
 

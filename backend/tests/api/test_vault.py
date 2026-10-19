@@ -1,5 +1,5 @@
 """Vault credential provider (sprint 0.11.5) against a local HTTP server implementing the parts
-of the Vault API DB Manager uses (KV v2 read, AppRole login, sys/health, namespaces), and end to
+of the Vault API DBManager uses (KV v2 read, AppRole login, sys/health, namespaces), and end to
 end: a registered PostgreSQL whose password lives only in "Vault" passes Test connection."""
 
 from __future__ import annotations

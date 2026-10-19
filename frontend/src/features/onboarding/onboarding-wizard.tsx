@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { ApiError, post } from "@/api/client";
 import { useApplications, useClusters, useEngines, useEnvironments, useSites } from "@/api/hooks";
 import type { CapabilityStatus, EngineInfo, Server, TestConnectionResult } from "@/api/types";
-import { EngineMark } from "@/components/status";
+import { DatabaseEngineIcon } from "@/components/status";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
@@ -23,10 +23,10 @@ import { postNdjson } from "./stream";
 
 export const ONBOARDING_STEPS: WizardStep[] = [
   { id: "engine", title: "Engine", description: "Which database engine is this server running?" },
-  { id: "connection", title: "Connection", description: "Where DB Manager reaches the server." },
+  { id: "connection", title: "Connection", description: "Where DBManager reaches the server." },
   { id: "tls", title: "TLS", description: "How the connection is encrypted and verified." },
   { id: "credentials", title: "Credentials", description: "A least-privilege monitoring account. Passwords are encrypted and never shown again." },
-  { id: "management", title: "Management mode", description: "What DB Manager is allowed to offer on this server." },
+  { id: "management", title: "Management mode", description: "What DBManager is allowed to offer on this server." },
   { id: "placement", title: "Placement", description: "Where the server belongs in your estate." },
   { id: "test", title: "Test connection", description: "A live, staged test with the details above." },
   { id: "review", title: "Review", description: "Check everything before the server is registered." },
@@ -238,7 +238,7 @@ export function OnboardingWizard({ open, onOpenChange, defaultEnvironmentId }: {
 
   const envName = envs.data?.find((e) => e.id === f.environment_id)?.name;
   const review: [string, React.ReactNode][] = [
-    ["Engine", engine ? <EngineMark engine={engine.engine} withLabel /> : "—"],
+    ["Engine", engine ? <DatabaseEngineIcon engine={engine.engine} withLabel /> : "—"],
     ["Name", f.name], ["Address", `${f.host}:${f.port}${f.default_database ? ` / ${f.default_database}` : ""}`],
     ["TLS", f.tls_mode + (f.tls_ca_pem ? " (private CA)" : "")],
     ["Monitoring account", f.mon_user ? <span>{f.mon_user} <span className="text-muted">{f.mon_provider !== "local" ? `(${PROVIDER_LABEL[f.mon_provider]}: ${f.mon_ref.trim()})` : f.mon_password ? "(password set, encrypted on save)" : "(no password)"}</span></span> : "none"],
@@ -259,7 +259,7 @@ export function OnboardingWizard({ open, onOpenChange, defaultEnvironmentId }: {
                 <button key={e.engine} type="button" role="radio" aria-checked={f.engine === e.engine} onClick={() => pickEngine(e)}
                   className={cn("flex items-center justify-between gap-2 rounded-md border px-3 py-2.5 text-left text-[13px] transition-colors duration-150 motion-reduce:transition-none",
                     f.engine === e.engine ? "border-accent bg-accent-soft/50 ring-1 ring-accent" : "border-border hover:bg-surface-2")}>
-                  <span className="flex items-center gap-2"><EngineMark engine={e.engine} /> <span className="font-medium">{e.display_name}</span></span>
+                  <span className="flex items-center gap-2"><DatabaseEngineIcon engine={e.engine} size="md" decorative /> <span className="font-medium">{e.display_name}</span></span>
                   <span className="flex gap-1">
                     {e.support_level === "partial" && <Badge tone="info">partial</Badge>}
                     {!e.implemented && <Badge>inventory only</Badge>}
@@ -335,7 +335,7 @@ export function OnboardingWizard({ open, onOpenChange, defaultEnvironmentId }: {
           <div className="space-y-3">
             <div role="radiogroup" aria-label="Management mode" className="grid gap-2">
               <ChoiceCard name="mode" selected={f.management_mode === "monitoring"} onSelect={() => set("management_mode", "monitoring")} icon={<Eye />} title="Monitoring Only" badge={<Badge tone="ok">default</Badge>}>
-                DB Manager reads metrics, sessions, queries and configuration. It never offers changes on this server, whatever the credentials would allow. Recommended for most servers.
+                DBManager reads metrics, sessions, queries and configuration. It never offers changes on this server, whatever the credentials would allow. Recommended for most servers.
               </ChoiceCard>
               <ChoiceCard name="mode" selected={f.management_mode === "administration"} onSelect={() => set("management_mode", "administration")} icon={<Wrench />} title="Administration Enabled">
                 Guarded changes (create users, grant privileges, create indexes, cancel sessions) become available. Every change is previewed, needs confirmation and permission, and is audited. Uses a separate administration account.
@@ -343,7 +343,7 @@ export function OnboardingWizard({ open, onOpenChange, defaultEnvironmentId }: {
             </div>
             {f.management_mode === "administration" && (
               <div className="grid gap-3 rounded-md border border-warn/40 bg-warn-soft/40 p-3 sm:grid-cols-2">
-                <p className="flex items-start gap-2 text-[12.5px] text-warn sm:col-span-2"><ShieldAlert className="mt-0.5 size-4 shrink-0" aria-hidden /> Use a dedicated account with only the privileges you want DB Manager to exercise. Destructive actions are never run automatically.</p>
+                <p className="flex items-start gap-2 text-[12.5px] text-warn sm:col-span-2"><ShieldAlert className="mt-0.5 size-4 shrink-0" aria-hidden /> Use a dedicated account with only the privileges you want DBManager to exercise. Destructive actions are never run automatically.</p>
                 <Field label="Administration user" error={errors.admin_user}><Input autoComplete="off" value={f.admin_user} onChange={(e) => set("admin_user", e.target.value)} /></Field>
                 <Field label="Administration password" hint="Encrypted; never displayed again."><Input type="password" autoComplete="new-password" value={f.admin_password} onChange={(e) => set("admin_password", e.target.value)} /></Field>
               </div>
@@ -377,7 +377,7 @@ export function OnboardingWizard({ open, onOpenChange, defaultEnvironmentId }: {
               </div>
             )}
             {result?.ok && result.capabilities && <CapabilityGroups caps={result.capabilities} />}
-            {!stages.length && f.mon_provider === "local" && <p className="text-[12.5px] text-muted">The test is optional, but it shows exactly what DB Manager can see with this account before you register the server.</p>}
+            {!stages.length && f.mon_provider === "local" && <p className="text-[12.5px] text-muted">The test is optional, but it shows exactly what DBManager can see with this account before you register the server.</p>}
           </div>
         );
       case "review":

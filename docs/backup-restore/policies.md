@@ -19,7 +19,7 @@ expressions are not offered. A policy never runs twice concurrently.
 
 ## Notifications
 
-When a policy has notification channels, DB Manager sends:
+When a policy has notification channels, DBManager sends:
 
 | Event | When |
 |---|---|

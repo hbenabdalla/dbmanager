@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { get } from "@/api/client";
 import type { LicensableFeature } from "@/api/types";
 import { PageHeader } from "@/components/page";
-import { EngineMark } from "@/components/status";
+import { DatabaseEngineIcon } from "@/components/status";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { ErrorState, SkeletonRows } from "@/components/ui/states";
@@ -61,7 +61,7 @@ export function EngineSupportPage() {
                     {q.data.engines.map((e) => (
                       <th key={e.engine} className="px-2 py-2 align-bottom font-medium">
                         <div className="flex flex-col gap-1">
-                          <EngineMark engine={e.engine} withLabel />
+                          <DatabaseEngineIcon engine={e.engine} withLabel />
                           <Tooltip content={e.support_note || e.display_name}>
                             <span><Badge tone={SUPPORT_LABEL[e.support_level]?.tone ?? "neutral"}>{SUPPORT_LABEL[e.support_level]?.label ?? e.support_level}</Badge></span>
                           </Tooltip>
@@ -108,7 +108,7 @@ export function EngineSupportPage() {
           <div className="grid gap-4 lg:grid-cols-2">
             {q.data.engines.filter((e) => e.support_note || (e.licensable_features ?? []).length).map((e) => (
               <Card key={e.engine}>
-                <CardHeader title={<EngineMark engine={e.engine} withLabel />} description={e.driver} />
+                <CardHeader title={<DatabaseEngineIcon engine={e.engine} withLabel />} description={e.driver} />
                 <CardBody className="space-y-2 text-[12.5px] text-text-2">
                   <p>{e.support_note}</p>
                   {(e.licensable_features ?? []).map((lf) => (
@@ -154,7 +154,7 @@ export function DatabaseDriversPage() {
               <tbody>
                 {q.data.map((d) => (
                   <tr key={d.key} className="border-b border-border align-top last:border-0">
-                    <td className="px-3 py-2"><div className="flex flex-col gap-1">{d.engines.map((e) => <EngineMark key={e} engine={e} withLabel />)}</div></td>
+                    <td className="px-3 py-2"><div className="flex flex-col gap-1">{d.engines.map((e) => <DatabaseEngineIcon key={e} engine={e} withLabel />)}</div></td>
                     <td className="px-3 py-2"><div className="font-medium">{d.driver}</div><div className="text-[12px] text-muted">{d.description} ({d.license})</div></td>
                     <td className="tabular px-3 py-2 font-mono text-[12px]">{d.version ?? "—"}</td>
                     <td className="px-3 py-2">

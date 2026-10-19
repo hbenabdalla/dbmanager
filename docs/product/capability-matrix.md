@@ -1,6 +1,6 @@
 # Capability matrix
 
-Evidence-based inventory of what DB Manager does **today**, produced by inspecting the source tree
+Evidence-based inventory of what DBManager does **today**, produced by inspecting the source tree
 (backend `app/`, frontend `src/`, migrations, deployment files, tests). Engine-level detail is in
 the [engine capability matrix](engine-matrix.md); what is missing and why is in the
 [gap analysis](gap-analysis.md).
@@ -162,11 +162,11 @@ documented skip), 54 frontend tests.
 | Performance report | COMPLETE | `performance` report |
 | Capacity report | COMPLETE | `capacity` report (size + 7-day growth) |
 | Recommendations report | COMPLETE | `recommendations` report |
-| Security report | PARTIAL | Security findings exportable via the findings list; no dedicated report definition |
-| Query report | PARTIAL | Workspace result export (`POST /workspace/export.csv`); no query-statistics report |
+| Security report | COMPLETE | `security-findings` (statuses, minimum severity, lifecycle dates, remediation) and `security-posture` reports; `tests/api/test_reports.py` |
+| Query report | COMPLETE | `query-statistics` (window, share per server, masked text), `slow-queries`, `query-regressions`; `tests/api/test_reports.py` |
 | Audit report / export | COMPLETE | `GET /audit/export.csv` (`audit.export` permission) |
-| Export formats | PARTIAL | CSV only; the UI offers only the formats the API serves; PDF planned (milestone 0.14) |
-| Scheduling | MISSING | No scheduled report delivery |
+| Export formats | COMPLETE | CSV (formula-injection guard) and server-side PDF (`backend/app/services/report_pdf.py`, ReportLab) for every report; preview of 50 rows; `tests/unit/test_report_pdf.py`. No Excel format |
+| Scheduling | COMPLETE | `backend/app/services/report_schedules.py`, job `report_scheduler`, migration `0012`, Reports → Schedules wizard; delivered to a real SMTP server in `tests/api/test_reports.py`; e-mail only |
 
 ## Topology
 

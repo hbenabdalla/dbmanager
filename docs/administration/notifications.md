@@ -20,8 +20,8 @@ the rule.
 
 ## Webhook
 
-The **payload format** (`preset`) is *DB Manager JSON* (`generic`, below), *Slack* (`slack`, an
-incoming-webhook message with blocks and an *Open in DB Manager* button) or *Microsoft Teams*
+The **payload format** (`preset`) is *DBManager JSON* (`generic`, below), *Slack* (`slack`, an
+incoming-webhook message with blocks and an *Open in DBManager* button) or *Microsoft Teams*
 (`teams`, a message with an Adaptive Card, for a Teams workflow "Post to a channel when a webhook
 request is received"). The generic format is a JSON `POST` to the configured URL:
 
@@ -64,9 +64,12 @@ Recipients are set per channel. SMTP settings come from the environment and can 
 | `DBM_SMTP_SECURITY` | `starttls` (submission, port 587), `tls` (implicit TLS / SMTPS, port 465) or `none` (plain; internal relays only). Empty = derived from the deprecated `DBM_SMTP_STARTTLS` (`true` → `starttls`, `false` → `none`) |
 | `DBM_SMTP_CA_FILE` | empty = system trust store; path of a CA bundle for an internal CA |
 | `DBM_SMTP_TIMEOUT_SECONDS` | `15` |
+| `DBM_REPORT_MAX_ATTACHMENT_MB` | `10` — largest report file a [scheduled report](../user-guide/reports.md#scheduled-reports) attaches |
 
 The server certificate is always verified (hostname and chain) for `starttls` and `tls`. The
-subject is `[DB Manager] SEVERITY: title` (`(still firing)` is appended to re-notifications).
+subject is `[DBManager] SEVERITY: title` (`(still firing)` is appended to re-notifications).
+E-mail channels also deliver [scheduled reports](../user-guide/reports.md#scheduled-reports) as
+attachments, with the subject `[DBManager] report title — schedule name`.
 
 ## Retries
 

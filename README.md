@@ -1,4 +1,8 @@
-# DB Manager
+<p align="center">
+  <img src="docs/assets/brand/dbmanager-logo.png" alt="DBManager" width="320">
+</p>
+
+# DBManager
 
 **One management plane for heterogeneous relational database fleets** — inventory, monitoring,
 query performance, execution plans, security posture, evidence-based recommendations and guarded
@@ -8,19 +12,19 @@ administration for PostgreSQL, MySQL, MariaDB, Microsoft SQL Server, Oracle Data
 [![Frontend](https://github.com/hbenabdalla/dbmanager/actions/workflows/ci-frontend.yml/badge.svg)](https://github.com/hbenabdalla/dbmanager/actions/workflows/ci-frontend.yml)
 [![Docs](https://github.com/hbenabdalla/dbmanager/actions/workflows/ci-docs.yml/badge.svg)](https://github.com/hbenabdalla/dbmanager/actions/workflows/ci-docs.yml)
 [![Documentation](https://readthedocs.org/projects/db-manager/badge/?version=latest)](https://db-manager.readthedocs.io/en/latest/)
-[![Version](https://img.shields.io/badge/version-0.13.0-blue)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.14.0-blue)](CHANGELOG.md)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 
 **Documentation: [db-manager.readthedocs.io/en/latest](https://db-manager.readthedocs.io/en/latest/)**
 
-> **Version 0.13.0 — performance intelligence** (pre-1.0; 0.12.0 was the first public release). Contents in the [changelog](CHANGELOG.md);
+> **Version 0.14.0 — reporting** (pre-1.0; 0.12.0 was the first public release). Contents in the [changelog](CHANGELOG.md);
 > what remains before 1.0 is in the [roadmap](ROADMAP.md).
 
 ![Fleet dashboard](docs/assets/screenshots/dashboard-light.png)
 
 ## Why
 
-DBAs who run several engines usually juggle one tool per vendor. DB Manager gives them one place
+DBAs who run several engines usually juggle one tool per vendor. DBManager gives them one place
 to see every server, compare what is slow, review who can do what, and make safe changes — while
 staying honest about what each engine, version, privilege set and license actually allows. A
 capability the server cannot provide is shown as *requires privilege / configuration / license*,
@@ -36,6 +40,7 @@ never filled with made-up data.
 | Capacity | Storage forecasts per server, database and tablespace with a robust trend, 90 % band and days to full |
 | Alerting | Threshold, health and collector rules (latest value, window aggregates or deviation from the server's own baseline (z-score), scope by server, environment or tag), alert inbox with acknowledge / comment / resolve and re-notification, recurring maintenance windows, webhook (generic, Slack, Teams) and e-mail notifications with retries and routing |
 | Backup & restore | Encrypted (age) platform backups and managed-database backups (PostgreSQL, MySQL, MariaDB, SQL Server, Oracle Data Pump, Db2 LUW) to local, NFS or S3-compatible storage; policies, retention, verification, restore wizard with impact analysis, disaster-recovery scan |
+| Reports | Fleet, capacity and forecast, performance, query statistics and regressions, security findings, privileged users, audit — previewed, downloaded as CSV or PDF, or e-mailed on a schedule with the owner's access |
 | Recommendations | Performance and configuration advice from common and engine-specific rules, each with its evidence and risk, and a before/after outcome once resolved |
 | Security | Privileged accounts, excessive grants, authentication and encryption checks, security posture score per server and fleet |
 | Administration | Users, roles, grants, schemas and indexes through previewed, confirmed and audited actions — off by default (*Monitoring Only*) |
@@ -150,10 +155,15 @@ public issue.
 
 ## License
 
-DB Manager is licensed under the [Apache License, Version 2.0](LICENSE) (SPDX: `Apache-2.0`).
+DBManager is licensed under the [Apache License, Version 2.0](LICENSE) (SPDX: `Apache-2.0`). The
+DBManager logo is part of the project ([brand assets](docs/development/brand-assets.md)).
 Contributions are accepted under the same license (see [CONTRIBUTING.md](CONTRIBUTING.md)).
 
-The license covers DB Manager's own code only. Database drivers and the vendor database images
+The license covers DBManager's own code only. Database drivers and the vendor database images
 used for integration testing (SQL Server Developer, Oracle Database, IBM Db2 Community Edition)
-are under their vendors' terms, and nothing in DB Manager grants rights to Oracle Diagnostics or
+are under their vendors' terms, and nothing in DBManager grants rights to Oracle Diagnostics or
 Tuning Pack features or other separately licensed database options.
+
+PostgreSQL, MySQL, MariaDB, SQL Server, Oracle and Db2 are trademarks of their respective owners.
+DBManager is not affiliated with or endorsed by them; the engine marks in the product are
+DBManager's own designs, not the vendors' logos ([brand assets](docs/development/brand-assets.md#trademark-notice)).

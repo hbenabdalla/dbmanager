@@ -235,7 +235,7 @@ async def test_channel_test_endpoint_and_simulated_policy(admin, monkeypatch) ->
 async def test_about_and_version(admin, make_client) -> None:  # type: ignore[no-untyped-def]
     anon = await make_client()
     v = (await anon.get("/api/v1/version")).json()
-    assert v == {"product": "DB Manager", "version": v["version"]} and v["version"]
+    assert v == {"product": "DBManager", "version": v["version"]} and v["version"]
     assert (await anon.get("/api/v1/about")).status_code == 401
     a = (await admin.get("/api/v1/about")).json()
     from app import __version__
@@ -247,7 +247,7 @@ async def test_about_and_version(admin, make_client) -> None:  # type: ignore[no
         a["links"]["roadmap"].endswith("/ROADMAP.md")
         and a["links"]["documentation"] == "https://db-manager.readthedocs.io/en/latest/"
     )
-    assert a["license"] == "Apache-2.0" and a["milestone"]["version"] == "v0.12"
+    assert a["license"] == "Apache-2.0" and a["milestone"]["version"] == "v0.14"
     engines = {e["engine"]: e for e in a["engines"]}
     assert "demo" not in engines and engines["postgresql"]["validation"] == "validated"
     assert engines["db2zos"]["support_level"] == "partial"

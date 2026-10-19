@@ -2,9 +2,9 @@
 
 | Kind | Description |
 |---|---|
-| `local` | a directory on the DB Manager host / container volume |
+| `local` | a directory on the DBManager host / container volume |
 | `mounted` | a directory on a mounted volume (block storage, SMB) — the check warns when it is not a mount point |
-| `nfs` | a directory on an NFS mount (mount it on the host or in the container; DB Manager does not mount shares) |
+| `nfs` | a directory on an NFS mount (mount it on the host or in the container; DBManager does not mount shares) |
 | `s3` | an S3-compatible bucket: AWS S3, MinIO, Ceph RGW, … (endpoint, bucket, prefix, region, access key, path or virtual addressing, TLS verification with an optional CA) |
 
 Azure Blob Storage and Google Cloud Storage are **planned, not implemented**.
@@ -28,5 +28,5 @@ Azure Blob Storage and Google Cloud Storage are **planned, not implemented**.
 `docker-compose.yml` mounts a `backups` volume at `/var/lib/dbmanager/backups`
 (`DBM_BACKUP_HOST_DIR` replaces it with a host directory or a mounted share) and a `backupwork`
 volume at `/var/lib/dbmanager/work` for building archives and dumps (`DBM_BACKUP_WORK_DIR`; not
-tmpfs, dumps can be large). Keep at least one target **off the DB Manager host** — a local
+tmpfs, dumps can be large). Keep at least one target **off the DBManager host** — a local
 directory does not survive the loss of the host.

@@ -22,7 +22,7 @@ const ALERT = {
   resolved_at: null, resolved_by: null,
 };
 const ABOUT = {
-  product: "DB Manager", description: "x", version: { application: "0.11.0-dev", backend: "0.11.0-dev", build: null, git_commit: null, build_date: null, schema: "0004" },
+  product: "DBManager", description: "x", version: { application: "0.11.0-dev", backend: "0.11.0-dev", build: null, git_commit: null, build_date: null, schema: "0004" },
   milestone: { version: "v0.11", name: "First public release" }, license: "Apache-2.0",
   links: { documentation: null, github: "https://github.com/hbenabdalla/dbmanager", roadmap: "https://github.com/hbenabdalla/dbmanager/blob/main/ROADMAP.md" },
   engines: [{ engine: "postgresql", display_name: "PostgreSQL", support_level: "supported", validation: "validated", validated_version: "16.4" }],
@@ -184,7 +184,7 @@ describe("alerts", () => {
       return undefined;
     });
     renderApp("/platform/about");
-    expect(await screen.findByRole("heading", { name: "About DB Manager" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "About DBManager" })).toBeInTheDocument();
     expect(screen.getByText("Milestone v0.11 — First public release")).toBeInTheDocument();
     expect(screen.getByText("hidden (DBM_DOCUMENTATION_URL=off)")).toBeInTheDocument();
     expect(screen.getByText("Apache-2.0")).toBeInTheDocument();

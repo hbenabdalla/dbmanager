@@ -54,7 +54,7 @@ GRANT pg_signal_backend TO dbm_admin;               -- cancel / terminate sessio
 GRANT app_owner TO dbm_admin;
 ```
 
-DB Manager sends passwords for `CREATE ROLE` as SCRAM-SHA-256 verifiers, so the clear text never
+DBManager sends passwords for `CREATE ROLE` as SCRAM-SHA-256 verifiers, so the clear text never
 reaches the server logs.
 
 See [Least-privilege accounts](permissions.md) for the rules that apply to every engine.
@@ -113,7 +113,7 @@ privileged accounts) also apply.
 | `PG-PERF-009` | Stale planner statistics |
 
 Plus the common performance rules `GEN-PERF-001` … `GEN-PERF-010`. Recommendations are advice with
-evidence; DB Manager never executes them.
+evidence; DBManager never executes them.
 
 ## Troubleshooting
 

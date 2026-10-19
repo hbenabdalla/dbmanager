@@ -72,6 +72,6 @@ echo "Back up DBM_MASTER_KEY separately: stored database credentials cannot be d
 if grep -q '^POSTGRES_PASSWORD=' "$report"; then
   echo
   echo "If you already started the stack with the placeholder values, recreate the database volume"
-  echo "so the new password applies (this deletes DB Manager's own data):  docker compose down -v"
+  echo "so the new password applies (this deletes DBManager's own data):  docker compose down -v"
 fi
 echo "Then start:  docker compose up --build"

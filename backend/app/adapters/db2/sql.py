@@ -258,7 +258,7 @@ FROM {schema}.EXPLAIN_PREDICATE WHERE {keys} ORDER BY OPERATOR_ID
 
 # --- tuning evidence -------------------------------------------------------------------------
 #: REORGCHK-style table formulas computed from catalog statistics (F1 overflow, F2 page use,
-#: F3 empty pages); recommendations only — DB Manager never runs REORG or RUNSTATS.
+#: F3 empty pages); recommendations only — DBManager never runs REORG or RUNSTATS.
 REORG_CANDIDATES = """
 SELECT TABSCHEMA, TABNAME, CARD, OVERFLOW, NPAGES, FPAGES, AVGROWSIZE, PAGESIZE,
        CASE WHEN CARD > 0 THEN DEC(100.0 * OVERFLOW / CARD, 7, 2) END AS F1,

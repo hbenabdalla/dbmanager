@@ -8,7 +8,7 @@ import { useEngines, useEnvironments } from "@/api/hooks";
 import type { Page, Server } from "@/api/types";
 import { Meter } from "@/components/charts";
 import { PageHeader } from "@/components/page";
-import { EngineMark, HealthBadge, SimulatedBadge } from "@/components/status";
+import { DatabaseEngineIcon, HealthBadge, SimulatedBadge } from "@/components/status";
 import { SourceFilter } from "@/components/fleet-source";
 import { useFleetSource } from "@/lib/fleet-source";
 import { FleetOnboarding } from "@/features/dashboard/onboarding";
@@ -85,7 +85,7 @@ export function ServersPage() {
         </div>
       ),
     },
-    { header: "Engine", accessorKey: "engine", cell: ({ row: { original: s } }) => <div className="flex items-center gap-2"><EngineMark engine={s.engine} /><span className="text-[12px] text-muted">{s.version?.split(" ")[0] ?? "—"}</span></div> },
+    { header: "Engine", accessorKey: "engine", cell: ({ row: { original: s } }) => <div className="flex items-center gap-2"><DatabaseEngineIcon engine={s.engine} /><span className="text-[12px] text-muted">{s.version?.split(" ")[0] ?? "—"}</span></div> },
     { header: "Environment", accessorFn: (s) => s.environment?.name ?? "", cell: ({ row: { original: s } }) => s.environment?.name ?? <span className="text-muted">Unassigned</span> },
     { header: "Health", accessorKey: "health_status", cell: ({ row: { original: s } }) => <HealthBadge health={s.health_status} reasons={s.health_reasons} /> },
     {
@@ -119,6 +119,7 @@ export function ServersPage() {
             <Search className="pointer-events-none absolute left-2.5 top-2 size-4 text-muted" />
             <Input aria-label="Search servers" placeholder="Name, host, owner" value={q} onChange={(e) => setQ(e.target.value)} className="pl-8" />
           </div>
+          {filters.engine && <DatabaseEngineIcon engine={filters.engine} size="md" />}
           <Select aria-label="Engine" className="w-40" value={filters.engine ?? ""} onChange={(e) => setFilter("engine", e.target.value)}>
             <option value="">All engines</option>{engines.data?.map((e) => <option key={e.engine} value={e.engine}>{e.display_name}</option>)}
           </Select>
