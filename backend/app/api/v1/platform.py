@@ -479,3 +479,18 @@ async def engine_support(p: CurrentPrincipal) -> dict[str, Any]:
             }
         )
     return {"rows": [label for label, _ in MATRIX_ROWS], "engines": engines}
+
+
+@router.get("/platform/secret-providers", summary="Credential providers available in this installation")
+async def secret_providers(p: CurrentPrincipal) -> dict[str, Any]:
+    p.authz.require_anywhere("credentials.manage")
+    from app.core.config import get_settings
+    from app.services import vault
+
+    s = get_settings()
+    return {
+        "local": {"available": True},
+        "env": {"available": True},
+        "file": {"available": True, "allowed_dirs": list(s.secret_file_dirs)},
+        "vault": {**(await vault.client.health()), "kv_mount": s.vault_kv_mount, "available": vault.configured()},
+    }

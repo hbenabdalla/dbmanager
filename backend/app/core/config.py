@@ -73,6 +73,26 @@ class Settings(BaseSettings):
     api_token_max_days: int = Field(default=365, ge=1, le=3650)
     #: failed Bearer authentications per source IP and minute before 429
     api_token_auth_failures_per_minute: int = Field(default=30, ge=0)
+    # --- HashiCorp Vault (credential provider "vault", app.services.vault) --------------------
+    #: e.g. https://vault.example.com:8200; empty = the vault provider is not available
+    vault_addr: str = ""
+    vault_namespace: str = ""
+    #: token | approle | kubernetes
+    vault_auth: Literal["token", "approle", "kubernetes"] = "token"
+    vault_token: SecretStr = Field(default=SecretStr(""))
+    vault_token_file: str = ""
+    vault_role_id: str = ""
+    vault_secret_id: SecretStr = Field(default=SecretStr(""))
+    vault_secret_id_file: str = ""
+    vault_kubernetes_role: str = ""
+    vault_kubernetes_jwt_file: str = "/var/run/secrets/kubernetes.io/serviceaccount/token"
+    vault_auth_mount: str = ""  # default: approle / kubernetes
+    #: KV version 2 mount used when a reference does not name one
+    vault_kv_mount: str = "secret"
+    vault_ca_file: str = ""
+    vault_timeout_seconds: float = 10.0
+    #: resolved secrets are kept in memory this long (0 = read Vault for every connection)
+    vault_cache_seconds: int = Field(default=60, ge=0, le=3600)
     secret_file_dirs: CsvList = Field(
         default_factory=lambda: ["/run/secrets", "/var/run/secrets", "/etc/dbmanager/secrets"]
     )

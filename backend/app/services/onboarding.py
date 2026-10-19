@@ -303,7 +303,7 @@ MODES = {
     "administration": "administration",
     "administration_enabled": "administration",
 }
-CRED_RE = re.compile(r"^(server|env|file):(.+)$")
+CRED_RE = re.compile(r"^(server|env|file|vault):(.+)$")
 
 
 def template_csv() -> str:
@@ -446,7 +446,8 @@ async def validate_rows(db: AsyncSession, rows: list[dict[str, Any]]) -> dict[st
                 errors.append(
                     _err(
                         "credential",
-                        "credential must be server:<registered server>, env:<VAR>@<user> or file:<path>@<user>",
+                        "credential must be server:<registered server>, env:<VAR>@<user>, file:<path>@<user> "
+                        "or vault:<[mount:]path#key>@<user>",
                     )
                 )
             else:
@@ -571,7 +572,7 @@ async def create_rows(
                 cred = n["credential"]
                 mon: CredentialIn | None = None
                 copy_from: Server | None = None
-                if cred and cred["kind"] in ("env", "file"):
+                if cred and cred["kind"] in ("env", "file", "vault"):
                     mon = CredentialIn(username=cred["username"], provider=cred["kind"], secret_ref=cred["secret_ref"])
                 body = ServerCreate(
                     name=n["name"],

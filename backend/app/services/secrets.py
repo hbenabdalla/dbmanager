@@ -6,8 +6,7 @@ Providers:
 * ``env``   — the secret is read from an environment variable named by ``secret_ref``
   (fits Kubernetes Secrets / External Secrets Operator).
 * ``file``  — read from a mounted file under an allow-listed directory.
-* ``vault`` — reserved; the interface exists so HashiCorp Vault / cloud secret managers can
-  be added without schema changes.
+* ``vault`` — HashiCorp Vault KV v2; ``secret_ref`` = ``[mount:]path#key`` (app.services.vault).
 
 Plaintext secrets only exist in memory for the duration of a connection attempt and are
 never returned by any API.
@@ -56,8 +55,12 @@ async def set_credential(
     if provider not in PROVIDERS:
         raise ValidationFailed(f"unknown secret provider {provider!r}")
     if provider == "vault":
-        raise ValidationFailed("The Vault provider is not enabled in this release")
-    if provider in ("env", "file") and not secret_ref:
+        from app.services import vault
+
+        if not vault.configured():
+            raise ValidationFailed("The Vault provider needs DBM_VAULT_ADDR (see Administration → Secret providers)")
+        vault.parse_ref(secret_ref or "")
+    if provider in ("env", "file", "vault") and not secret_ref:
         raise ValidationFailed(f"secret_ref is required for provider '{provider}'")
     if provider == "file":
         _check_file_ref(secret_ref or "")
@@ -122,7 +125,23 @@ def resolve_password(cred: Credential) -> str | None:
         return os.environ.get(_check_env_ref(cred.secret_ref or ""))
     if cred.provider == "file":
         return _check_file_ref(cred.secret_ref or "").read_text().strip()
+    if cred.provider == "vault":
+        raise ValidationFailed("Vault secrets are read asynchronously: use resolve_password_async")
     raise ValidationFailed(f"secret provider {cred.provider!r} is not available")
+
+
+async def resolve_password_async(cred: Credential) -> str | None:
+    """Like :func:`resolve_password`, also for providers that need network access (Vault)."""
+    if cred.provider == "vault":
+        from app.services import vault
+
+        try:
+            return await vault.client.read(cred.secret_ref or "")
+        except vault.VaultError as exc:
+            raise ValidationFailed(
+                f"Could not read the credential from Vault: {exc}", code="secret_unavailable"
+            ) from exc
+    return resolve_password(cred)
 
 
 def describe(cred: Credential | None) -> dict[str, object] | None:
@@ -133,7 +152,7 @@ def describe(cred: Credential | None) -> dict[str, object] | None:
         "purpose": cred.purpose,
         "username": cred.username,
         "provider": cred.provider,
-        "secret_ref": cred.secret_ref if cred.provider in ("env", "file") else None,
+        "secret_ref": cred.secret_ref if cred.provider in ("env", "file", "vault") else None,
         "has_secret": bool(cred.encrypted) if cred.provider == "local" else bool(cred.secret_ref),
         "rotated_at": cred.rotated_at.isoformat() if cred.rotated_at else None,
         "updated_by": cred.updated_by,

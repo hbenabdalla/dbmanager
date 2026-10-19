@@ -90,7 +90,7 @@ async def adapter_for(db: AsyncSession, server: Server, purpose: str = "monitori
         )
     if cred is None:
         raise ValidationFailed("No monitoring credential is configured for this server", code="credential_required")
-    password = secrets.resolve_password(cred)
+    password = await secrets.resolve_password_async(cred)
     return create_adapter(server.engine, build_spec(server, cred.username, password))
 
 

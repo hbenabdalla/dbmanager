@@ -99,7 +99,7 @@ class Tag(BaseModel):
 class CredentialIn(BaseModel):
     username: str = Field(min_length=1, max_length=256)
     password: str | None = Field(None, max_length=4096, description="write-only")
-    provider: Literal["local", "env", "file"] = "local"
+    provider: Literal["local", "env", "file", "vault"] = "local"
     secret_ref: str | None = Field(None, max_length=512)
 
 
