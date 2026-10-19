@@ -4,6 +4,7 @@ Administrator-relevant controls (the full model is in [Security](../security/ind
 
 | Control | Where |
 |---|---|
+| Multi-factor authentication | `DBM_MFA_REQUIRED_FOR` (`none`, `admins`, `all`), `DBM_MFA_ISSUER`; OIDC providers: `require_mfa` — see [Multi-factor authentication](mfa.md) |
 | Session lifetime and idle timeout | `DBM_SESSION_TTL_MINUTES` (480), `DBM_SESSION_IDLE_TIMEOUT_MINUTES` (30) |
 | Brute-force protection | `DBM_LOGIN_MAX_FAILURES`, `DBM_LOGIN_LOCKOUT_MINUTES`, `DBM_LOGIN_RATE_PER_IP_PER_MINUTE` |
 | API rate limits (per principal, shared by replicas) | `DBM_API_RATE_PER_USER_PER_MINUTE` (600), `DBM_API_RATE_TARGET_PER_MINUTE` (120), `DBM_API_RATE_EXPENSIVE_PER_MINUTE` (30) — see [rate limiting](rate-limiting.md) |
@@ -15,4 +16,5 @@ Administrator-relevant controls (the full model is in [Security](../security/ind
 | Who may register servers | `server.register` (it lets the backend open connections to any host — grant narrowly) |
 
 Review regularly: platform users with platform-scope roles, identity-provider group mappings, the
-audit log for `access.denied` and administration events.
+audit log for `access.denied` and administration events, and which administrators have not enrolled
+an authenticator (with `DBM_MFA_REQUIRED_FOR=admins` they cannot work until they do).

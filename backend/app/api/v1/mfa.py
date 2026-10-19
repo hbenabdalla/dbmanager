@@ -10,7 +10,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
 from app.api.deps import DB, CurrentPrincipal
-from app.core.errors import NotAuthenticated, NotFound, ValidationFailed
+from app.core.errors import NotFound, ValidationFailed
 from app.core.security import verify_password
 from app.models import User
 from app.schemas.common import Message
@@ -42,7 +42,8 @@ def _local(p: CurrentPrincipal) -> User:
 
 def _password(user: User, password: str) -> None:
     if not verify_password(password, user.password_hash):
-        raise NotAuthenticated("Password is incorrect")
+        # 422, not 401: a typo must not look like an expired session to the web UI
+        raise ValidationFailed("Password is incorrect")
 
 
 @router.get("/me/mfa", summary="Multi-factor authentication status of the signed-in account")

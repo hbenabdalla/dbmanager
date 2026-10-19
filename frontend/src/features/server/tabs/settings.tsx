@@ -1,12 +1,16 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { KeyRound, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { Download, KeyRound, PlugZap, ShieldCheck, Trash2 } from "lucide-react";
+import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { ApiError, del, patch, post, put } from "@/api/client";
+import { ApiError, del, download, patch, post, put } from "@/api/client";
 import { serverCan, useApplications, useClusters, useEngines, useEnvironments, useSites } from "@/api/hooks";
 import type { CredentialInfo, ServerDetail } from "@/api/types";
 import { ConfirmDialog } from "@/components/confirm";
+import { StageList, type Stage, type StageStatus } from "@/components/wizard";
+import { Dialog } from "@/components/ui/dialog";
+import { STAGE_LABELS } from "@/features/onboarding/onboarding-wizard";
+import { postNdjson } from "@/features/onboarding/stream";
 import { Button } from "@/components/ui/button";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Field, Input, Select } from "@/components/ui/input";
@@ -57,6 +61,50 @@ function CredentialEditor({ server, purpose, info }: { server: ServerDetail; pur
   );
 }
 
+type StreamEvent = { stage: string; status: string; message?: string; duration_ms?: number; detail?: Record<string, unknown>; result?: { ok: boolean; message?: string } };
+
+/** Staged connection test of the registered server, using its stored settings and credential. */
+function ConnectionTestDialog({ server, onClose }: { server: ServerDetail; onClose: () => void }) {
+  const [stages, setStages] = useState<Stage[]>([]);
+  const [result, setResult] = useState<{ ok: boolean; message?: string } | null>(null);
+  const [running, setRunning] = useState(false);
+  const abort = useRef<AbortController | null>(null);
+  const run = async () => {
+    abort.current?.abort();
+    const ctl = new AbortController();
+    abort.current = ctl;
+    setRunning(true);
+    setResult(null);
+    setStages(Object.keys(STAGE_LABELS).map((s) => ({ stage: s, status: "pending" as StageStatus })));
+    try {
+      await postNdjson<StreamEvent>(`/servers/${server.id}/test-connection/stream`, {}, (ev) => {
+        if (ev.stage === "result") { setResult(ev.result ?? null); return; }
+        setStages((cur) => {
+          const upd: Stage = { stage: ev.stage, status: ev.status as StageStatus, message: ev.message, duration_ms: ev.duration_ms, detail: ev.detail };
+          return cur.some((s) => s.stage === ev.stage) ? cur.map((s) => (s.stage === ev.stage ? upd : s)) : [...cur, upd];
+        });
+      }, ctl.signal);
+    } catch (e) {
+      if ((e as Error).name !== "AbortError") setResult({ ok: false, message: e instanceof ApiError ? e.message : String(e) });
+    } finally {
+      setStages((cur) => cur.map((s) => (s.status === "pending" || s.status === "running" ? { ...s, status: "skipped" } : s)));
+      setRunning(false);
+    }
+  };
+  return (
+    <Dialog open onOpenChange={(o) => { if (!o) { abort.current?.abort(); onClose(); } }} title={`Test connection to ${server.name}`}
+      description="DNS, TCP, TLS, authentication, version, privileges and capabilities with the stored settings and monitoring credential."
+      footer={<><Button variant="ghost" onClick={() => { abort.current?.abort(); onClose(); }}>Close</Button><Button variant="primary" disabled={running} onClick={run}>{running ? "Testing…" : stages.length ? "Run again" : "Start test"}</Button></>}>
+      {stages.length > 0 ? <StageList stages={stages} labels={STAGE_LABELS} /> : <p className="text-[13px] text-text-2">Nothing is changed on the server.</p>}
+      {result && (
+        <p role="status" className={`mt-3 rounded-md border px-3 py-2 text-[13px] ${result.ok ? "border-ok/30 bg-ok-soft text-ok" : "border-crit/30 bg-crit-soft text-crit"}`}>
+          {result.ok ? "Connection succeeded." : "Connection failed."}{result.message ? ` ${result.message}` : ""}
+        </p>
+      )}
+    </Dialog>
+  );
+}
+
 export function SettingsTab({ server }: { server: ServerDetail }) {
   const qc = useQueryClient();
   const navigate = useNavigate();
@@ -94,6 +142,17 @@ export function SettingsTab({ server }: { server: ServerDetail }) {
     onError: (e: ApiError) => toast.error(e.message),
   });
   const collect = useMutation({ mutationFn: () => post(`/servers/${server.id}/collect`), onSuccess: () => toast.success("Collection queued") });
+  const scan = useMutation({
+    mutationFn: () => post<{ message: string }>(`/servers/${server.id}/security-scan`),
+    onSuccess: (r) => toast.success(r.message),
+    onError: (e: ApiError) => toast.error(e.message),
+  });
+  const [testing, setTesting] = useState(false);
+  const diagnostics = useMutation({
+    mutationFn: () => download(`/servers/${server.id}/diagnostics`, `dbm-diagnostics-${server.name}.json`),
+    onSuccess: () => toast.success("Diagnostic bundle downloaded"),
+    onError: (e: ApiError) => toast.error(e.message),
+  });
   const canModify = serverCan(server, "server.modify");
   return (
     <div className="grid gap-4 xl:grid-cols-[1.4fr_1fr]">
@@ -146,6 +205,15 @@ export function SettingsTab({ server }: { server: ServerDetail }) {
           <CardHeader title="Operations" />
           <CardBody className="space-y-3 text-[13px]">
             {serverCan(server, "collectors.manage") && <div className="flex items-center justify-between gap-3"><span className="text-text-2">Run discovery, metrics, query statistics and advisors now.</span><Button size="sm" onClick={() => collect.mutate()}>Collect now</Button></div>}
+            {(serverCan(server, "server.modify") || serverCan(server, "collectors.manage")) && (
+              <div className="flex items-center justify-between gap-3"><span className="text-text-2">Check that DB Manager can still reach and sign in to this server.</span><Button size="sm" onClick={() => setTesting(true)}><PlugZap /> Test connection</Button></div>
+            )}
+            {serverCan(server, "security.manage") && (
+              <div className="flex items-center justify-between gap-3"><span className="text-text-2">Re-evaluate the security rules now instead of at the next scheduled scan.</span><Button size="sm" disabled={scan.isPending} onClick={() => scan.mutate()}><ShieldCheck /> Scan security now</Button></div>
+            )}
+            {serverCan(server, "collectors.view") && (
+              <div className="flex items-center justify-between gap-3"><span className="text-text-2">Collector diagnostics for support: settings, health, recent jobs and driver versions. Secrets are redacted.</span><Button size="sm" disabled={diagnostics.isPending} onClick={() => diagnostics.mutate()}><Download /> Download diagnostics</Button></div>
+            )}
             {serverCan(server, "server.delete") && (
               <div className="flex items-center justify-between gap-3 border-t border-border pt-3">
                 <span className="text-text-2">Remove from DB Manager. The database server itself isn't touched.</span>
@@ -155,6 +223,7 @@ export function SettingsTab({ server }: { server: ServerDetail }) {
           </CardBody>
         </Card>
       </div>
+      {testing && <ConnectionTestDialog server={server} onClose={() => setTesting(false)} />}
       <ConfirmDialog open={deleting} onOpenChange={setDeleting} title={`Remove ${server.name}?`} danger expected={server.name}
         confirmLabel="Remove server" busy={remove.isPending} onConfirm={(typed) => remove.mutate(typed)}>
         <p className="text-[13px] text-text-2">Collected metrics, query statistics, findings and stored credentials for this server are deleted. Audit records are kept.</p>

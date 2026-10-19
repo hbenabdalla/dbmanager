@@ -3,7 +3,6 @@ import { Download, FileSpreadsheet } from "lucide-react";
 import { toast } from "sonner";
 import { download, get } from "@/api/client";
 import { PageHeader } from "@/components/page";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { SkeletonRows } from "@/components/ui/states";
@@ -12,9 +11,9 @@ interface Report { key: string; title: string; description: string; formats: str
 
 export function ReportsPage() {
   const q = useQuery({ queryKey: ["reports"], queryFn: () => get<Report[]>("/reports") });
-  const run = async (r: Report) => {
+  const run = async (r: Report, fmt: string) => {
     try {
-      await download(`/reports/${r.key}.csv`, `${r.key}.csv`);
+      await download(`/reports/${r.key}.${fmt}`, `${r.key}.${fmt}`);
       toast.success(`${r.title} downloaded`);
     } catch (e) {
       toast.error((e as Error).message);
@@ -29,8 +28,10 @@ export function ReportsPage() {
             <div key={r.key} className="flex flex-wrap items-center gap-3 px-4 py-3">
               <FileSpreadsheet className="size-5 text-muted" />
               <div className="min-w-0 flex-1"><div className="font-medium">{r.title}</div><div className="text-[12.5px] text-muted">{r.description}</div></div>
-              <span className="flex gap-1">{r.planned_formats.map((f) => <Badge key={f} tone="outline">{f.toUpperCase()} later</Badge>)}</span>
-              <Button size="sm" disabled={!r.available} onClick={() => run(r)}><Download /> CSV</Button>
+              {/* only the formats the backend serves today are offered */}
+              {r.formats.map((f) => (
+                <Button key={f} size="sm" disabled={!r.available} onClick={() => run(r, f)} aria-label={`Download ${r.title} as ${f.toUpperCase()}`}><Download /> {f.toUpperCase()}</Button>
+              ))}
             </div>
           ))}
         </Card>

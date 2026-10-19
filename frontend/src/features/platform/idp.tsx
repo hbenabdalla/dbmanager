@@ -13,6 +13,7 @@ import { Field, Input, Select } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { EmptyState, SkeletonRows } from "@/components/ui/states";
 import { IdentityWizardDialog } from "./idp-wizards";
+import { OidcMfaFields } from "./oidc-mfa";
 
 const OIDC_FIELDS: [string, string, string?][] = [
   ["issuer", "Issuer URL", "https://login.microsoftonline.com/<tenant>/v2.0"], ["client_id", "Client ID"],
@@ -51,6 +52,7 @@ function ProviderDialog({ kind, provider, onClose }: { kind: "ldap" | "oidc"; pr
         <Field label={kind === "oidc" ? "Client secret" : "Service account password"} hint={provider?.has_secret ? "Stored encrypted. Leave empty to keep it." : "Stored encrypted, never shown again"}>
           <Input type="password" autoComplete="new-password" value={secret} onChange={(e) => setSecret(e.target.value)} />
         </Field>
+        {kind === "oidc" && <OidcMfaFields cfg={cfg} onChange={(p) => setCfg({ ...cfg, ...p })} />}
         {kind === "oidc" && provider && <Field label="Redirect URI to register with the provider" className="sm:col-span-2"><Input readOnly value={String(provider.config.redirect_uri_effective ?? "")} className="font-mono text-[12px]" /></Field>}
       </div>
     </Dialog>

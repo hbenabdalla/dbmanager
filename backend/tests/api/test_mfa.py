@@ -41,7 +41,7 @@ async def test_enroll_and_sign_in_with_totp_and_recovery_code(admin, make_client
     name = await _user(admin)
     c = await make_client((name, PW))
     assert (await c.get("/api/v1/me/mfa")).json()["enabled"] is False
-    assert (await c.post("/api/v1/me/mfa/totp/setup", json={"password": "wrong"})).status_code == 401
+    assert (await c.post("/api/v1/me/mfa/totp/setup", json={"password": "wrong"})).status_code == 422
     setup = (await c.post("/api/v1/me/mfa/totp/setup", json={"password": PW})).json()
     secret = setup["secret"]
     assert setup["qr_svg"].startswith("<svg")

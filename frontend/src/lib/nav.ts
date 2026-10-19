@@ -19,6 +19,7 @@ export const NAV_GROUPS: NavGroup[] = [
           { label: "Clusters", to: "/fleet/clusters" },
           { label: "Databases", to: "/fleet/databases", perm: "database.view" },
           { label: "Environments", to: "/fleet/environments" },
+          { label: "Placement", to: "/fleet/placement", perm: "inventory.manage" },
           { label: "Bulk onboarding", to: "/fleet/onboarding/bulk", perm: "server.register" },
         ],
       },

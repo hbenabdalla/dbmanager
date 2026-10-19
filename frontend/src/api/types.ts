@@ -15,7 +15,14 @@ export interface Me {
   id: string; username: string; display_name: string | null; email: string | null; auth_source: string;
   must_change_password: boolean; permissions: string[]; platform_permissions: string[]; grants: Grant[];
   csrf_token?: string | null;
+  /** TOTP enrolled for this (local) account */
+  mfa_enabled?: boolean;
+  /** the MFA policy requires this account to enroll before it can do anything else */
+  mfa_enrollment_required?: boolean;
 }
+
+/** First sign-in step accepted; the second factor goes to /auth/login/mfa. */
+export interface MfaChallenge { mfa_required: true; mfa_token: string; methods: string[] }
 
 export interface Server {
   id: string; name: string; description: string | null; engine: string; engine_label: string; version: string | null;
@@ -124,6 +131,7 @@ export interface Permission { key: string; group: string; description: string; p
 export interface User {
   id: string; username: string; email: string | null; display_name: string | null; auth_source: string; is_active: boolean;
   must_change_password: boolean; locked_until: string | null; last_login_at: string | null; created_at: string; groups: Ref[];
+  mfa_enabled?: boolean;
 }
 export interface Group { id: string; name: string; description: string | null; members: { id: string; username: string; display_name: string | null }[] }
 export interface Assignment {

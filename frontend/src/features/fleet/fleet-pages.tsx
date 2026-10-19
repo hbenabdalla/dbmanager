@@ -16,6 +16,7 @@ import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { DataTable } from "@/components/ui/data-table";
 import { Dialog } from "@/components/ui/dialog";
 import { Field, Input, Select } from "@/components/ui/input";
+import { PlacementActions } from "./placement";
 import { EmptyState, SkeletonRows } from "@/components/ui/states";
 import { useAuth } from "@/lib/auth";
 import { HEALTH_LABEL } from "@/lib/engines";
@@ -80,7 +81,8 @@ export function ClustersPage() {
             const list = members.get(c.id) ?? [];
             return (
               <Card key={c.id}>
-                <CardHeader title={c.name} description={`${c.kind}, ${list.length} member${list.length === 1 ? "" : "s"}`} />
+                <CardHeader title={c.name} description={`${c.kind}, ${list.length} member${list.length === 1 ? "" : "s"}`}
+                  actions={canPlatform("inventory.manage") && <PlacementActions kind="clusters" item={c} />} />
                 <ul className="divide-y divide-border">
                   {list.map((s) => (
                     <li key={s.id}>
@@ -124,7 +126,10 @@ export function EnvironmentsPage() {
             return (
               <Card key={e.id}>
                 <CardHeader title={e.name} description={<span className="capitalize">{e.tier} tier</span>}
-                  actions={<Link className="text-[12.5px] font-medium text-accent hover:underline" to={`/fleet/servers?environment_id=${e.id}`}>{list.length} servers</Link>} />
+                  actions={<span className="flex items-center gap-2">
+                    <Link className="text-[12.5px] font-medium text-accent hover:underline" to={`/fleet/servers?environment_id=${e.id}`}>{list.length} servers</Link>
+                    {canPlatform("inventory.manage") && <PlacementActions kind="environments" item={e} />}
+                  </span>} />
                 <CardBody className="space-y-2">
                   {Object.keys(HEALTH_LABEL).map((h) => counts[h] ? (
                     <div key={h} className="flex items-center gap-2 text-[13px]"><HealthDot health={h} /> {HEALTH_LABEL[h]}<span className="ml-auto tabular text-text-2">{counts[h]}</span></div>

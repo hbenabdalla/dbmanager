@@ -2,7 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createContext, useCallback, useContext, useEffect, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { ApiError, get, post, setUnauthorizedHandler } from "@/api/client";
-import type { Me } from "@/api/types";
+import type { Me, MfaChallenge } from "@/api/types";
 
 interface AuthCtx {
   me: Me | undefined;
@@ -10,7 +10,9 @@ interface AuthCtx {
   /** Permission held anywhere (navigation hint only — the backend enforces). */
   can: (perm: string) => boolean;
   canPlatform: (perm: string) => boolean;
-  login: (username: string, password: string) => Promise<Me>;
+  /** Resolves with the signed-in user, or with an MFA challenge when a second factor is needed. */
+  login: (username: string, password: string) => Promise<Me | MfaChallenge>;
+  loginMfa: (mfaToken: string, code: string) => Promise<Me>;
   logout: () => Promise<void>;
   refresh: () => void;
 }
@@ -38,7 +40,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(
     async (username: string, password: string) => {
-      const me = await post<Me>("/auth/login", { username, password });
+      const res = await post<Me | MfaChallenge>("/auth/login", { username, password });
+      if ("mfa_required" in res && res.mfa_required) return res;
+      qc.clear();
+      qc.setQueryData(["me"], res);
+      return res;
+    },
+    [qc],
+  );
+  const loginMfa = useCallback(
+    async (mfaToken: string, code: string) => {
+      const me = await post<Me>("/auth/login/mfa", { mfa_token: mfaToken, code });
       qc.clear();
       qc.setQueryData(["me"], me);
       return me;
@@ -62,6 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     can: (p) => perms.has(p),
     canPlatform: (p) => platform.has(p),
     login,
+    loginMfa,
     logout,
     refresh: () => qc.invalidateQueries({ queryKey: ["me"] }),
   };

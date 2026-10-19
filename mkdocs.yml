@@ -156,6 +156,7 @@ nav:
       - administration/index.md
       - Users: administration/users.md
       - API tokens: administration/api-tokens.md
+      - Multi-factor authentication: administration/mfa.md
       - Rate limiting: administration/rate-limiting.md
       - Roles and permissions: administration/rbac.md
       - Identity providers: administration/identity-providers.md

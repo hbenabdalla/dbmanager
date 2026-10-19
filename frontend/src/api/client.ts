@@ -71,6 +71,8 @@ export function buildUrl(path: string, query?: Query): string {
 }
 
 let onUnauthorized: (() => void) | null = null;
+/** endpoints that re-check the password / second factor and answer 401 when they are wrong */
+const STEP_UP = ["/me/mfa/totp/", "/me/mfa/recovery-codes"];
 export function setUnauthorizedHandler(fn: () => void) {
   onUnauthorized = fn;
 }
@@ -93,7 +95,9 @@ export async function api<T>(
     body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
     signal: opts.signal,
   });
-  if (res.status === 401 && !path.startsWith("/auth/login")) onUnauthorized?.();
+  // A 401 from a step-up endpoint means "wrong password or code", not "session expired": the
+  // caller shows the error and re-checks the session itself (see features/account/security.tsx).
+  if (res.status === 401 && !path.startsWith("/auth/login") && !STEP_UP.some((p) => path.startsWith(p))) onUnauthorized?.();
   if (!res.ok) {
     let payload: { error?: { code?: string; message?: string; details?: Record<string, unknown>; request_id?: string } } = {};
     try {

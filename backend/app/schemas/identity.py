@@ -74,6 +74,8 @@ class UserOut(ORM):
     locked_until: datetime | None
     last_login_at: datetime | None
     created_at: datetime
+    #: TOTP enrolled (local accounts; directory/SSO accounts use their provider's MFA)
+    mfa_enabled: bool = Field(default=False, validation_alias="totp_enabled")
     groups: list[GroupRef] = Field(default_factory=list)
 
 

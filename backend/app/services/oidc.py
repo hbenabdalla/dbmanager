@@ -178,6 +178,15 @@ async def exchange_and_validate(
     return claims
 
 
+def _as_list(value: object) -> set[str]:
+    """A list setting that may also arrive as one comma-separated string."""
+    if not value:
+        return set()
+    if isinstance(value, str):
+        return {v.strip() for v in value.split(",") if v.strip()}
+    return {str(v) for v in value}  # type: ignore[union-attr]
+
+
 def check_mfa(cfg: dict[str, Any], claims: dict[str, Any]) -> None:
     """With ``require_mfa`` the ID token must prove a second factor: an ``amr`` value from
     ``mfa_amr_values`` (default: RFC 8176 multi-factor methods) or an ``acr`` listed in
@@ -187,8 +196,8 @@ def check_mfa(cfg: dict[str, Any], claims: dict[str, Any]) -> None:
     amr = claims.get("amr") or []
     if isinstance(amr, str):
         amr = [amr]
-    accepted = {str(v).lower() for v in (cfg.get("mfa_amr_values") or MFA_AMR_VALUES)}
-    acr_ok = str(claims.get("acr") or "") in {str(v) for v in cfg.get("required_acr") or []}
+    accepted = {v.lower() for v in (_as_list(cfg.get("mfa_amr_values")) or MFA_AMR_VALUES)}
+    acr_ok = str(claims.get("acr") or "") in _as_list(cfg.get("required_acr"))
     if not (acr_ok or accepted & {str(v).lower() for v in amr}):
         raise NotAuthenticated("Your identity provider did not confirm multi-factor authentication for this sign-in")
 

@@ -1,9 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Lock, Plus } from "lucide-react";
+import { Lock, Plus, Trash2 } from "lucide-react";
 import { Fragment, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { ApiError, get, patch, post } from "@/api/client";
+import { ApiError, del, get, patch, post } from "@/api/client";
 import type { Permission, Role } from "@/api/types";
+import { ConfirmDialog } from "@/components/confirm";
 import { PageHeader } from "@/components/page";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -74,6 +75,12 @@ function RoleEditor({ role, perms, onClose }: { role: Role | null; perms: Permis
   const [name, setName] = useState(role?.name ?? "");
   const [desc, setDesc] = useState(role?.description ?? "");
   const [sel, setSel] = useState<Set<string>>(new Set(role?.permissions ?? []));
+  const [deleting, setDeleting] = useState(false);
+  const remove = useMutation({
+    mutationFn: () => del(`/roles/${role!.id}`),
+    onSuccess: () => { toast.success("Role deleted"); setDeleting(false); onClose(); },
+    onError: (e: ApiError) => toast.error(e.message),
+  });
   const m = useMutation({
     mutationFn: () => role ? patch(`/roles/${role.id}`, { name, description: desc, permissions: [...sel] }) : post("/roles", { name, description: desc, permissions: [...sel] }),
     onSuccess: () => { toast.success(role ? "Role updated" : "Role created"); onClose(); },
@@ -83,7 +90,9 @@ function RoleEditor({ role, perms, onClose }: { role: Role | null; perms: Permis
   const grouped = perms.reduce<Record<string, Permission[]>>((a, p) => ({ ...a, [p.group]: [...(a[p.group] ?? []), p] }), {});
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()} width="max-w-3xl" title={role ? `Edit ${role.name}` : "New role"}
-      footer={<><Button variant="ghost" onClick={onClose}>Cancel</Button><Button variant="primary" disabled={!name || m.isPending} onClick={() => m.mutate()}>{role ? "Save role" : "Create role"}</Button></>}>
+      footer={<>
+        {role && !role.is_system && <Button variant="danger" className="mr-auto" onClick={() => setDeleting(true)}><Trash2 /> Delete role</Button>}
+        <Button variant="ghost" onClick={onClose}>Cancel</Button><Button variant="primary" disabled={!name || m.isPending} onClick={() => m.mutate()}>{role ? "Save role" : "Create role"}</Button></>}>
       <div className="space-y-4">
         <div className="grid gap-3 sm:grid-cols-2">
           <Field label="Name"><Input value={name} onChange={(e) => setName(e.target.value)} /></Field>
@@ -102,6 +111,12 @@ function RoleEditor({ role, perms, onClose }: { role: Role | null; perms: Permis
           ))}
         </div>
       </div>
+      {role && (
+        <ConfirmDialog open={deleting} onOpenChange={setDeleting} title={`Delete role ${role.name}?`} danger expected={role.name}
+          expectedLabel="Type the role name to confirm" confirmLabel="Delete role" busy={remove.isPending} onConfirm={() => remove.mutate()}>
+          Users and groups holding this role through an assignment lose its permissions immediately.
+        </ConfirmDialog>
+      )}
     </Dialog>
   );
 }

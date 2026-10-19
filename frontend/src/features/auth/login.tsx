@@ -13,30 +13,68 @@ const SSO_ERRORS: Record<string, string> = {
 };
 
 export function LoginPage() {
-  const { me, login } = useAuth();
+  const { me, login, loginMfa } = useAuth();
   const [params] = useSearchParams();
   const navigate = useNavigate();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(SSO_ERRORS[params.get("error") ?? ""] ?? null);
   const [busy, setBusy] = useState(false);
+  /** set after the password step when the account uses an authenticator */
+  const [mfaToken, setMfaToken] = useState<string | null>(null);
+  const [code, setCode] = useState("");
   const providers = useQuery({ queryKey: ["providers"], queryFn: () => get<{ id: string; name: string }[]>("/auth/providers") });
   const next = params.get("next") || "/";
 
   if (me) return <Navigate to={next} replace />;
+
+  const go = () => navigate(next.startsWith("/") && !next.startsWith("//") ? next : "/", { replace: true });
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     setBusy(true);
     setError(null);
     try {
-      await login(username, password);
-      navigate(next.startsWith("/") && !next.startsWith("//") ? next : "/", { replace: true });
+      const res = await login(username, password);
+      if ("mfa_required" in res && res.mfa_required) {
+        setMfaToken(res.mfa_token);
+        setCode("");
+        return;
+      }
+      go();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Sign-in failed. Check your connection and try again.");
     } finally {
       setBusy(false);
     }
+  };
+
+  const submitCode = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!mfaToken) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await loginMfa(mfaToken, code.trim());
+      go();
+    } catch (err) {
+      const msg = err instanceof ApiError ? err.message : "Sign-in failed. Check your connection and try again.";
+      if (err instanceof ApiError && /expired/i.test(msg)) {
+        // the challenge is only valid for a few minutes: start again with the password
+        setMfaToken(null);
+        setPassword("");
+      }
+      setError(msg);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const restart = () => {
+    setMfaToken(null);
+    setCode("");
+    setPassword("");
+    setError(null);
   };
 
   return (
@@ -47,6 +85,28 @@ export function LoginPage() {
             <img src="/favicon.svg" alt="" className="size-8" />
             <span className="text-[15px] font-semibold">DB Manager</span>
           </div>
+          {mfaToken ? (
+            <>
+              <h1 className="text-[24px] font-semibold">Two-step verification</h1>
+              <p className="mt-1 text-[13px] text-muted">
+                Enter the 6-digit code from your authenticator app, or one of your recovery codes.
+              </p>
+              <form onSubmit={submitCode} className="mt-6 space-y-4" noValidate>
+                <Field label="Authentication code">
+                  <Input autoComplete="one-time-code" inputMode="text" autoFocus value={code} maxLength={32}
+                    onChange={(e) => setCode(e.target.value)} required />
+                </Field>
+                {error && <p role="alert" className="rounded-md border border-crit/30 bg-crit-soft px-3 py-2 text-[13px] text-crit">{error}</p>}
+                <Button type="submit" variant="primary" size="lg" className="w-full" disabled={busy || code.trim().length < 6}>
+                  {busy ? "Verifying…" : "Verify"}
+                </Button>
+                <button type="button" onClick={restart} className="w-full text-center text-[12.5px] text-muted hover:text-text hover:underline">
+                  Use a different account
+                </button>
+              </form>
+            </>
+          ) : (
+          <>
           <h1 className="text-[24px] font-semibold">Sign in</h1>
           <p className="mt-1 text-[13px] text-muted">Use your platform account or your directory credentials.</p>
           <form onSubmit={submit} className="mt-6 space-y-4" noValidate>
@@ -69,6 +129,8 @@ export function LoginPage() {
                 </Button>
               ))}
             </div>
+          )}
+          </>
           )}
           <p className="mt-8 text-[12px] leading-relaxed text-muted">
             Access is logged. Sessions end after 30 minutes of inactivity.

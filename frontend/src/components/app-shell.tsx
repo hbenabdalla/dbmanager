@@ -1,10 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import {
   BellRing, BookOpen, ChevronDown, ChevronsLeft, CircleHelp, Github, Info, ChevronsRight, Database, FolderTree, KeyRound, Layers, LogOut, Menu as MenuIcon, Moon, Plus,
-  Search, Server as ServerIcon, Sun, UserPlus, UserRound, Wand2, X,
+  Search, Server as ServerIcon, ShieldCheck, Sun, UserPlus, UserRound, Wand2, X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Navigate, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { get } from "@/api/client";
 import { Menu, MenuContent, MenuItem, MenuLabel, MenuSeparator, MenuTrigger } from "@/components/ui/menu";
 import { useAuth } from "@/lib/auth";
@@ -334,6 +334,7 @@ export function AppShell() {
                 </div>
                 <MenuSeparator />
                 <MenuItem onSelect={() => navigateTo("/account/tokens")}><KeyRound /> API tokens</MenuItem>
+                <MenuItem onSelect={() => navigateTo("/account/security")}><ShieldCheck /> Security</MenuItem>
                 {me?.auth_source === "local" && <MenuItem onSelect={() => setPwOpen(true)}><UserRound /> Change password</MenuItem>}
                 <MenuItem onSelect={() => logout()}><LogOut /> Sign out</MenuItem>
               </MenuContent>
@@ -349,7 +350,8 @@ export function AppShell() {
           </div>
         )}
         <main id="main" className="mx-auto w-full max-w-[1600px] flex-1 px-3 py-5 sm:px-6">
-          <Outlet />
+          {/* the MFA policy requires enrollment first: everything else is refused by the API */}
+          {me?.mfa_enrollment_required && loc.pathname !== "/account/security" ? <Navigate to="/account/security" replace /> : <Outlet />}
         </main>
       </div>
       <CommandPalette open={palette} onOpenChange={setPalette} />

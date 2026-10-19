@@ -14,11 +14,13 @@ import { AuditPage } from "@/features/audit/audit";
 import { LoginPage } from "@/features/auth/login";
 import { DashboardPage } from "@/features/dashboard/dashboard";
 import { ClustersPage, EnvironmentsPage, FleetDatabasesPage } from "@/features/fleet/fleet-pages";
+import { PlacementPage } from "@/features/fleet/placement";
 import { ServersPage } from "@/features/fleet/servers";
 import { LocksPage, MonitoringOverviewPage, PerformanceComparePage, ReplicationPage, SessionsPage } from "@/features/monitoring/monitoring";
 import { RecommendationsPage } from "@/features/optimization/optimization";
 import { AboutPage } from "@/features/platform/about";
 import { ApiTokensPage } from "@/features/account/api-tokens";
+import { SecurityPage } from "@/features/account/security";
 import { NotificationChannelsPage } from "@/features/platform/channels";
 import { IdentityProvidersPage } from "@/features/platform/idp";
 import { CollectorsPage, CredentialsPage, SettingsPage } from "@/features/platform/ops";
@@ -73,6 +75,7 @@ export function AppRoutes() {
         <Route path="fleet/clusters" element={<ClustersPage />} />
         <Route path="fleet/databases" element={<FleetDatabasesPage />} />
         <Route path="fleet/environments" element={<EnvironmentsPage />} />
+        <Route path="fleet/placement" element={<PlacementPage />} />
         <Route path="fleet/onboarding/bulk" element={<BulkOnboardingPage />} />
         <Route path="setup" element={<SetupWizardPage />} />
         <Route path="setup/checklist" element={<SetupChecklistPage />} />
@@ -110,6 +113,7 @@ export function AppRoutes() {
         <Route path="platform/notifications" element={<NotificationChannelsPage />} />
         <Route path="platform/about" element={<AboutPage />} />
         <Route path="account/tokens" element={<ApiTokensPage />} />
+        <Route path="account/security" element={<SecurityPage />} />
         <Route path="platform/users" element={<UsersPage />} />
         <Route path="platform/roles" element={<RolesPage />} />
         <Route path="platform/identity" element={<IdentityProvidersPage />} />

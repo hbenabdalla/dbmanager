@@ -1,11 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
-import { Plus, Trash2, UserPlus } from "lucide-react";
+import { Plus, ShieldOff, Trash2, UserPlus, Users as UsersIcon } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { ApiError, del, get, patch, post } from "@/api/client";
+import { ApiError, del, get, patch, post, put } from "@/api/client";
 import { useAllServers, useClusters, useEnvironments, useSites } from "@/api/hooks";
 import type { Assignment, Group, Page, Role, User } from "@/api/types";
+import { ConfirmDialog } from "@/components/confirm";
 import { PageHeader } from "@/components/page";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -115,10 +116,53 @@ export function AssignmentList({ principalId, principalName, type }: { principal
   );
 }
 
+interface EffectiveGrant { role: string; scope_type: string; scope_id: string; scope_label: string | null; via_group: string | null; permissions: string[] }
+
+/** What a user can actually do: every grant (direct or via a group) with its permissions. */
+export function EffectivePermissions({ userId }: { userId: string }) {
+  const [open, setOpen] = useState(false);
+  const q = useQuery({
+    queryKey: ["effective-permissions", userId],
+    queryFn: () => get<{ user: string; grants: EffectiveGrant[] }>(`/users/${userId}/effective-permissions`),
+    enabled: open,
+  });
+  return (
+    <div>
+      <div className="mb-2 flex items-center justify-between">
+        <h4 className="text-[13px] font-semibold">Effective permissions</h4>
+        <Button size="sm" variant="ghost" onClick={() => setOpen((o) => !o)}>{open ? "Hide" : "Show"}</Button>
+      </div>
+      {open && (q.isLoading ? <p className="text-[13px] text-muted">Loading…</p> : (
+        <ul className="divide-y divide-border rounded-md border border-border" data-testid="effective-permissions">
+          {q.data?.grants.map((g, i) => (
+            <li key={i} className="space-y-1 px-3 py-2 text-[13px]">
+              <div><span className="font-medium">{g.role}</span> <span className="text-muted">on</span> <Badge tone="accent">{g.scope_type}</Badge> {g.scope_label ?? g.scope_id}
+                {g.via_group && <span className="text-muted"> (via group {g.via_group})</span>}</div>
+              <div className="flex flex-wrap gap-1">{g.permissions.map((p) => <Badge key={p} tone="outline" className="font-mono">{p}</Badge>)}</div>
+            </li>
+          ))}
+          {q.data?.grants.length === 0 && <li className="px-3 py-3 text-[13px] text-muted">No permissions anywhere.</li>}
+        </ul>
+      ))}
+    </div>
+  );
+}
+
 function UserDialog({ user, onClose }: { user: User; onClose: () => void }) {
   const qc = useQueryClient();
   const { canPlatform, me } = useAuth();
   const [pw, setPw] = useState("");
+  const [confirm, setConfirm] = useState<"mfa" | "delete" | null>(null);
+  const mfaReset = useMutation({
+    mutationFn: () => post<{ message: string }>(`/users/${user.id}/mfa/reset`),
+    onSuccess: (r) => { toast.success(r.message); setConfirm(null); },
+    onError: err,
+  });
+  const remove = useMutation({
+    mutationFn: () => del(`/users/${user.id}`),
+    onSuccess: () => { toast.success(`${user.username} deleted`); qc.invalidateQueries({ queryKey: ["users"] }); setConfirm(null); onClose(); },
+    onError: err,
+  });
   const toggle = useMutation({ mutationFn: (v: Partial<{ is_active: boolean; unlock: boolean }>) => patch<User>(`/users/${user.id}`, v), onSuccess: () => { toast.success("User updated"); qc.invalidateQueries({ queryKey: ["users"] }); }, onError: err });
   const reset = useMutation({ mutationFn: () => post(`/users/${user.id}/reset-password`, { new_password: pw, must_change_password: true }), onSuccess: () => { toast.success("Password reset; the user must change it at next sign-in"); setPw(""); }, onError: err });
   return (
@@ -128,6 +172,7 @@ function UserDialog({ user, onClose }: { user: User; onClose: () => void }) {
           <div><div className="text-[12px] text-muted">Last sign-in</div>{relTime(user.last_login_at)}</div>
           <div><div className="text-[12px] text-muted">Created</div>{dateTime(user.created_at)}</div>
           <div><div className="text-[12px] text-muted">Groups</div>{user.groups.map((g) => g.name).join(", ") || "None"}</div>
+          {user.auth_source === "local" && <div><div className="text-[12px] text-muted">Multi-factor</div>{user.mfa_enabled ? "Authenticator enrolled" : "Not enrolled"}</div>}
         </div>
         {canPlatform("users.manage") && (
           <div className="flex flex-wrap items-center gap-4 rounded-md border border-border p-3 text-[13px]">
@@ -141,9 +186,26 @@ function UserDialog({ user, onClose }: { user: User; onClose: () => void }) {
             )}
           </div>
         )}
+        {canPlatform("users.manage") && (
+          <div className="flex flex-wrap gap-2">
+            {user.auth_source === "local" && user.mfa_enabled && <Button size="sm" onClick={() => setConfirm("mfa")}><ShieldOff /> Reset MFA</Button>}
+            {user.id !== me?.id && <Button size="sm" variant="danger" onClick={() => setConfirm("delete")}><Trash2 /> Delete user</Button>}
+          </div>
+        )}
         <AssignmentList principalId={user.id} principalName={user.username} type="user" />
+        <EffectivePermissions userId={user.id} />
         {canPlatform("users.manage") && <UserTokens userId={user.id} />}
       </div>
+      <ConfirmDialog open={confirm === "mfa"} onOpenChange={(o) => !o && setConfirm(null)} title={`Reset MFA of ${user.username}?`}
+        confirmLabel="Remove authenticator" busy={mfaReset.isPending} onConfirm={() => mfaReset.mutate()}>
+        Use this when the user lost their authenticator. Their authenticator and recovery codes are removed; if the MFA policy
+        applies to them they must set up a new authenticator at their next sign-in. The reset is audited.
+      </ConfirmDialog>
+      <ConfirmDialog open={confirm === "delete"} onOpenChange={(o) => !o && setConfirm(null)} title={`Delete ${user.username}?`} danger
+        expected={user.username} expectedLabel="Type the username to confirm" confirmLabel="Delete user" busy={remove.isPending}
+        onConfirm={() => remove.mutate()}>
+        The account, its role assignments and its API tokens are removed. Audit records keep the username. This cannot be undone.
+      </ConfirmDialog>
     </Dialog>
   );
 }
@@ -169,13 +231,55 @@ function CreateUser({ open, onOpenChange }: { open: boolean; onOpenChange: (o: b
   );
 }
 
+function MembersDialog({ group, onClose }: { group: Group; onClose: () => void }) {
+  const qc = useQueryClient();
+  const { me } = useAuth();
+  const users = useQuery({ queryKey: ["users", "all"], queryFn: () => get<Page<User>>("/users", { page_size: 500 }) });
+  const [ids, setIds] = useState<Set<string>>(() => new Set(group.members.map((m) => m.id)));
+  const save = useMutation({
+    mutationFn: () => put<Group>(`/groups/${group.id}/members`, { user_ids: [...ids] }),
+    onSuccess: () => { toast.success("Members updated"); qc.invalidateQueries({ queryKey: ["groups"] }); qc.invalidateQueries({ queryKey: ["users"] }); onClose(); },
+    onError: err,
+  });
+  const toggle = (id: string) => setIds((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()} title={`Members of ${group.name}`}
+      description="Members receive the group's role assignments. Memberships synchronised from a directory are kept as they are."
+      footer={<><Button variant="ghost" onClick={onClose}>Cancel</Button><Button variant="primary" disabled={save.isPending} onClick={() => save.mutate()}>Save members</Button></>}>
+      <ul className="max-h-80 divide-y divide-border overflow-y-auto rounded-md border border-border">
+        {users.data?.items.map((u) => {
+          const self = u.id === me?.id && !group.members.some((m) => m.id === u.id);
+          return (
+            <li key={u.id} className="px-3 py-1.5 text-[13px]">
+              <label className="flex items-center gap-2">
+                <input type="checkbox" checked={ids.has(u.id)} disabled={self} onChange={() => toggle(u.id)} aria-label={`Member ${u.username}`} />
+                <span className="font-medium">{u.display_name ?? u.username}</span><span className="text-muted">{u.username}</span>
+                {self && <span className="text-[12px] text-muted">(you cannot add yourself)</span>}
+              </label>
+            </li>
+          );
+        })}
+      </ul>
+    </Dialog>
+  );
+}
+
 function Groups() {
   const qc = useQueryClient();
   const { canPlatform } = useAuth();
   const groups = useQuery({ queryKey: ["groups"], queryFn: () => get<Group[]>("/groups") });
   const [name, setName] = useState("");
-  const [sel, setSel] = useState<Group | null>(null);
+  const [selId, setSelId] = useState<string | null>(null);
+  const sel = groups.data?.find((g) => g.id === selId) ?? null;
+  const setSel = (g: Group | null) => setSelId(g?.id ?? null);
+  const [editing, setEditing] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const create = useMutation({ mutationFn: () => post("/groups", { name }), onSuccess: () => { setName(""); qc.invalidateQueries({ queryKey: ["groups"] }); }, onError: err });
+  const remove = useMutation({
+    mutationFn: (g: Group) => del(`/groups/${g.id}`),
+    onSuccess: () => { toast.success("Group deleted"); setDeleting(false); setSel(null); qc.invalidateQueries({ queryKey: ["groups"] }); },
+    onError: err,
+  });
   return (
     <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
       <Card>
@@ -189,11 +293,25 @@ function Groups() {
       <Card>
         {sel ? (
           <CardBody className="space-y-4">
-            <div><h3 className="text-[15px] font-semibold">{sel.name}</h3><p className="text-[12.5px] text-muted">Members: {sel.members.map((m) => m.username).join(", ") || "none"}</p></div>
+            <div className="flex flex-wrap items-start justify-between gap-2">
+              <div><h3 className="text-[15px] font-semibold">{sel.name}</h3><p className="text-[12.5px] text-muted">Members: {sel.members.map((m) => m.username).join(", ") || "none"}</p></div>
+              {canPlatform("users.manage") && (
+                <div className="flex gap-2">
+                  <Button size="sm" onClick={() => setEditing(true)}><UsersIcon /> Edit members</Button>
+                  <Button size="sm" variant="danger" onClick={() => setDeleting(true)}><Trash2 /> Delete group</Button>
+                </div>
+              )}
+            </div>
             <AssignmentList principalId={sel.id} principalName={sel.name} type="group" />
           </CardBody>
         ) : <EmptyState title="Select a group" />}
       </Card>
+      {editing && sel && <MembersDialog group={sel} onClose={() => setEditing(false)} />}
+      <ConfirmDialog open={deleting} onOpenChange={setDeleting} title={`Delete group ${sel?.name ?? ""}?`} danger
+        expected={sel?.name} expectedLabel="Type the group name to confirm" confirmLabel="Delete group" busy={remove.isPending}
+        onConfirm={() => sel && remove.mutate(sel)}>
+        Members lose the roles assigned to this group. Directory group mappings pointing to it stop working.
+      </ConfirmDialog>
     </div>
   );
 }

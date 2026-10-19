@@ -17,6 +17,7 @@ import { Switch } from "@/components/ui/switch";
 import { ChoiceCard, StageList, SuccessPanel, Wizard, type Stage, type WizardStep } from "@/components/wizard";
 import { useAuth } from "@/lib/auth";
 import { EmptyState } from "@/components/ui/states";
+import { OidcMfaFields } from "./oidc-mfa";
 
 interface DraftResult { ok: boolean; stages: Stage[] }
 export interface OidcPreset {
@@ -268,6 +269,7 @@ export function OidcWizard({ provider, onDone, onCancel }: { provider?: Identity
           <Field label="Username claim"><Input value={String(cfg.username_claim ?? "")} onChange={(e) => s("username_claim", e.target.value)} /></Field>
           <Field label="Email claim"><Input value={String(cfg.email_claim ?? "")} onChange={(e) => s("email_claim", e.target.value)} /></Field>
           <Field label="Groups claim" hint="Dotted paths work, e.g. realm_access.roles"><Input value={String(cfg.groups_claim ?? "")} onChange={(e) => s("groups_claim", e.target.value)} /></Field>
+          <OidcMfaFields cfg={cfg} onChange={(p) => setCfg((c) => ({ ...c, ...p }))} />
         </div>);
       case "test": return (
         <div className="space-y-3">
