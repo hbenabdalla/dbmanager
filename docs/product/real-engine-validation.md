@@ -5,7 +5,7 @@ container images**, driven by the integration suite (`backend/tests/integration/
 `scripts/integration-test.ps1` / `.sh`. Nothing here comes from mocks or the simulation. Results
 also ship in `backend/app/data/real_engine_validation.json` (shown on **Platform → Engine support**).
 
-Last full run: **2026-10-19 20:31 UTC** (pytest JUnit timestamp; matrix written 20:32:49 UTC), release 0.12.0 + the 0.13.0 fixes up to commit `92c9250`. Changes made after that run (MySQL error-1419 handling, the Db2 SYSMAINT backup operator, and the 0.13.0 real-engine checks for plan identity and size series) are **pending a re-run** and are not counted as validated.
+Last full run: **2026-10-19 20:31 UTC** (pytest JUnit timestamp; matrix written 20:32:49 UTC), release 0.12.0 + the 0.13.0 fixes up to commit `92c9250`. Last full run: **2026-10-19 21:34 UTC** (pytest JUnit timestamp; matrix written 21:36:02 UTC) of release 0.13.0 (commit `43c48a3`). It includes the 0.13.0 real-engine checks: plan identity in Oracle and SQL Server query statistics, database and tablespace size series built from real storage data, MySQL restore with binary logging on, and the Db2 backup as a SYSMAINT operator. The previous run (2026-10-19 20:31 UTC, 84 passed, 1 failed — MySQL backup/restore, error 1419) is superseded.
 
 ## Status legend
 
@@ -27,11 +27,11 @@ validated only in part.
 | Engine | Version | Connection | TLS | Inventory | Users | Roles | Privileges | Sessions | Locks | Blocking | Performance Metrics | Storage | Queries | Execution Plans | Replication | Security | Recommendations | Administration | Backup | Restore | Overall |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | PostgreSQL | 16.15 | PASS | NOT TESTED | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PARTIAL | PASS | PASS | PASS | PASS | PASS | PASS |
-| MySQL | 8.4.11 | PASS | NOT TESTED | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PARTIAL | PASS | PASS | PASS | FAIL | FAIL | FAIL |
+| MySQL | 8.4.11 | PASS | NOT TESTED | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PARTIAL | PASS | PASS | PASS | PASS | PASS | PASS |
 | MariaDB | 11.4.13 | PASS | NOT TESTED | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PARTIAL | PASS | PASS | PASS | PASS | PASS | PASS |
 | SQL Server | 16.0.4305.5 (2022) | PASS | PARTIAL | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PARTIAL | PASS | PASS | PASS | PASS | PASS | PASS |
 | Oracle | 21.3.0.0.0 XE | PASS | NOT TESTED | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PARTIAL | PASS | PASS | PASS | PASS | PASS | PASS |
-| Db2 LUW | 11.5.9.0 | PASS | NOT TESTED | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PARTIAL | PASS | PASS | PASS | PARTIAL | EXTERNAL VALIDATION REQUIRED | PARTIAL |
+| Db2 LUW | 11.5.9.0 | PASS | NOT TESTED | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PARTIAL | PASS | PASS | PASS | PASS | EXTERNAL VALIDATION REQUIRED | PASS |
 | Db2 for z/OS | — | EXTERNAL VALIDATION REQUIRED | EXTERNAL VALIDATION REQUIRED | EXTERNAL VALIDATION REQUIRED | EXTERNAL VALIDATION REQUIRED | EXTERNAL VALIDATION REQUIRED | EXTERNAL VALIDATION REQUIRED | EXTERNAL VALIDATION REQUIRED | EXTERNAL VALIDATION REQUIRED | EXTERNAL VALIDATION REQUIRED | EXTERNAL VALIDATION REQUIRED | EXTERNAL VALIDATION REQUIRED | EXTERNAL VALIDATION REQUIRED | EXTERNAL VALIDATION REQUIRED | EXTERNAL VALIDATION REQUIRED | EXTERNAL VALIDATION REQUIRED | EXTERNAL VALIDATION REQUIRED | EXTERNAL VALIDATION REQUIRED | EXTERNAL VALIDATION REQUIRED | EXTERNAL VALIDATION REQUIRED | EXTERNAL VALIDATION REQUIRED |
 
 Summary (as requested for the release report):
@@ -39,17 +39,17 @@ Summary (as requested for the release report):
 | Engine | Real Engine | Adapter | Monitoring | Queries | Security | Admin | Backup/Restore | Overall |
 |---|---|---|---|---|---|---|---|---|
 | PostgreSQL | PASS | PASS | PASS | PASS | PASS | PASS | PASS / PASS | PASS |
-| MySQL | PASS | PASS | PASS | PASS | PASS | PASS | FAIL / FAIL | FAIL |
+| MySQL | PASS | PASS | PASS | PASS | PASS | PASS | PASS / PASS | PASS |
 | MariaDB | PASS | PASS | PASS | PASS | PASS | PASS | PASS / PASS | PASS |
 | SQL Server | PASS | PASS | PASS | PASS | PASS | PASS | PASS / PASS | PASS |
 | Oracle | PASS | PASS | PASS | PASS | PASS | PASS | PASS / PASS | PASS |
-| Db2 LUW | PASS | PASS | PASS | PASS | PASS | PASS | PARTIAL / EXTERNAL VALIDATION REQUIRED | PARTIAL |
+| Db2 LUW | PASS | PASS | PASS | PASS | PASS | PASS | PASS / EXTERNAL VALIDATION REQUIRED | PASS |
 | Db2 for z/OS | EXTERNAL VALIDATION REQUIRED | EXTERNAL VALIDATION REQUIRED | EXTERNAL VALIDATION REQUIRED | EXTERNAL VALIDATION REQUIRED | EXTERNAL VALIDATION REQUIRED | EXTERNAL VALIDATION REQUIRED | EXTERNAL VALIDATION REQUIRED | EXTERNAL VALIDATION REQUIRED |
 
 ## Run details
 
 - **Environment:** Docker Desktop on Windows (WSL 2), `docker-compose.test.yml` via `scripts/integration-test.ps1`, the backend `it` image as the test runner
-- **Result:** 86 tests: 84 passed, 1 failed (MySQL backup/restore), 1 skipped (Oracle TCPS)
+- **Result:** 86 tests: 85 passed, 0 failed, 1 skipped (Oracle TCPS)
 - **Identity and secrets:** OpenLDAP (osixia/openldap 1.5.0): bind, search, groups, StartTLS — PASS; Keycloak 26.0.7: OIDC authorization code flow with PKCE — PASS; HashiCorp Vault 1.17.6: KV v2 with token and AppRole — PASS
 - **Time-series:** VictoriaMetrics v1.122.0 suite not part of this run
 - **Passwords:** generated per environment into `.env.test`; never in this report or the repository
@@ -82,11 +82,11 @@ Limitations:
 | Driver | PyMySQL 1.2.3 |
 | Client tools | MariaDB client tools (`mysqldump` / `mysql` of Debian 12's MariaDB 10.11 client) in the backend image |
 | Accounts | monitoring `dbm_it_monitor` (`PROCESS, SHOW DATABASES, SHOW VIEW`, `REPLICATION CLIENT`, `SHOW_ROUTINE`, `SELECT` on `performance_schema` and `mysql`), backup `SELECT, SHOW VIEW, TRIGGER, EVENT, LOCK TABLES`, restore schema-scoped DDL/DML; no `SUPER` |
-| Tests | 13 executed: 12 passed, 1 failed, 0 skipped |
+| Tests | 13 executed: 13 passed, 0 failed, 0 skipped |
 
 Limitations:
 
-- Backup/restore FAIL in the 2026-10-19 20:31 UTC run: restoring the trigger and procedure failed with error 1419 (binary logging on, `log_bin_trust_function_creators = OFF`). Fixed in 0.13.0 (checked before anything is created, refused with the fix; the test then applies the documented prerequisite). The fix was verified against MariaDB 10.11 with binary logging; **the MySQL 8.4 re-run is pending**.
+- Backup/restore with binary logging on validated: refusal without `log_bin_trust_function_creators`, then the documented prerequisite (not `SUPER`).
 - TLS NOT TESTED: `prefer` mode; the suite does not assert an encrypted session.
 - Replication PARTIAL: standalone server only.
 - Dumps are made with the MariaDB client tools of the image; mount MySQL's own client tools for full fidelity (`DBM_BACKUP_MYSQL_BIN_DIR`).
@@ -152,7 +152,7 @@ Limitations:
 
 Limitations:
 
-- Backup PARTIAL: the online backup and its recovery-history verification passed in the 20:31 UTC run, but as the instance owner (SYSADM). 0.13.0 runs it as the SYSMAINT backup operator `DBMBK`; **that re-run is pending**.
+- Backup validated as the SYSMAINT backup operator `DBMBK` (not SYSADM).
 - Restore EXTERNAL VALIDATION REQUIRED: a Db2 restore runs with the CLP on the Db2 host; DB Manager generates the command (checked by the test) and does not execute it.
 - TLS NOT TESTED: the container has no SSL listener.
 - Replication PARTIAL: HADR off (standalone).
@@ -174,7 +174,6 @@ Limitations:
 - TLS certificate verification (`verify-ca` / `verify-full`) against real engines.
 - Active Directory (only OpenLDAP was available).
 - Db2 for z/OS — EXTERNAL VALIDATION REQUIRED.
-- Re-run of the 0.13.0 changes: MySQL backup/restore with binary logging, Db2 backup as SYSMAINT operator, Oracle/SQL Server plan identity in query statistics, database/tablespace size series from real storage data (`.\scripts\integration-test.ps1`).
 
 ## How to reproduce
 

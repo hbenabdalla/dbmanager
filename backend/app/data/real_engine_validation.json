@@ -139,7 +139,7 @@
         }
       },
       "result": "passed",
-      "validated_at": "2026-10-19T20:32:49.651313+00:00"
+      "validated_at": "2026-10-19T21:36:02.089211+00:00"
     },
     "mssql": {
       "version": "16.0.4305.5",
@@ -263,7 +263,7 @@
         }
       },
       "result": "passed",
-      "validated_at": "2026-10-19T20:32:49.651313+00:00"
+      "validated_at": "2026-10-19T21:36:02.089211+00:00"
     },
     "mysql": {
       "version": "8.4.11",
@@ -372,22 +372,22 @@
           "status": "not_tested"
         },
         "backup": {
-          "status": "failed",
-          "passed": 0,
-          "failed": 1,
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
           "skipped": 0,
           "skip_reasons": []
         },
         "restore": {
-          "status": "failed",
-          "passed": 0,
-          "failed": 1,
+          "status": "validated",
+          "passed": 1,
+          "failed": 0,
           "skipped": 0,
           "skip_reasons": []
         }
       },
-      "result": "failed",
-      "validated_at": "2026-10-19T20:32:49.651313+00:00"
+      "result": "passed",
+      "validated_at": "2026-10-19T21:36:02.089211+00:00"
     },
     "mariadb": {
       "version": "11.4.13-MariaDB-ubu2404",
@@ -511,7 +511,7 @@
         }
       },
       "result": "passed",
-      "validated_at": "2026-10-19T20:32:49.651313+00:00"
+      "validated_at": "2026-10-19T21:36:02.089211+00:00"
     },
     "oracle": {
       "version": "21.3.0.0.0",
@@ -637,7 +637,7 @@
         }
       },
       "result": "passed",
-      "validated_at": "2026-10-19T20:32:49.651313+00:00"
+      "validated_at": "2026-10-19T21:36:02.089211+00:00"
     },
     "postgresql": {
       "version": "16.15",
@@ -761,7 +761,7 @@
         }
       },
       "result": "passed",
-      "validated_at": "2026-10-19T20:32:49.651313+00:00"
+      "validated_at": "2026-10-19T21:36:02.089211+00:00"
     },
     "openldap": {
       "version": "OpenLDAP (osixia/openldap 1.5.0)",
@@ -833,7 +833,7 @@
         }
       },
       "result": "passed",
-      "validated_at": "2026-10-19T20:32:49.651313+00:00"
+      "validated_at": "2026-10-19T21:36:02.089211+00:00"
     },
     "keycloak": {
       "version": "Keycloak 26 (http://keycloak:8080/realms/dbm)",
@@ -909,7 +909,7 @@
         }
       },
       "result": "passed",
-      "validated_at": "2026-10-19T20:32:49.651313+00:00"
+      "validated_at": "2026-10-19T21:36:02.089211+00:00"
     },
     "vault": {
       "version": "Vault 1.17.6",
@@ -981,7 +981,7 @@
         }
       },
       "result": "passed",
-      "validated_at": "2026-10-19T20:32:49.651313+00:00"
+      "validated_at": "2026-10-19T21:36:02.089211+00:00"
     }
   },
   "environment": "docker-compose.test.yml via scripts/integration-test.ps1 (Docker Desktop / WSL 2): vendor images from Docker Hub, mcr.microsoft.com, container-registry.oracle.com, icr.io; backend image with Microsoft ODBC Driver 18.7",
@@ -989,5 +989,5 @@
     "db2zos": "External validation required: Db2 for z/OS cannot run in a container; validate against a z/OS subsystem through Db2 Connect."
   },
   "notes": {},
-  "generated_at": "2026-10-19T20:32:49.651313+00:00"
+  "generated_at": "2026-10-19T21:36:02.089211+00:00"
 }

@@ -23,7 +23,7 @@ documented skip), 54 frontend tests.
 > upgrade and recovery verification (0.9.5), and alerting with lifecycle, maintenance windows,
 > webhook and SMTP channels (0.10.1–0.10.3) have landed with tests; their rows below are updated.
 > Test counts for 0.13.0: 471 backend unit + API, 5 migration, 86 real-engine integration in the
-> last Docker run (84 passed, 1 failed, 1 documented skip — see the
+> last Docker run (85 passed, 1 documented skip — see the
 > [real-engine validation report](real-engine-validation.md)), 117 frontend. See the [roadmap](roadmap.md).
 
 ## Platform
@@ -241,8 +241,8 @@ documented skip), 54 frontend tests.
 | MariaDB backup / restore | COMPLETE (real-validated: 11.4.13 and 10.11, least privilege) | `engines.MySQLFamilyProvider`; `tests/integration/test_backup_engines.py` |
 | SQL Server backup / restore | COMPLETE (real-validated: 2022, `db_backupoperator` / `dbcreator`) | `engines.SQLServerProvider` |
 | Oracle Data Pump export / import | COMPLETE (real-validated: 21c XE, no `DBA`) | `engines.OracleProvider` |
-| MySQL backup / restore | IMPLEMENTED / NOT REAL-VALIDATED (failed with error 1419 in the 2026-10-19 run; fixed in 0.13.0, re-run pending) | `engines.MySQLFamilyProvider` binary-logging preflight |
-| Db2 LUW online backup | PARTIAL (real run passed as the instance owner; SYSMAINT-operator run pending) | `engines.Db2LUWProvider` |
+| MySQL backup / restore | COMPLETE (real-validated: 8.4.11 with binary logging on, least privilege) | `engines.MySQLFamilyProvider` binary-logging preflight |
+| Db2 LUW online backup | COMPLETE (real-validated: 11.5.9.0 as a SYSMAINT operator) | `engines.Db2LUWProvider` |
 | Db2 LUW restore, Oracle RMAN, Db2 for z/OS | NOT APPLICABLE (external tool required) | Reported as such by capability discovery; Db2 LUW restore command generated |
 | Point-in-time recovery | PLANNED | Sprint 0.12.7; not claimed by any provider |
 | Policies, schedules, retention, bulk, notifications, metrics, protection status | COMPLETE | `service.schedule`, `apply_retention`, `protection`; API tests |

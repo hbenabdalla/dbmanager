@@ -46,11 +46,11 @@ never filled with made-up data.
 | Engine | Driver | Status | Real-engine validation |
 |---|---|---|---|
 | PostgreSQL 12–17 | asyncpg | Supported (reference adapter) | 16.15 — adapter, backup and restore |
-| MySQL 8.0 / 8.4 / 9.x | PyMySQL | Supported | 8.4.11 — adapter; backup/restore fix awaiting re-run |
+| MySQL 8.0 / 8.4 / 9.x | PyMySQL | Supported | 8.4.11 — adapter, backup and restore |
 | MariaDB 10.5–11.x | PyMySQL | Supported | 11.4.13 — adapter, backup and restore |
 | SQL Server 2016–2022, Azure SQL | pyodbc + Microsoft ODBC Driver 18 | Supported | 2022 (16.0.4305.5) — adapter, backup and restore |
 | Oracle Database 12.2–23ai | python-oracledb (thin, no Oracle Client) | Supported without management packs | 21c XE — adapter, Data Pump backup and restore (TCPS not exercised) |
-| IBM Db2 LUW 11.1–12.1 | ibm_db | Supported | 11.5.9.0 — adapter; backup partial (restore external) |
+| IBM Db2 LUW 11.1–12.1 | ibm_db | Supported | 11.5.9.0 — adapter and backup (restore external) |
 | IBM Db2 for z/OS 12–13 | ibm_db over DRDA (needs Db2 Connect) | **Partial** | External validation required |
 
 Oracle Diagnostics and Tuning Pack features (AWR, ASH, ADDM, SQL Monitor, SQL Tuning Advisor) are

@@ -92,22 +92,22 @@ compatibility*):
 - Oracle: no optional packs are used (no AWR, ASH, ADDM, SQL Monitor, SQL Tuning Advisor).
 
 ### Database compatibility
-Real-engine run on 2026-10-19 (Docker Desktop / WSL 2, official images), see
+Real-engine run on 2026-10-19 21:34 UTC of this release (Docker Desktop / WSL 2, official images), see
 `docs/product/real-engine-validation.md`:
 
 | Engine (image) | Version | Result |
 |---|---|---|
 | PostgreSQL (`postgres:16-alpine`) | 16.15 | PASS (backup/restore included) |
-| MySQL (`mysql:8.4`) | 8.4.11 | PASS except backup/restore: FAIL (error 1419) in that run — fixed in 0.13.0, re-run pending |
+| MySQL (`mysql:8.4`) | 8.4.11 | PASS (backup/restore with binary logging on included) |
 | MariaDB (`mariadb:11.4`) | 11.4.13 | PASS (backup/restore included) |
 | SQL Server (`mssql/server:2022-latest`) | 16.0.4305.5 | PASS (backup/restore included) |
 | Oracle Database XE (`database/express:21.3.0-xe`) | 21.3.0.0.0 | PASS (Data Pump included); TCPS not tested |
-| Db2 LUW (`db2_community/db2:11.5.9.0`) | 11.5.9.0 | PASS; backup PARTIAL (instance owner; SYSMAINT re-run pending); restore external |
+| Db2 LUW (`db2_community/db2:11.5.9.0`) | 11.5.9.0 | PASS (backup as a SYSMAINT operator); restore is an external step |
 | OpenLDAP (`osixia/openldap:1.5.0`), Keycloak 26.0.7, Vault 1.17.6 | — | PASS |
 | Db2 for z/OS | — | EXTERNAL VALIDATION REQUIRED |
 
 Drivers: asyncpg 0.32.0, PyMySQL 1.2.3, pyodbc 5.3.0 with Microsoft ODBC Driver 18.7,
-python-oracledb 26.0.1 (thin), ibm_db 3.3.0. 86 tests: 84 passed, 1 failed, 1 skipped.
+python-oracledb 26.0.1 (thin), ibm_db 3.3.0. 86 tests: 85 passed, 1 skipped (Oracle TCPS). An earlier run the same day (84 passed, 1 failed) found the MySQL error 1419 fixed in this release.
 
 ### Known limitations
 - Plan changes are detected only for Oracle and SQL Server; the other engines' statement

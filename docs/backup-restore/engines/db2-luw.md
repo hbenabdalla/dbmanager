@@ -15,7 +15,7 @@
 * **Least privilege:** `BACKUP DATABASE` needs an instance-level authority; the smallest is
   **SYSMAINT**, granted through the operating-system group named in `SYSMAINT_GROUP` (changing it
   needs an instance restart). The backup account then needs `CONNECT`, `EXECUTE` on
-  `SYSPROC.ADMIN_CMD` and `SELECT` on `SYSIBMADM.DB_HISTORY` (plus `EXECUTE` on `SYSPROC.DB_HISTORY`).
+  `SYSPROC.ADMIN_CMD` and `SELECT` on `SYSIBMADM.DB_HISTORY`.
   Do not use SYSADM or the instance owner:
 
   ```sql
@@ -24,7 +24,6 @@
   GRANT CONNECT ON DATABASE TO USER DBMBK;
   GRANT EXECUTE ON PROCEDURE SYSPROC.ADMIN_CMD TO USER DBMBK;
   GRANT SELECT ON SYSIBMADM.DB_HISTORY TO USER DBMBK;
-  GRANT EXECUTE ON FUNCTION SYSPROC.DB_HISTORY TO USER DBMBK;
   ```
 
 * Applies to Db2 LUW only — never to Db2 for z/OS.

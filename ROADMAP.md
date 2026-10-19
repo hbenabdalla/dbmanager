@@ -23,7 +23,7 @@ roadmap is milestone-based, and no dates are promised.
 | 0.9 | **Release foundation**: repository and governance, CI, Read the Docs site, version metadata and About page, upgrade and recovery verification | DONE |
 | 0.10 | **Operations & alerting**: alert engine, SMTP/webhook (Slack, Teams) notifications with retries and routing, recurring maintenance windows, alert inbox and re-notification, diagnostic bundles | DONE |
 | 0.11 | **Enterprise integration**: API tokens, rate limiting, real LDAP / Keycloak (OIDC) / Vault validation, SIEM forwarding, HashiCorp Vault, MFA | DONE. Cloud secret managers are PLANNED (0.11.7). |
-| 0.12 | **Asset protection**: backup and restore of the platform and of managed databases, policies, retention, verification, disaster recovery | DONE. Database backups real-validated for PostgreSQL, MariaDB, SQL Server and Oracle; the MySQL fix and the Db2 LUW SYSMAINT run await a re-run. Native Azure/GCS targets and PITR are PLANNED. |
+| 0.12 | **Asset protection**: backup and restore of the platform and of managed databases, policies, retention, verification, disaster recovery | DONE. Database backups and restores real-validated for all six engines (Db2 LUW restore is an external step). Native Azure/GCS targets and PITR are PLANNED. |
 | 0.13 | **Performance intelligence**: z-score alert rules, query regression and plan-change detection, capacity forecasting with confidence bands, period and plan comparison, recommendation outcome validation | DONE (0.13.0) |
 | 0.14 | Reporting: more report types, scheduled delivery, PDF | NEXT |
 | 0.15 | Cloud-native: published images, Helm chart, manifest validation, HA and TLS reference | PLANNED |

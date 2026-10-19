@@ -54,8 +54,7 @@ the repository root; "—" means not yet created.
 |---|---|---|---|---|---|---|
 | Platform backup, encryption, storage targets | G-20 | 0.12.1 | `backend/app/backup/{platform,encryption,storage,service}.py`, migration `0010` | `tests/unit/test_backup_units.py`, `tests/api/test_backup.py` | [Backup & Restore](../backup-restore/index.md) | VERIFIED COMPLETE |
 | Platform restore with impact analysis | G-22 | 0.12.2 | `service.preview_platform_restore`, `platform.apply` / `impact` | `tests/api/test_backup.py` | [restore](../backup-restore/restore.md) | VERIFIED COMPLETE |
-| Managed database backup (PostgreSQL, MariaDB, SQL Server, Oracle) | — | 0.12.3 | `backend/app/backup/engines.py` | `tests/api/test_backup.py`, `tests/integration/test_backup_engines.py` (run) | [engine support](../backup-restore/engine-support.md) | VERIFIED COMPLETE |
-| Managed database backup (MySQL, Db2 LUW) | — | 0.12.3 | same | `tests/integration/test_backup_engines.py` (run 2026-10-19: MySQL FAIL → fixed; Db2 passed as instance owner → SYSMAINT operator) | same | re-run pending (see [validation report](real-engine-validation.md)) |
+| Managed database backup (PostgreSQL, MariaDB, SQL Server, Oracle, MySQL, Db2 LUW) | — | 0.12.3 | `backend/app/backup/engines.py` | `tests/api/test_backup.py`, `tests/integration/test_backup_engines.py` (run) | [engine support](../backup-restore/engine-support.md) | VERIFIED COMPLETE |
 | Policies, retention, bulk, notifications, metrics, protection status, UI | — | 0.12.4 | `service.schedule`, `apply_retention`, `protection`; `frontend/src/features/backup/` | `tests/api/test_backup.py`, frontend tests | [policies](../backup-restore/policies.md) | VERIFIED COMPLETE |
 | Disaster recovery | G-22 | 0.12.5 | `service.scan_target` | `tests/api/test_backup.py` | [disaster recovery](../backup-restore/disaster-recovery.md) | VERIFIED COMPLETE |
 | Azure Blob / GCS targets, PITR | — | 0.12.6, 0.12.7 | — | — | — | PLANNED |
