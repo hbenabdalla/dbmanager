@@ -5,6 +5,123 @@ All notable changes to DB Manager are documented here. The format follows
 [Semantic Versioning](https://semver.org/). Pre-1.0 minor versions may contain breaking changes;
 they are listed under **Changed** with migration notes.
 
+## [0.13.0] — 2026-10-19
+
+Milestone 0.13 — Performance Intelligence — and the fixes found by the first full real-engine
+run in the Docker integration environment. Upgrading from 0.12.0 applies migration `0011`
+automatically; no configuration change is needed.
+
+### Added
+
+**Performance intelligence** (milestone 0.13)
+- **z-score alert rules** (0.13.1): *Evaluate → Deviation from baseline* compares the latest value
+  or a window average with the server's own baseline (mean and standard deviation over
+  `baseline_days`, at least 60 samples, the recent window excluded, cached for 10 minutes). The
+  rule wizard previews the baseline for a server-scoped rule. API: `aggregation: "zscore"`,
+  `baseline_days`.
+- **Query regression detection** (0.13.2): **Queries → Regressions** and
+  `GET /api/v1/servers/{id}/query-regressions` — statements whose mean latency in a recent window
+  is well above their baseline (relative and absolute thresholds, minimum executions; platform
+  settings `performance.regression_*`, `performance.baseline_days`). Advisor rule `GEN-PERF-011`.
+- **Plan-change detection** for Oracle (dominant `PLAN_HASH_VALUE` from `V$SQLSTATS`) and SQL Server
+  (distinct `query_plan_hash` per `query_hash`); new statement metrics `db_query_plans` and
+  `db_query_plan_id`.
+- **Capacity forecasting** (0.13.3): **Monitoring → Capacity forecast**,
+  `GET /api/v1/capacity/forecast` and `/servers/{id}/capacity-forecast` — Theil–Sen growth with a
+  90 % confidence interval and forecast band, days to full (earliest / likely / latest) per server,
+  database and tablespace. The hourly discovery now records `db_database_size_bytes`,
+  `db_tablespace_used_bytes` and `db_tablespace_max_bytes`. Advisor rule `GEN-PERF-012`
+  (setting `performance.forecast_warning_days`).
+- **Query comparison** (0.13.4): **Queries → Compare periods** (`GET /servers/{id}/query-compare`,
+  presets or custom periods) and **Queries → Compare plans** (`GET /plans/compare`) for plans saved
+  with *Save plan as* on Execution plans (`POST /servers/{id}/explain` with `save_label`;
+  `GET /servers/{id}/plans`, `GET`/`DELETE /plans/{id}`).
+- **Recommendation validation** (0.13.5): resolving a recommendation measures its triggering
+  metric (or the statement's latency) before and after; job `validate_recommendations`; outcome
+  in the recommendation dialog and on **Optimization → Outcomes**
+  (`GET /recommendations/validation-summary`; setting `performance.validation_window_hours`).
+- Migration `0011`: `alert_rules.baseline_days`, `recommendations.validation`,
+  `query_plan_snapshots` (included in platform backups, component *findings*).
+
+**Documentation**
+- `docs/product/real-engine-validation.md` (per-engine validation report),
+  `docs/product/current-milestone.md`, `docs/database-permissions/` (accounts the real-engine
+  suite uses), `docs/troubleshooting/real-engine-findings.md`,
+  `docs/performance/regressions-and-comparison.md`.
+
+### Changed
+- Roadmap status labels are now DONE / CURRENT / NEXT / PLANNED / FUTURE / BLOCKED (DONE replaces
+  VERIFIED COMPLETE).
+- Simulation: cumulative statement counters integrate latency over time (hourly noise no longer
+  looks like a regression), per-database size history and capacity history are generated, and
+  database sizes are consistent with the server's data volume.
+- Integration tests: the Db2 backup runs as a SYSMAINT backup operator (`SYSMAINT_GROUP`), not the
+  instance owner; `scripts/integration-test` adds `IT_DB2_BK_PASSWORD` to an existing `.env.test`.
+- The upgrade test now seeds users, role assignments, credentials, findings, backup targets and
+  policies and settings at the previous release's schema and checks that every row survives.
+
+### Fixed
+Defects found by the real-engine run of 0.12.0 (container images listed under *Database
+compatibility*):
+- PostgreSQL restore failed on servers older than the client tools (`pg_restore` 17 →
+  PostgreSQL 16: `transaction_timeout`); such restores now go through a rendered script without the
+  unknown settings, run by `psql` with `ON_ERROR_STOP`.
+- MySQL restore of dumps with triggers or routines failed with error 1419 when binary logging is
+  on (MySQL 8 default); it is now checked before anything is created and refused with the fix.
+- MySQL / MariaDB restores no longer need `SUPER` / `SET_USER_ID` for objects of other definers:
+  `DEFINER` clauses are removed, so restored objects belong to the restoring account.
+- SQL Server, Oracle and Db2 backup errors surfaced as adapter errors instead of backup errors.
+- SQL Server backup metadata is read with `RESTORE HEADERONLY` (a `db_backupoperator` cannot read
+  `msdb.dbo.backupset`).
+- Db2 restore command: logs are extracted with `LOGTARGET` and used as `OVERFLOW LOG PATH`.
+- LDAP: groups found both through `memberOf` and the group search were listed twice.
+- Integration environment: Db2 setup no longer hangs after an interrupted run; Db2 test container
+  uses archive logging; OpenLDAP container ACLs let the service account search; the runner shows
+  progress, enforces a per-test timeout and writes a JUnit report; compose commands documented
+  with `--env-file .env.test`.
+
+### Security
+- Real-engine validation uses least-privilege accounts only (no `root`, `sa`/`sysadmin`, `SYS`,
+  `SYSTEM`, `DBA` or `SYSADM` for monitoring, backup or restore); the accounts are documented in
+  `docs/database-permissions/`.
+- New endpoints follow the existing RBAC: regressions and period comparison `query.view` (statement
+  text masked without `query.view_text`), forecasts `performance.view`, saved plans
+  `query.explain` (deletion by the author or `performance.tune`). Saving and deleting a plan is
+  audited (`query.plan_saved`, `query.plan_deleted`); statements are stored only when a user saves
+  a plan explicitly.
+- Oracle: no optional packs are used (no AWR, ASH, ADDM, SQL Monitor, SQL Tuning Advisor).
+
+### Database compatibility
+Real-engine run on 2026-10-19 (Docker Desktop / WSL 2, official images), see
+`docs/product/real-engine-validation.md`:
+
+| Engine (image) | Version | Result |
+|---|---|---|
+| PostgreSQL (`postgres:16-alpine`) | 16.15 | PASS (backup/restore included) |
+| MySQL (`mysql:8.4`) | 8.4.11 | PASS except backup/restore: FAIL (error 1419) in that run — fixed in 0.13.0, re-run pending |
+| MariaDB (`mariadb:11.4`) | 11.4.13 | PASS (backup/restore included) |
+| SQL Server (`mssql/server:2022-latest`) | 16.0.4305.5 | PASS (backup/restore included) |
+| Oracle Database XE (`database/express:21.3.0-xe`) | 21.3.0.0.0 | PASS (Data Pump included); TCPS not tested |
+| Db2 LUW (`db2_community/db2:11.5.9.0`) | 11.5.9.0 | PASS; backup PARTIAL (instance owner; SYSMAINT re-run pending); restore external |
+| OpenLDAP (`osixia/openldap:1.5.0`), Keycloak 26.0.7, Vault 1.17.6 | — | PASS |
+| Db2 for z/OS | — | EXTERNAL VALIDATION REQUIRED |
+
+Drivers: asyncpg 0.32.0, PyMySQL 1.2.3, pyodbc 5.3.0 with Microsoft ODBC Driver 18.7,
+python-oracledb 26.0.1 (thin), ibm_db 3.3.0. 86 tests: 84 passed, 1 failed, 1 skipped.
+
+### Known limitations
+- Plan changes are detected only for Oracle and SQL Server; the other engines' statement
+  statistics carry no plan identity.
+- Forecasts use a robust linear trend without seasonality. Database and tablespace sizes are
+  recorded from this release on; their forecasts appear after 7 days of history. SQL Server
+  filegroups are not forecast; PostgreSQL and MySQL tablespaces have no reported maximum.
+- Before/after validation shows correlation in time, not proof of cause; configuration and
+  security findings are not measurable from the monitoring history.
+- Oracle TCPS has not been exercised (the XE image has no TCPS listener). Replication was validated
+  on standalone servers only (no replica topology in the test environment).
+- Db2 LUW restores and Oracle RMAN remain external steps; no point-in-time recovery.
+- Db2 for z/OS: EXTERNAL VALIDATION REQUIRED (z/OS subsystem with Db2 Connect).
+
 ## [0.12.0] — 2026-10-19
 
 The first public release. Its number follows the roadmap: it contains milestones 0.9 (release

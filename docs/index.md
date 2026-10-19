@@ -30,7 +30,9 @@ control and a complete audit trail.
 
 ## Project status
 
-**Version 0.12.0** — the first public release (see the
+**Version 0.13.0** — performance intelligence: baseline-relative alerts, query regression
+detection, capacity forecasting, query and plan comparison, recommendation outcomes (see the
+[release notes](release-notes/0.13.0.md), the
 [changelog](https://github.com/hbenabdalla/dbmanager/blob/main/CHANGELOG.md) and
 [versioning](product/roadmap.md#versioning)). DB Manager is pre-1.0 software. The capability status of every area is tracked honestly in the
 [capability matrix](product/capability-matrix.md) and the [roadmap](product/roadmap.md):

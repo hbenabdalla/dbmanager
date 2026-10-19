@@ -1,7 +1,7 @@
 """DB Manager backend."""
 
 #: single source of the product version (frontend package.json carries the same value)
-__version__ = "0.12.0"
+__version__ = "0.13.0"
 
 #: SPDX identifier of the license DB Manager is distributed under (see LICENSE)
 __license__ = "Apache-2.0"
