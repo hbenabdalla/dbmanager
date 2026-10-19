@@ -207,6 +207,22 @@ async def test_s3_passphrase_policy_retention_scheduler_and_dr_scan(admin, s3, m
     assert r.status_code == 201 and "it-secret" not in r.text and r.json()["has_secret"], r.text
     t = r.json()
     assert (await admin.post(f"/api/v1/backup/targets/{t['id']}/check")).json()["ok"] is True
+    # the CA certificate is never returned; saving without it keeps it, "" removes it
+    cfg = {
+        **r.json()["config"],
+        "ca_pem": "-----BEGIN CERTIFICATE-----\nMIIB\n-----END CERTIFICATE-----\n",
+        "verify_tls": False,
+    }
+    upd = {"name": "bk-s3", "kind": "s3", "config": cfg}
+    assert (await admin.put(f"/api/v1/backup/targets/{t['id']}", json=upd)).json()["config"]["ca_pem"] == "(set)"
+    kept = (
+        await admin.put(
+            f"/api/v1/backup/targets/{t['id']}", json={**upd, "config": {k: v for k, v in cfg.items() if k != "ca_pem"}}
+        )
+    ).json()
+    assert kept["config"]["ca_pem"] == "(set)"
+    gone = (await admin.put(f"/api/v1/backup/targets/{t['id']}", json={**upd, "config": {**cfg, "ca_pem": ""}})).json()
+    assert "ca_pem" not in gone["config"]
     body = {
         "name": "bk-nightly-config",
         "kind": "platform",
@@ -503,6 +519,16 @@ async def test_backup_permissions_and_validation(admin, make_client, backup_root
     assert (
         await admin.post("/api/v1/backups/platform", json={**body, "scope": {"components": ["everything"]}})
     ).status_code == 422
+    # the probe writes to storage: auditors (backup.view only) may not run it
+    assert (await auditor.post(f"/api/v1/backup/targets/{t['id']}/check")).status_code == 403
+    # a manual passphrase policy needs the passphrase for each run
+    pp = (
+        await admin.post(
+            "/api/v1/backup/policies", json={**bad_policy, "name": "bk-pp-manual", "schedule": {"frequency": "manual"}}
+        )
+    ).json()
+    assert (await admin.post(f"/api/v1/backup/policies/{pp['id']}/run")).status_code == 422
+    await admin.delete(f"/api/v1/backup/policies/{pp['id']}")
     caps = (await admin.get("/api/v1/backup/capabilities")).json()
     assert (
         caps["engines"]["db2zos"]["status"] == "EXTERNAL_TOOL_REQUIRED"

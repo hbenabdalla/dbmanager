@@ -274,7 +274,7 @@ def test_identifiers_and_server_paths_are_validated() -> None:
         with pytest.raises(engines.BackupProviderError):
             engines.check_identifier(bad)
     assert engines._SERVER_DIR.match("C:\\Backups\\SQL") and engines._SERVER_DIR.match("/var/opt/mssql/backup")
-    for bad in ("relative", "C:\\x';--", "/tmp/a|b"):
+    for bad in ("relative", "C:\\x';--", "/srv/a|b"):
         assert not engines._SERVER_DIR.match(bad)
 
 

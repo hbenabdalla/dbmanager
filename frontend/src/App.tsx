@@ -23,6 +23,9 @@ import { ApiTokensPage } from "@/features/account/api-tokens";
 import { SecurityPage } from "@/features/account/security";
 import { NotificationChannelsPage } from "@/features/platform/channels";
 import { SiemDestinationsPage } from "@/features/platform/siem";
+import { CreateBackupWizard } from "@/features/backup/create-wizard";
+import { BackupRestorePage } from "@/features/backup/pages";
+import { RestoreWizard } from "@/features/backup/restore-wizard";
 import { IdentityProvidersPage } from "@/features/platform/idp";
 import { CollectorsPage, CredentialsPage, SettingsPage } from "@/features/platform/ops";
 import { MonitoringStoragePage } from "@/features/platform/monitoring-storage";
@@ -113,6 +116,9 @@ export function AppRoutes() {
         <Route path="alerts/maintenance" element={<MaintenanceWindowsPage />} />
         <Route path="platform/notifications" element={<NotificationChannelsPage />} />
         <Route path="platform/audit-forwarding" element={<SiemDestinationsPage />} />
+        <Route path="platform/backups" element={<BackupRestorePage />} />
+        <Route path="platform/backups/new" element={<CreateBackupWizard />} />
+        <Route path="platform/backups/:id/restore" element={<RestoreWizard />} />
         <Route path="platform/about" element={<AboutPage />} />
         <Route path="account/tokens" element={<ApiTokensPage />} />
         <Route path="account/security" element={<SecurityPage />} />

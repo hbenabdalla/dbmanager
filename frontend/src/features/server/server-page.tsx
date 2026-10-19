@@ -29,6 +29,7 @@ import { SettingsTab } from "./tabs/settings";
 import { AdministrationTab } from "./tabs/administration";
 import { ServerVitals } from "./vitals";
 import { ServerAlertBadge, ServerAlertsPanel } from "../alerts/server-alerts";
+import { ServerProtectionPanel } from "../backup/protection";
 
 interface TabDef { key: string; label: string; perm?: string; cap?: string; platformPerm?: string; render: (s: ServerDetail, go: (t: string, db?: string) => void, db?: string) => React.ReactNode }
 
@@ -115,6 +116,7 @@ export function ServerPage() {
       )}
       {!planned && capUsable(s, "performance_metrics") && (serverCan(s, "performance.view") || can("performance.view")) && <ServerVitals server={s} />}
       <ServerAlertsPanel serverId={s.id} />
+      {!s.is_demo && !planned && (serverCan(s, "backup.view") || can("backup.view")) && <ServerProtectionPanel serverId={s.id} />}
       <Tabs value={active.key} onValueChange={(v) => go(v)}>
         <TabsList className="mb-4">
           {TABS.map((t) => {

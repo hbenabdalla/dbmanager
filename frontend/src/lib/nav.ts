@@ -1,5 +1,5 @@
 import {
-  Activity, BarChart3, BellRing, Database, FileText, Gauge, KeyRound, LayoutGrid, type LucideIcon, Network, ScrollText, Server,
+  Activity, Archive, BarChart3, BellRing, Database, FileText, Gauge, KeyRound, LayoutGrid, type LucideIcon, Network, ScrollText, Server,
   Settings2, ShieldCheck, Sparkles, SquareTerminal, Users, Wand2,
 } from "lucide-react";
 
@@ -94,6 +94,15 @@ export const NAV_GROUPS: NavGroup[] = [
         label: "Setup", icon: Wand2, perm: "settings.manage", platform: true, items: [
           { label: "Setup wizard", to: "/setup", perm: "settings.manage", platform: true },
           { label: "Setup checklist", to: "/setup/checklist", perm: "settings.manage", platform: true },
+        ],
+      },
+      {
+        label: "Backup & Restore", icon: Archive, perm: "backup.view", items: [
+          { label: "Overview", to: "/platform/backups" },
+          { label: "Backup history", to: "/platform/backups?tab=history" },
+          { label: "Backup policies", to: "/platform/backups?tab=policies" },
+          { label: "Storage targets", to: "/platform/backups?tab=targets" },
+          { label: "Create backup", to: "/platform/backups/new", perm: "backup.create" },
         ],
       },
       {

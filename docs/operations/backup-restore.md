@@ -1,5 +1,14 @@
 # Backup and restore
 
+!!! tip "In-application backups"
+    This page describes the **stack-level** backup of a Docker Compose installation
+    (`scripts/backup.sh`: a `pg_dump` of the whole control-plane database, run from the host).
+    DB Manager also backs itself up and the managed databases from **Platform → Backup &
+    Restore**: encrypted (age), to local, NFS or S3-compatible storage, scheduled by policies with
+    retention, and restored per component with an impact analysis. See
+    [Backup & Restore](../backup-restore/index.md) and
+    [Disaster recovery](../backup-restore/disaster-recovery.md) for when to use which.
+
 DB Manager has two persistence layers with different value:
 
 | Layer | Contains | Loss means |

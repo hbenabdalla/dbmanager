@@ -395,7 +395,10 @@ def _stored_target_config(body: TargetIn) -> dict[str, Any]:
     if body.kind in storage.FILESYSTEM_KINDS:
         return {"path": str(storage.validate_directory(str(body.config["path"])))}
     keys = ("endpoint_url", "bucket", "prefix", "region", "access_key_id", "addressing_style", "verify_tls", "ca_pem")
-    return {k: body.config[k] for k in keys if k in body.config}
+    out = {k: body.config[k] for k in keys if k in body.config}
+    if out.get("ca_pem") in ("", "(set)"):
+        out.pop("ca_pem")
+    return out
 
 
 @router.post("/backup/targets", status_code=201, summary="Add a backup storage target")
@@ -431,7 +434,11 @@ async def update_target(target_id: uuid.UUID, body: TargetIn, db: DB, p: Current
     t = await _get_target(db, target_id)
     if body.kind != t.kind:
         raise ValidationFailed("the target kind cannot be changed; add a new target")
+    # the API never returns the CA: omitted or "(set)" keeps the stored one, "" removes it
+    keep_ca = body.config.get("ca_pem", "(set)") == "(set)" and t.config.get("ca_pem")
     t.name, t.enabled, t.config = body.name, body.enabled, _stored_target_config(body)
+    if keep_ca:  # the API only ever shows "(set)": keep the stored certificate
+        t.config = {**t.config, "ca_pem": keep_ca}
     if body.kind == "s3" and body.secret_access_key is not None:
         t.secret = storage.seal_secret(t.id, body.secret_access_key) if body.secret_access_key else None
     await audit.record(
@@ -467,7 +474,7 @@ async def delete_target(target_id: uuid.UUID, db: DB, p: CurrentPrincipal) -> Me
     "/backup/targets/{target_id}/check", summary="Write/read/delete probe", dependencies=[rate_limit("expensive")]
 )
 async def check_target(target_id: uuid.UUID, db: DB, p: CurrentPrincipal) -> dict[str, Any]:
-    p.authz.require_anywhere("backup.view")
+    p.authz.require("backup.target.manage")  # writes and deletes a probe object
     t = await _get_target(db, target_id)
     try:
         info = await storage.provider_for(t).check()
@@ -586,6 +593,9 @@ async def run_policy(
         await db.execute(select(BackupJob.id).where(BackupJob.policy_id == pol.id, BackupJob.status.in_(JOB_ACTIVE)))
     ).first():
         raise Conflict("this policy is already running")
+    enc = pol.encryption or {}
+    if enc.get("mode") == "passphrase" and not enc.get("passphrase_ref") and not (body and body.passphrase):
+        raise ValidationFailed("this policy encrypts with a passphrase: supply it for this run")
     job = await service.create_job(
         db,
         "platform_backup" if pol.kind == "platform" else "database_backup",

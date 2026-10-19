@@ -174,6 +174,28 @@ nav:
       - Simulation: administration/simulation.md
       - Diagnostics: administration/diagnostics.md
       - About: administration/about.md
+  - Backup & Restore:
+      - backup-restore/index.md
+      - Architecture: backup-restore/architecture.md
+      - Platform backup: backup-restore/platform-backup.md
+      - Database backup: backup-restore/database-backup.md
+      - Restore: backup-restore/restore.md
+      - Policies: backup-restore/policies.md
+      - Retention: backup-restore/retention.md
+      - Storage targets: backup-restore/storage-targets.md
+      - Encryption: backup-restore/encryption.md
+      - Engine support:
+          - backup-restore/engine-support.md
+          - PostgreSQL: backup-restore/engines/postgresql.md
+          - MySQL: backup-restore/engines/mysql.md
+          - MariaDB: backup-restore/engines/mariadb.md
+          - SQL Server: backup-restore/engines/sqlserver.md
+          - Oracle: backup-restore/engines/oracle.md
+          - Db2 LUW: backup-restore/engines/db2-luw.md
+          - Db2 for z/OS: backup-restore/engines/db2-zos.md
+      - Disaster recovery: backup-restore/disaster-recovery.md
+      - Security and RBAC: backup-restore/security.md
+      - Troubleshooting: backup-restore/troubleshooting.md
   - Deployment:
       - deployment/index.md
       - Reverse proxy and TLS: deployment/reverse-proxy-tls.md
@@ -212,4 +234,6 @@ nav:
       - Gap analysis: product/gap-analysis.md
       - Roadmap: product/roadmap.md
       - Roadmap traceability: product/roadmap-traceability.md
+      - Roadmap audit: product/roadmap-audit.md
+      - Release notes 0.12.0: release-notes/0.12.0.md
       - Release checklist: product/release-checklist.md
