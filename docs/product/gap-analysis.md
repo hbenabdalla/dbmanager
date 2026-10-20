@@ -19,6 +19,9 @@ Scales: business value, technical importance, security impact and operational im
 
 ## Status after the current release work
 
+Reconciled for 0.14.0: the closed gaps were re-checked against the code ([roadmap audit](roadmap-audit.md)); G-41 – G-46 were found by that audit.
+
+
 The tables below keep each gap as originally assessed. Progress since the audit:
 
 | Gap | Status | Where |
@@ -26,7 +29,7 @@ The tables below keep each gap as originally assessed. Progress since the audit:
 | G-01 Git repository | Closed — published at [hbenabdalla/dbmanager](https://github.com/hbenabdalla/dbmanager) | sprint 0.9.1 |
 | G-02 License | Closed — the owner chose Apache-2.0; `LICENSE` added | sprint 0.9.1 |
 | G-03 CI | Closed — workflows run on GitHub; first-run failures (Compose health, gitleaks) fixed | sprint 0.9.2 |
-| G-04 Version metadata | Closed — `0.13.0`, `/api/v1/version`, `/api/v1/about`, Platform → About | sprint 0.9.4 |
+| G-04 Version metadata | Closed — `0.14.0`, `/api/v1/version`, `/api/v1/about`, Platform → About | sprint 0.9.4 |
 | G-05 Policies | Closed — CONTRIBUTING, SECURITY, CODE_OF_CONDUCT, issue forms, PR template | sprint 0.9.1 |
 | G-06 Publishable documentation | Closed — published on Read the Docs ([https://db-manager.readthedocs.io/en/latest/](https://db-manager.readthedocs.io/en/latest/)) | sprint 0.9.3 |
 | G-07 Secret scan / ignore rules | Closed — tree scanned (only documented development/test placeholders), `.gitignore` hardened, gitleaks in CI | sprint 0.9.1 |
@@ -34,7 +37,7 @@ The tables below keep each gap as originally assessed. Progress since the audit:
 | G-18 API tokens | Closed — personal tokens (service accounts later) | sprint 0.11.1 |
 | G-19 API rate limiting | Closed — per-principal policies, shared counters, `Retry-After` | sprint 0.11.2 |
 | G-20 Backup/restore verification | Closed — `scripts/backup.sh`, `scripts/restore.sh`, automated round-trip test | sprint 0.9.5 |
-| G-22 Upgrade & migration testing | Closed — step-by-step upgrade, downgrade, model parity, and upgrade of an installation with data from the first and the previous schema | sprint 0.9.5 |
+| G-22 Upgrade & migration testing | Closed — step-by-step upgrade, downgrade, model parity, and upgrade of an installation with data from the first schema and from the published releases 0.12.0 and 0.13.0 | sprint 0.9.5 (reconciled) |
 | G-16, G-17 Slack/Teams presets, re-notify | Closed (re-notify; on-call chains stay with PagerDuty/Opsgenie) | sprint 0.10.4 |
 | G-20, G-21 Backup/restore, configuration backup | Closed — in-app platform backup and restore by component with verification, plus stack scripts | milestone 0.12 |
 | G-23 Collector diagnostics bundle | Closed | sprint 0.10.5 |
@@ -50,6 +53,12 @@ The tables below keep each gap as originally assessed. Progress since the audit:
 | G-32 Security and query-statistics reports | Closed — *Security findings*, *Query statistics*, *Query regressions* and *Capacity forecast* report definitions with parameters | sprint 0.14.1 |
 | G-30 Scheduled reports | Closed — schedules e-mailed through e-mail channels with the owner's current access, run history, audit | sprint 0.14.2 |
 | G-31 PDF export | Closed — server-side PDF for every report | sprint 0.14.3 |
+| G-41 Client address behind proxies (P0) | Closed — right-to-left `X-Forwarded-For` past trusted proxies; nginx replaces the header | remediation R1 |
+| G-42 Workspace in the selected database on MySQL/MariaDB (P0) | Closed — the connection switches to the selected database and back | remediation R2 |
+| G-43 Secrets in webhook channels and audit (P1) | Closed — URLs and headers encrypted, write-only, never audited; existing channels migrated | remediation R1 |
+| G-44 Backup visibility for scoped users (P1) | Closed — jobs, policies, targets and overview scoped; cancel needs the starting permission | remediation R4 |
+| G-45 Advisor and alert state integrity (P1) | Closed — no auto-resolve without evaluation; out-of-scope alerts resolve; suppression released after windows | remediation R3 |
+| G-46 Adapter depth (P2) | Closed — constraints (SQL Server, Oracle), roles across SQL Server databases, PDB users from root, Db2 grant catalogs, storage contract | remediation R2 |
 | G-26 Anomaly detection | Open (P3) — z-score rules are the first building block; no automatic anomaly detection | Future |
 
 ## Release blockers (P0)

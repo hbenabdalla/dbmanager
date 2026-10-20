@@ -97,7 +97,7 @@ function Kpi({ label, value, sub, tone, trend, active, onSelect, title }: {
       </div>
       <div className="mt-0.5 flex items-end justify-between gap-2">
         <span className="tabular text-[22px] font-semibold leading-tight" style={{ color }}>{value}</span>
-        {trend && <Sparkline values={trend} width={72} height={24} color={color ?? "var(--chart-1)"} label={`${label} trend, 24 hours`} />}
+        {trend && <span className="min-w-0 shrink overflow-hidden"><Sparkline values={trend} width={72} height={24} color={color ?? "var(--chart-1)"} label={`${label} trend, 24 hours`} /></span>}
       </div>
       {sub && <div className="mt-0.5 truncate text-[12px] text-muted">{sub}</div>}
     </>
@@ -189,7 +189,7 @@ export function DashboardPage() {
 
       {canPlatform("settings.manage") && <SetupChecklist className="mb-4" />}
       <Card className="mb-4 overflow-hidden">
-        <div className={cn("anim-stagger grid grid-cols-2 divide-border sm:grid-cols-3 [&>*]:border-b [&>*]:border-border lg:[&>*]:border-b-0 lg:divide-x", alerts ? "lg:grid-cols-10" : "lg:grid-cols-9")}>
+        <div className={cn("anim-stagger -mb-px -mr-px grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 [&>*]:border-b [&>*]:border-r [&>*]:border-border 2xl:[&>*]:border-b-0", alerts ? "2xl:grid-cols-10" : "2xl:grid-cols-9")}>
           {d ? (
             <>
               <Kpi label="Servers" value={d.kpis.servers} active={!anyFilter} onSelect={clearFilters} title="Show every server" />

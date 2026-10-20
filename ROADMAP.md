@@ -1,44 +1,66 @@
 # Roadmap
 
-DBManager **0.14.0** is the current release (**0.12.0** was the first public release). The
-roadmap is milestone-based, and no dates are promised.
+DBManager **0.14.0** is the release being prepared. **0.13.0** is the latest published release,
+and **0.12.0** was the first. The roadmap is organised by milestone and promises no dates.
 
-- The full roadmap, with sprint objectives, acceptance criteria and Definition of Done, is in [docs/product/roadmap.md](docs/product/roadmap.md).
-- The milestone of this release: [docs/product/current-milestone.md](docs/product/current-milestone.md).
-- The task-by-task check of each milestone against the code and tests is in the [roadmap audit](docs/product/roadmap-audit.md).
-- The evidence behind both is in the [capability matrix](docs/product/capability-matrix.md) and the [real-engine validation report](docs/product/real-engine-validation.md).
+- [Full roadmap](docs/product/roadmap.md): sprints, acceptance criteria, Definition of Done.
+- [Roadmap audit](docs/product/roadmap-audit.md): every claim checked against code, tests and
+  documentation (the evidence lives there, not here).
+- [Capability matrix](docs/product/capability-matrix.md),
+  [engine matrix](docs/product/engine-matrix.md),
+  [real-engine validation](docs/product/real-engine-validation.md).
 
-| Status | Meaning |
-|---|---|
-| DONE | Implemented, tested (tests executed), documented |
-| CURRENT | Being worked on |
-| NEXT | Starts after the current milestone |
-| PLANNED | Scheduled in a later milestone |
-| FUTURE | Accepted, not yet scheduled |
-| BLOCKED | Waiting for a named external dependency |
+## Released and verified
+
+The 0.14.0 roadmap reconciliation re-audited every milestone below and did not take earlier DONE
+statuses on trust. 61 claims were reopened because they were broken, partial, untested, or
+present on only one side (UI or backend). All of them were fixed and verified again before
+0.14.0.
 
 | Milestone | Theme | Status |
 |---|---|---|
-| Baseline | Seven engine adapters (six real-engine validated), telemetry on VictoriaMetrics, query analysis, advisor rules, scoped RBAC, audit, guarded administration, simulation, topology, wizards | DONE |
-| 0.9 | **Release foundation**: repository and governance, CI, Read the Docs site, version metadata and About page, upgrade and recovery verification | DONE |
-| 0.10 | **Operations & alerting**: alert engine, SMTP/webhook (Slack, Teams) notifications with retries and routing, recurring maintenance windows, alert inbox and re-notification, diagnostic bundles | DONE |
-| 0.11 | **Enterprise integration**: API tokens, rate limiting, real LDAP / Keycloak (OIDC) / Vault validation, SIEM forwarding, HashiCorp Vault, MFA | DONE. Cloud secret managers are PLANNED (0.11.7). |
-| 0.12 | **Asset protection**: backup and restore of the platform and of managed databases, policies, retention, verification, disaster recovery | DONE. Database backups and restores real-validated for all six engines (Db2 LUW restore is an external step). Native Azure/GCS targets and PITR are PLANNED. |
-| 0.13 | **Performance intelligence**: z-score alert rules, query regression and plan-change detection, capacity forecasting with confidence bands, period and plan comparison, recommendation outcome validation | DONE (0.13.0) |
-| 0.14 | **Reporting**: security-findings, query-statistics, regression and forecast reports with parameters and preview; server-side PDF; schedules e-mailed with the owner's access. **Branding**: DBManager logo, app icons, DBManager engine marks | DONE (0.14.0) |
-| 0.15 | Cloud-native: published images, Helm chart, manifest validation, HA and TLS reference | NEXT |
-| 1.0 | Production release: scale and security testing, accessibility, upgrade drill, release candidate | PLANNED |
-| Future | Anomaly detection beyond z-score rules, custom rules and dashboards, database logs, cloud discovery, Oracle TCPS validation | FUTURE |
+| Baseline | Seven engine adapters, telemetry on VictoriaMetrics, query analysis, 116 advisor rules (61 performance, 55 security), scoped RBAC, audit, guarded administration, simulation, topology, wizards | VERIFIED COMPLETE (reconciled) |
+| 0.9 | Release foundation: repository, CI, documentation site, version metadata, upgrade and restore drills | VERIFIED COMPLETE (reconciled) |
+| 0.10 | Operations & alerting: alert engine, notifications, maintenance windows, alert inbox, diagnostics | VERIFIED COMPLETE (reconciled) |
+| 0.11 | Enterprise integration: API tokens, rate limiting, LDAP/OIDC/Vault validation, SIEM forwarding, Vault, MFA | VERIFIED COMPLETE (reconciled); cloud secret stores PLANNED (0.11.7) |
+| 0.12 | Asset protection: backup and restore of the platform and of managed databases | VERIFIED COMPLETE (reconciled); native Azure/GCS (0.12.6) and PITR (0.12.7) PLANNED |
+| 0.13 | Performance intelligence: z-score rules, regressions, forecasts, comparisons, outcome validation | VERIFIED COMPLETE (reconciled) |
+| 0.14 | Reporting (definitions, preview, PDF, schedules) and DBManager branding | VERIFIED COMPLETE (release 0.14.0) |
 
-**Versioning:** the product version follows the roadmap. `0.14.0` adds milestone 0.14 to
-`0.13.0`, which added milestone 0.13 to `0.12.0`, which contained milestones 0.9 to 0.12. 0.14.0 is
-a minor version (semantic versioning, 0.x): new features and an additive schema migration, no
-removed endpoints; the one API change is that `GET /reports` no longer lists `planned_formats` (PDF
-is now served). Versions 0.9 to 0.11 were development states and
-were never released.
+## Remediation
 
-**Blocked:** Db2 for z/OS real validation, which needs a z/OS subsystem with Db2 Connect
-(EXTERNAL VALIDATION REQUIRED).
+| Sprint | Scope | Status |
+|---|---|---|
+| R1 – R7 | Security, engine correctness, findings and alerts, backup & restore, runtime and CI, user interface, documentation and screenshots | VERIFIED COMPLETE, part of 0.14.0 ([audit](docs/product/roadmap-audit.md#remediation-sprints)) |
 
-The known limitations of this release are listed at the end of the
-[full roadmap](docs/product/roadmap.md#known-limitations-of-the-current-release).
+## Current
+
+**0.14.0 release**: reporting, branding and the roadmap reconciliation. The code is complete and
+tested. What remains is the publishing step: push, tag and GitHub release (see
+[release checklist](docs/product/release-checklist.md)).
+
+## Next
+
+| Milestone | Theme | Status |
+|---|---|---|
+| 0.15 | Cloud-native deployment: published, signed images with an SBOM; Helm chart; manifest validation (kubeconform, kind, OpenShift); HA and TLS reference; dependency major upgrades | NEXT, not started |
+
+## Future
+
+| Milestone | Theme | Status |
+|---|---|---|
+| 1.0 | Production release: scale and security testing, accessibility, upgrade drill from every 0.x schema, release candidate | PLANNED |
+| — | Anomaly detection beyond z-score rules, custom rules and dashboards, database logs, cloud discovery, OpenTelemetry | FUTURE |
+
+## External dependencies
+
+| Item | Needs | Status |
+|---|---|---|
+| Db2 for z/OS real validation; thread, lock and subsystem monitoring | A z/OS subsystem with Db2 Connect. Db2 LUW results are never used as z/OS evidence | BLOCKED (EXTERNAL VALIDATION REQUIRED) |
+| Db2 LUW database restore | Runs on the Db2 host, outside DBManager | EXTERNAL VALIDATION REQUIRED |
+| Oracle TCPS | A TCPS listener in the test environment | FUTURE |
+| Cloud secret stores (AWS, Azure, Google) | Cloud accounts to validate against | PLANNED (0.11.7) |
+
+**Versioning:** the product version follows the milestones. 0.14.0 is a minor version under
+semantic versioning (0.x). It adds new features and two additive migrations (`0012`, `0013`), and
+removes no endpoints. Changed behaviour is listed in the [changelog](CHANGELOG.md).

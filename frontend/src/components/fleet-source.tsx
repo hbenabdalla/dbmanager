@@ -30,7 +30,7 @@ export function SimulationIndicator() {
           aria-label={`Simulation data active: ${counts.real} real and ${counts.simulated} simulated servers. Showing ${LABEL[effective].toLowerCase()}.`}
         >
           <FlaskConical className="size-3.5" />
-          <span className="hidden font-medium md:inline">Simulation data active</span>
+          <span className="hidden font-medium xl:inline">Simulation data active</span>
           <span className="hidden text-text-2 xl:inline">
             <span className="tabular">{counts.real}</span> real, <span className="tabular">{counts.simulated}</span> simulated
           </span>

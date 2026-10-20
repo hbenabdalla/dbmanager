@@ -15,16 +15,17 @@ the [engine capability matrix](engine-matrix.md); what is missing and why is in 
 | **BLOCKED BY EXTERNAL DEPENDENCY** | Cannot be completed or validated without something outside the repository |
 | **NOT APPLICABLE** | Deliberately out of scope |
 
-Paths are relative to the repository root (`backend/app/...`, `frontend/src/...`). Test counts
-at the time of the audit: 221 backend unit, 73 backend API, 75 real-engine integration (plus 1
-documented skip), 54 frontend tests.
+Paths are relative to the repository root (`backend/app/...`, `frontend/src/...`).
 
-> **Updated after this release's sprints.** Version/build metadata and the About page (0.9.4),
-> upgrade and recovery verification (0.9.5), and alerting with lifecycle, maintenance windows,
-> webhook and SMTP channels (0.10.1–0.10.3) have landed with tests; their rows below are updated.
-> Test counts for 0.13.0: 471 backend unit + API, 5 migration, 86 real-engine integration in the
-> last Docker run (85 passed, 1 documented skip — see the
-> [real-engine validation report](real-engine-validation.md)), 117 frontend. See the [roadmap](roadmap.md).
+> **Reconciled for 0.14.0.** Every row was checked again against the code, the tests and the
+> documentation ([roadmap audit](roadmap-audit.md)). Rows whose claim was not true were fixed in
+> remediation sprints R1 – R7, and their evidence now names the tests that prove them. Test
+> counts at 0.14.0:
+>
+> - backend: 837 (unit, API and migration);
+> - frontend: 180;
+> - real-engine runs in this audit: PostgreSQL 16 (13), MariaDB 10.11 (15) and VictoriaMetrics (5);
+> - the other engines: the last Docker run, see the [real-engine validation report](real-engine-validation.md).
 
 ## Platform
 
@@ -35,19 +36,19 @@ documented skip), 54 frontend tests.
 | Platform setup wizard (resumable) | COMPLETE | `backend/app/api/v1/setup.py`, `frontend/src/features/setup/`, `backend/tests/api/test_onboarding.py` |
 | Configuration | COMPLETE | `backend/app/core/config.py` (`DBM_*` env), runtime settings `GET/PUT /api/v1/settings` (`backend/app/services/app_settings.py`) |
 | Health / readiness | COMPLETE | `GET /healthz`, `GET /readyz` with per-component status (`backend/app/api/ops.py`), tests in `backend/tests/api/test_metrics.py` |
-| Upgrade (schema migrations) | COMPLETE | Alembic `0001–0010`, applied on start (`DBM_RUN_MIGRATIONS_ON_START`) or `python -m app.cli migrate`; `backend/tests/migrations/test_migrations.py` upgrades step by step, downgrades to base, re-upgrades, checks head schema = models, and upgrades an installation with data from the first and the previous schema |
+| Upgrade (schema migrations) | COMPLETE | Alembic `0001–0013`, applied on start (`DBM_RUN_MIGRATIONS_ON_START`) or `python -m app.cli migrate`; `backend/tests/migrations/test_migrations.py` upgrades step by step, downgrades to base, re-upgrades, checks head schema = models, and upgrades an installation with data from the first schema and from the published releases 0.12.0 (`0010`) and 0.13.0 (`0011`) |
 | Backup | COMPLETE | In-app **Backup & Restore** (`backend/app/backup/`): platform archives by component, age encryption, local / mounted / NFS / S3-compatible targets, policies, retention, verification (`tests/api/test_backup.py`, `tests/unit/test_backup_units.py`); stack-level `scripts/backup.sh` (pg_dump + VictoriaMetrics snapshot) with `scripts/restore-drill.sh` in Docker CI |
 | Restore | COMPLETE | Restore wizard with integrity, compatibility and impact analysis (rolled-back trial), pre-restore backup, typed confirmation; `scripts/restore.sh` for the whole stack; credentials decrypt with the same master key (tested) |
 | Logging | COMPLETE | Structured JSON logging `backend/app/core/logging.py`, request IDs in `backend/app/core/middleware.py`, secrets masked (`clean_message`) |
 | Observability (self-metrics) | COMPLETE | Prometheus `GET /metrics` (`backend/app/core/metrics.py`: HTTP, collectors, scheduler leader, pipeline counters) |
 | Diagnostics | COMPLETE | Collectors page, monitoring-storage page, driver health and a redacted per-server diagnostic bundle (`GET /servers/{id}/diagnostics`, `app/services/diagnostics.py`, `tests/api/test_diagnostics.py`, `tests/unit/test_redact.py`) |
-| Version / build metadata | COMPLETE | `0.12.0` in `backend/app/__init__.py`, `pyproject.toml`, `frontend/package.json`; build args `DBM_BUILD_VERSION/DBM_GIT_COMMIT/DBM_BUILD_DATE`; `GET /api/v1/version` (exact keys tested), `GET /api/v1/about`; Platform → About |
+| Version / build metadata | COMPLETE | `0.14.0` in `backend/app/__init__.py`, `pyproject.toml`, `frontend/package.json`; build args `DBM_BUILD_VERSION/DBM_GIT_COMMIT/DBM_BUILD_DATE`; `GET /api/v1/version` (exact keys tested), `GET /api/v1/about`; Platform → About |
 
 ## Identity
 
 | Capability | Status | Evidence |
 |---|---|---|
-| Local authentication | COMPLETE | `POST /api/v1/auth/login`, Argon2 hashing `backend/app/core/security.py`, lockout (`login_max_failures`, `login_lockout_minutes`), `tests/api/test_auth.py` |
+| Local authentication | COMPLETE | `POST /api/v1/auth/login`, Argon2 hashing `backend/app/core/security.py`, lockout (`login_max_failures`, `login_lockout_minutes`) enforced on the password and the TOTP step, `tests/api/test_auth.py`, `tests/api/test_mfa.py` |
 | LDAP | COMPLETE (real-validated: OpenLDAP 2.6 local and osixia/openldap 1.5.0) | `backend/app/services/ldap_auth.py`, wizard; `tests/integration/test_identity.py` (service bind, search, password bind, groups, StartTLS, injection) run against OpenLDAP |
 | Active Directory | IMPLEMENTED / NOT REAL-VALIDATED | Same LDAP path (`sAMAccountName`/`memberOf` configurable); no AD test environment |
 | OIDC | COMPLETE (real-validated: Keycloak 26.0.7) | `backend/app/services/oidc.py` (PKCE, state sealing, claims mapping, MFA `amr`/`acr` checks); `test_identity.py::test_oidc_code_flow_with_pkce_against_keycloak` passed in the Docker run of 2026-10-19 |
@@ -61,7 +62,7 @@ documented skip), 54 frontend tests.
 
 | Capability | Status | Evidence |
 |---|---|---|
-| RBAC (roles, permissions, assignments) | COMPLETE | `backend/app/domain/permissions.py`, `backend/app/services/authz.py`, `/api/v1/roles`, `/role-assignments`, `tests/api/test_rbac.py`, `tests/unit/test_authz.py` |
+| RBAC (roles, permissions, assignments) | COMPLETE | `backend/app/domain/permissions.py`, `backend/app/services/authz.py`, `/api/v1/roles` (needs a role or user management permission), `/role-assignments`, `tests/api/test_rbac.py`, `tests/unit/test_authz.py` |
 | Server / database / schema scope | COMPLETE | `backend/app/domain/scopes.py` (platform ⊃ environment ⊃ site ⊃ cluster ⊃ server ⊃ database ⊃ schema) |
 | Environment / site scope | COMPLETE | Attribute scopes in `scopes.py`, anti-escalation checks |
 | Administrative actions (guarded) | COMPLETE | Preview → confirm → execute (`backend/app/api/v1/admin_actions.py`), Monitoring Only default, production confirmation |
@@ -113,7 +114,7 @@ documented skip), 54 frontend tests.
 
 | Capability | Status | Evidence |
 |---|---|---|
-| Recommendations | COMPLETE | Rule engine `backend/app/advisors/engine.py`, 61 performance rules across engines (`advisors/performance/*.py`) |
+| Recommendations | COMPLETE | Rule engine `backend/app/advisors/engine.py`, 61 performance rules across engines (`advisors/performance/*.py`); every rule has a firing and a quiet test (`tests/unit/test_rules_coverage.py`, meta-test fails for an untested rule) |
 | Evidence | COMPLETE | Each finding stores evidence; rules must not fire on unknown evidence |
 | Confidence / risk | COMPLETE | `confidence`, severity and risk on findings (`backend/app/models/advisor.py`, `backend/app/domain/risk.py`) |
 | Historical validation (did the fix help?) | COMPLETE | Before/after measurement of the triggering metric or statement latency when a recommendation is resolved, job `validate_recommendations`, Outcomes page; configuration/security findings reported as not measurable |
@@ -130,7 +131,7 @@ documented skip), 54 frontend tests.
 | Audit configuration | COMPLETE | Rules for server audits / unified auditing / Db2 audit |
 | Dormant accounts | COMPLETE | `dormant_accounts` rule (`backend/app/advisors/security/common.py`) |
 | PUBLIC grants | COMPLETE | Engine rules (PG, Oracle `public_system_privileges`, Db2 `public_grants`) |
-| Security recommendations | COMPLETE | 55 security rules (`advisors/security/*.py`), `POST /servers/{id}/security-scan` |
+| Security recommendations | COMPLETE | 55 security rules (`advisors/security/*.py`), `POST /servers/{id}/security-scan`; `tests/unit/test_rules_coverage.py`; Compliance counts from `GET /advisor/rule-summary` |
 | Security posture | COMPLETE | `GET /security/posture`, posture dashboard |
 
 ## Administration (target databases)
@@ -150,7 +151,7 @@ documented skip), 54 frontend tests.
 |---|---|---|
 | Thresholds / alert rules | COMPLETE | Metric threshold (latest or avg/min/max over a window) + for-duration, health-state and collector rules; scope all/environment/server/tag; `tests/unit/test_alerting*.py`, `tests/api/test_alerting*.py` |
 | Alert lifecycle / acknowledgement | COMPLETE | pending → firing → acknowledged → resolved, auto-resolve, de-duplication (partial unique index), `/alerts/{id}/acknowledge` and `/alerts/{id}/resolve`, audit; Operations → Alerts |
-| Notification channels | COMPLETE | Webhook (generic, Slack, Teams presets; HMAC, SSRF guard) and SMTP (STARTTLS / implicit TLS, CA file); routing by environment/tag/engine; retries with backoff; delivery log; tested against local SMTP (aiosmtpd) and HTTP receivers |
+| Notification channels | COMPLETE | Webhook (generic, Slack, Teams presets; HMAC, SSRF guard; URL and headers encrypted and write-only, never audited) and SMTP (STARTTLS / implicit TLS, CA file); routing by environment/tag/engine; retries with backoff; delivery log; tested against local SMTP (aiosmtpd) and HTTP receivers |
 | Escalation | PARTIAL | Re-notification every N minutes until acknowledged (`renotify_minutes`); no multi-level escalation chains |
 | Maintenance windows | COMPLETE | One-off and recurring (daily/weekly, time zone, DST), scope incl. tags; suppressed alerts notify after the window if still firing |
 
@@ -166,7 +167,7 @@ documented skip), 54 frontend tests.
 | Query report | COMPLETE | `query-statistics` (window, share per server, masked text), `slow-queries`, `query-regressions`; `tests/api/test_reports.py` |
 | Audit report / export | COMPLETE | `GET /audit/export.csv` (`audit.export` permission) |
 | Export formats | COMPLETE | CSV (formula-injection guard) and server-side PDF (`backend/app/services/report_pdf.py`, ReportLab) for every report; preview of 50 rows; `tests/unit/test_report_pdf.py`. No Excel format |
-| Scheduling | COMPLETE | `backend/app/services/report_schedules.py`, job `report_scheduler`, migration `0012`, Reports → Schedules wizard; delivered to a real SMTP server in `tests/api/test_reports.py`; e-mail only |
+| Scheduling | COMPLETE | `backend/app/services/report_schedules.py`, job `report_scheduler`, migration `0012`, Reports → Schedules wizard; changed or run only by owner, creator or `users.manage`; delivered to a real SMTP server in `tests/api/test_reports.py`; e-mail only |
 
 ## Topology
 
@@ -204,7 +205,7 @@ documented skip), 54 frontend tests.
 | Capability | Status | Evidence |
 |---|---|---|
 | LDAP / OIDC | COMPLETE (real-validated: OpenLDAP, Keycloak) | See Identity |
-| SMTP | COMPLETE | Alert email channel (`DBM_SMTP_*` or per-channel); scheduled report e-mail not yet |
+| SMTP | COMPLETE | Alert e-mail channels (`DBM_SMTP_*` or per channel) and scheduled report e-mail (0.14.2) |
 | Webhooks | COMPLETE | Alert webhook channel with HMAC signing and SSRF protection (`DBM_WEBHOOK_ALLOW_PRIVATE`) |
 | Teams / Slack | COMPLETE | Webhook presets (Slack blocks, Teams Adaptive Card); payloads tested |
 | SIEM | COMPLETE | Audit forwarding: syslog RFC 5424 over UDP/TCP/TLS and signed webhook batches, at-least-once cursor (`app/services/siem.py`, `tests/api/test_siem.py`) |
@@ -245,7 +246,7 @@ documented skip), 54 frontend tests.
 | Db2 LUW online backup | COMPLETE (real-validated: 11.5.9.0 as a SYSMAINT operator) | `engines.Db2LUWProvider` |
 | Db2 LUW restore, Oracle RMAN, Db2 for z/OS | NOT APPLICABLE (external tool required) | Reported as such by capability discovery; Db2 LUW restore command generated |
 | Point-in-time recovery | PLANNED | Sprint 0.12.7; not claimed by any provider |
-| Policies, schedules, retention, bulk, notifications, metrics, protection status | COMPLETE | `service.schedule`, `apply_retention`, `protection`; API tests |
+| Policies, schedules, retention, bulk, notifications, metrics, protection status | COMPLETE | `service.schedule`, `apply_retention`, `protection` (manual policies without a maximum age protect for 8 days), `scope_servers`; jobs, policies, targets and overview scoped to the caller; `tests/api/test_backup.py`, `test_backup_scope.py`, `test_backup_extras.py`, `tests/unit/test_backup_units.py` (DST both ways) |
 | Disaster recovery (scan a target into a new catalog) | COMPLETE | `service.scan_target`; tested |
 
 ## Repository and release engineering
@@ -256,5 +257,5 @@ documented skip), 54 frontend tests.
 | License | COMPLETE | Apache-2.0 — `LICENSE`, README, `backend/pyproject.toml`, `frontend/package.json`, About page |
 | CI | COMPLETE | `.github/workflows/` backend (lint, unit, API, migrations, PostgreSQL real engine), frontend, docs (`mkdocs build --strict`), Docker images + Compose health + restore drill, security (gitleaks, pip-audit, npm audit); required checks run on every pull request (no path filters) |
 | Contribution / security policy | COMPLETE | `CONTRIBUTING.md`, `SECURITY.md` (private advisories), `CODE_OF_CONDUCT.md`, issue forms, PR template |
-| Changelog / versioning | COMPLETE | `CHANGELOG.md` (Keep a Changelog, SemVer); version `0.12.0` (first tag: v0.12.0) |
+| Changelog / versioning | COMPLETE | `CHANGELOG.md` (Keep a Changelog, SemVer); version `0.14.0` (published tags: v0.12.0, v0.13.0) |
 | Published documentation | COMPLETE | Read the Docs project `db-manager`: [https://db-manager.readthedocs.io/en/latest/](https://db-manager.readthedocs.io/en/latest/), built from `.readthedocs.yaml` with `mkdocs build --strict`; linked from the app's Help menu and About page |

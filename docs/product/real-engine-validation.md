@@ -5,14 +5,46 @@ container images**, driven by the integration suite (`backend/tests/integration/
 `scripts/integration-test.ps1` / `.sh`. Nothing here comes from mocks or the simulation. Results
 also ship in `backend/app/data/real_engine_validation.json` (shown on **Platform → Engine support**).
 
-Last full run: **2026-10-19 20:31 UTC** (pytest JUnit timestamp; matrix written 20:32:49 UTC), release 0.12.0 + the 0.13.0 fixes up to commit `92c9250`. Last full run: **2026-10-19 21:34 UTC** (pytest JUnit timestamp; matrix written 21:36:02 UTC) of release 0.13.0 (commit `43c48a3`). It includes the 0.13.0 real-engine checks: plan identity in Oracle and SQL Server query statistics, database and tablespace size series built from real storage data, MySQL restore with binary logging on, and the Db2 backup as a SYSMAINT operator. The previous run (2026-10-19 20:31 UTC, 84 passed, 1 failed — MySQL backup/restore, error 1419) is superseded.
+Last full Docker run: **2026-10-19 21:34 UTC** (pytest JUnit timestamp; matrix written
+21:36:02 UTC), release 0.13.0, commit `43c48a3`. It covered:
 
-**Release 0.14.0.** Reporting reads data DBManager has already collected and the branding work is
-front-end only: no adapter, collector or backup provider changed. Before publishing, the
-PostgreSQL 16 adapter suite (12 tests) and the PostgreSQL backup round trip were re-run against a
-local PostgreSQL 16 server (2026-10-19, all passed); the full Docker matrix below is from the
-0.13.0 run and is re-run with `scripts/integration-test` on the 0.14.0 commit before the tag (the
-release checklist records the result). The matrix is not updated from the local run.
+- plan identity in Oracle and SQL Server query statistics;
+- database and tablespace size series built from real storage data;
+- a MySQL restore with binary logging on;
+- the Db2 backup as a SYSMAINT operator.
+
+An earlier run (20:31 UTC, 84 passed, 1 failed: MySQL backup/restore, error 1419) is superseded.
+
+## Release 0.14.0: roadmap reconciliation
+
+Unlike reporting and branding, the reconciliation **changed adapters**:
+
+- MySQL/MariaDB database selection;
+- TLS *prefer* and *require*;
+- MySQL 5.7 locks;
+- Db2 database refusal;
+- constraints on SQL Server and Oracle;
+- SQL Server roles across databases;
+- PDB local users;
+- Db2 grant catalogs;
+- one storage contract for every engine.
+
+The integration suites were extended with assertions for these changes. These runs were made on
+2026-10-20 against local servers:
+
+| Engine | Suite | Result |
+|---|---|---|
+| PostgreSQL 16.15 | adapter suite + database backup/restore | 12 + 1 passed |
+| MariaDB 10.11.14 | adapter suite (database selection, TLS `verify-ca`, wrong CA refused, `require`, `prefer`, storage contract) + database backup/restore | 14 + 1 passed |
+| VictoriaMetrics 1.122.0 | time-series suite | 5 passed |
+
+The connection variables of these local runs pointed at an administrative account. The suite
+uses that account to create its least-privilege test accounts, then runs the checks as those
+accounts, as in the Docker run. MySQL 8.x, SQL Server, Oracle and Db2 LUW could not be started in
+this environment, because container images cannot be pulled here. Their changes are covered by
+unit tests that replay the engines' catalog queries, and **the full matrix must be re-run with
+`scripts/integration-test` on the release commit before the tag.** The release checklist tracks
+this. The matrix below is not updated from the local runs.
 
 ## Status legend
 
@@ -178,7 +210,7 @@ Limitations:
 
 - Oracle TCPS (needs a TCPS listener with a wallet) — FUTURE.
 - Replica topologies (PostgreSQL streaming, MySQL/MariaDB replication, Always On, Data Guard, HADR): only standalone servers are in the test environment.
-- TLS certificate verification (`verify-ca` / `verify-full`) against real engines.
+- TLS certificate verification (`verify-ca` / `verify-full`) against real engines: exercised for MariaDB 10.11 (2026-10-20, including a wrong CA); the other engines still pending.
 - Active Directory (only OpenLDAP was available).
 - Db2 for z/OS — EXTERNAL VALIDATION REQUIRED.
 

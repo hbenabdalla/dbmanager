@@ -17,10 +17,12 @@ administration for PostgreSQL, MySQL, MariaDB, Microsoft SQL Server, Oracle Data
 
 **Documentation: [db-manager.readthedocs.io/en/latest](https://db-manager.readthedocs.io/en/latest/)**
 
-> **Version 0.14.0 — reporting** (pre-1.0; 0.12.0 was the first public release). Contents in the [changelog](CHANGELOG.md);
-> what remains before 1.0 is in the [roadmap](ROADMAP.md).
+> **Version 0.14.0: reporting and the roadmap reconciliation.** DBManager is pre-1.0, and 0.12.0
+> was its first public release. Every earlier milestone was audited again from the code, and what
+> was not true was fixed ([roadmap audit](docs/product/roadmap-audit.md)). What changed is in the
+> [changelog](CHANGELOG.md); what remains before 1.0 is in the [roadmap](ROADMAP.md).
 
-![Fleet dashboard](docs/assets/screenshots/dashboard-light.png)
+![Fleet dashboard](docs/assets/screenshots/dashboard-overview.png)
 
 ## Why
 
@@ -41,7 +43,7 @@ never filled with made-up data.
 | Alerting | Threshold, health and collector rules (latest value, window aggregates or deviation from the server's own baseline (z-score), scope by server, environment or tag), alert inbox with acknowledge / comment / resolve and re-notification, recurring maintenance windows, webhook (generic, Slack, Teams) and e-mail notifications with retries and routing |
 | Backup & restore | Encrypted (age) platform backups and managed-database backups (PostgreSQL, MySQL, MariaDB, SQL Server, Oracle Data Pump, Db2 LUW) to local, NFS or S3-compatible storage; policies, retention, verification, restore wizard with impact analysis, disaster-recovery scan |
 | Reports | Fleet, capacity and forecast, performance, query statistics and regressions, security findings, privileged users, audit — previewed, downloaded as CSV or PDF, or e-mailed on a schedule with the owner's access |
-| Recommendations | Performance and configuration advice from common and engine-specific rules, each with its evidence and risk, and a before/after outcome once resolved |
+| Recommendations | 116 rules (61 performance and configuration, 55 security), common and engine-specific, each with its evidence and risk, and a before/after outcome once resolved |
 | Security | Privileged accounts, excessive grants, authentication and encryption checks, security posture score per server and fleet |
 | Administration | Users, roles, grants, schemas and indexes through previewed, confirmed and audited actions — off by default (*Monitoring Only*) |
 | Platform | Local sign-in with TOTP MFA, LDAP / Active Directory and OIDC, API tokens, rate limiting, scoped RBAC, full audit trail with SIEM forwarding (syslog RFC 5424 / webhook), HashiCorp Vault credentials, redacted diagnostic bundles, setup wizard, simulated demo fleet, About page |
@@ -59,7 +61,8 @@ never filled with made-up data.
 | IBM Db2 for z/OS 12–13 | ibm_db over DRDA (needs Db2 Connect) | **Partial** | External validation required |
 
 Oracle Diagnostics and Tuning Pack features (AWR, ASH, ADDM, SQL Monitor, SQL Tuning Advisor) are
-never queried unless a server is explicitly marked as licensed. Per-engine details, privileges and
+never queried unless a server is explicitly marked as licensed. The SQL workspace refuses them
+too. Per-engine details, privileges and
 limitations: [database engines](docs/database-engines/index.md); per-capability results (TLS, replication and
 what is not exercised): [real-engine validation report](docs/product/real-engine-validation.md); full status:
 [capability matrix](docs/product/capability-matrix.md).
@@ -81,10 +84,19 @@ flowchart TB
 Four containers: frontend, backend, PostgreSQL (identity, inventory, findings, audit) and
 VictoriaMetrics (metric history). See [architecture](docs/architecture/index.md).
 
+## Screenshots
+
+These are real captures of the running application. The fleet is a simulated one, plus two real
+lab servers.
+
 | | |
 |---|---|
-| ![Topology](docs/assets/screenshots/topology.png) | ![Add a database](docs/assets/screenshots/add-database-wizard.png) |
-| ![Security posture](docs/assets/screenshots/security-posture.png) | ![Engine support](docs/assets/screenshots/engine-support.png) |
+| ![Fleet](docs/assets/screenshots/fleet-overview.png) | ![Server detail](docs/assets/screenshots/server-detail-postgresql.png) |
+| ![Topology](docs/assets/screenshots/topology.png) | ![Add a database](docs/assets/screenshots/database-onboarding-engine-selection.png) |
+| ![Query performance](docs/assets/screenshots/query-performance.png) | ![Recommendations](docs/assets/screenshots/recommendations.png) |
+| ![Security posture](docs/assets/screenshots/security-posture.png) | ![Alerts](docs/assets/screenshots/alerts.png) |
+| ![Backup & Restore](docs/assets/screenshots/backup-dashboard.png) | ![Reports](docs/assets/screenshots/report-preview.png) |
+| ![Engine support](docs/assets/screenshots/engine-support.png) | ![Dark theme](docs/assets/screenshots/dashboard-overview-dark.png) |
 
 ## Quick start (Docker Compose)
 
@@ -123,6 +135,8 @@ No database at hand? **Platform → Simulation** generates a clearly labelled si
 All settings are environment variables prefixed `DBM_` (see [`.env.example`](.env.example)).
 The most important: `DBM_MASTER_KEY`, `DBM_DATABASE_URL`, `DBM_PUBLIC_BASE_URL`,
 `DBM_TIMESERIES_*`, `DBM_COOKIE_SECURE`, `DBM_SMTP_*` for e-mail alerts, and
+`DBM_TRUSTED_PROXIES` / `DBM_OUTER_PROXY` when DBManager runs behind a reverse proxy (so the
+audit log and rate limits see the real client address), and
 `DBM_DOCUMENTATION_URL` (the Help menu links to the published documentation by default; set your
 own URL for an internal copy or `off` to hide it). LDAP and
 OIDC are configured in the UI. Reference:

@@ -3,8 +3,8 @@
 | | |
 |---|---|
 | **Milestone** | 0.14 — Reporting (with the DBManager branding and engine-identity workstream) |
-| **Status** | DONE — released as **0.14.0** |
-| **Release target** | 0.14.0 (this release). Next: milestone 0.15 — Cloud-Native Deployment (NEXT) |
+| **Status** | DONE. Release **0.14.0** also contains the roadmap reconciliation (remediation sprints R1 – R7); only publishing remains |
+| **Release target** | 0.14.0 (this release). Next: milestone 0.15 — Cloud-Native Deployment (**NEXT, not started**) |
 
 ## Objective
 
@@ -14,6 +14,26 @@ on demand or e-mailed on a schedule, without ever sending more than the person t
 may see. In the same release, give the product a consistent visual identity: the DBManager logo
 everywhere the product introduces itself, and one engine mark per database engine everywhere a
 server is listed — DBManager's own marks, because vendor logos need the vendors' permission.
+
+## Roadmap reconciliation in this release
+
+Before 0.14.0 was published, every earlier milestone was audited again from the code. The 61
+claims that were not true were fixed in remediation sprints R1 – R7, and the
+[roadmap audit](roadmap-audit.md) holds the evidence. The fixes change some behaviour:
+
+- Servers registered without a management mode are monitoring-only. Migration `0013` keeps
+  existing servers in administration mode.
+- Webhook URLs and headers of notification channels are write-only.
+- Behind a proxy, set `DBM_TRUSTED_PROXIES` (backend) and `DBM_OUTER_PROXY` (frontend nginx).
+- A platform restore without a safety backup needs
+  `backup.allow_restore_without_safety_backup`.
+- Report schedules can be changed only by their owner, their creator or a user manager.
+
+## Next milestone (not started)
+
+**0.15 — Cloud-Native Deployment** is NEXT: published, signed images with an SBOM, a Helm chart,
+manifest validation, an HA and TLS reference, and the dependency major upgrades. No work on it has
+started. [Scope](roadmap.md#milestone-015-cloud-native-deployment-next).
 
 ## Sprints
 

@@ -289,7 +289,7 @@ export function AppShell() {
             className="flex h-8 w-full max-w-sm items-center gap-2 rounded-md border border-border bg-surface-2 px-2.5 text-[13px] text-muted hover:border-border-strong">
             <Search className="size-4" />
             <span className="truncate">Search servers, pages and actions</span>
-            <kbd className="ml-auto hidden rounded border border-border bg-surface px-1.5 font-mono text-2xs sm:inline">Ctrl K</kbd>
+            <kbd className="ml-auto hidden shrink-0 whitespace-nowrap rounded border border-border bg-surface px-1.5 font-mono text-2xs xl:inline">Ctrl K</kbd>
           </button>
           <div className="ml-auto flex items-center gap-1">
             <AddMenu can={can} canPlatform={canPlatform} />
@@ -303,7 +303,7 @@ export function AppShell() {
               <MenuTrigger asChild>
                 <button className="flex items-center gap-2 rounded-md px-2 py-1 text-[13px] hover:bg-surface-3">
                   <span className="flex size-6 items-center justify-center rounded-full bg-accent-soft text-[11px] font-semibold uppercase text-accent">{me?.username.slice(0, 2)}</span>
-                  <span className="hidden max-w-[160px] truncate sm:inline">{me?.display_name ?? me?.username}</span>
+                  <span className="hidden max-w-[160px] truncate xl:inline">{me?.display_name ?? me?.username}</span>
                   <ChevronDown className="size-3.5 text-muted" />
                 </button>
               </MenuTrigger>

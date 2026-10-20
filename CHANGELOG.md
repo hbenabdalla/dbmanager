@@ -5,10 +5,23 @@ All notable changes to DBManager are documented here. The format follows
 [Semantic Versioning](https://semver.org/). Pre-1.0 minor versions may contain breaking changes;
 they are listed under **Changed** with migration notes.
 
-## [0.14.0] — 2026-10-19
+## [0.14.0] — 2026-10-20
 
-Milestone 0.14 — Reporting — and the DBManager branding and database-engine identity workstream.
-Upgrading from 0.13.0 applies migration `0012` automatically; no configuration change is needed.
+Milestone 0.14 (Reporting), the DBManager branding and database-engine identity workstream, and
+the **roadmap reconciliation**. Before this release every earlier milestone was audited again
+from the code. 61 claims were reopened because they were broken, partial, untested, or present
+only in the UI or only in the backend; two of them were P0 security issues. All 61 were fixed and
+verified again ([roadmap audit](docs/product/roadmap-audit.md)).
+
+Upgrading from 0.13.0 applies migrations `0012` and `0013` automatically. Three upgrade notes:
+
+- **Behind a reverse proxy**, set `DBM_TRUSTED_PROXIES` (backend) and `DBM_OUTER_PROXY`
+  (frontend nginx) to your proxy addresses. Otherwise audit entries and rate limits use the
+  proxy's address. See *Security*.
+- Webhook channel URLs and headers become write-only. Existing ones are encrypted at the first
+  start.
+- Servers registered without a management mode are now monitoring-only. Migration `0013` keeps
+  every existing server in administration mode, so nothing changes for them.
 
 ### Added
 
@@ -49,7 +62,52 @@ Upgrading from 0.13.0 applies migration `0012` automatically; no configuration c
   512 KiB limit, no symbolic links, `nosniff`, sandboxing CSP).
 - `docs/development/brand-assets.md` (asset inventory, rules, trademark notice).
 
+**Roadmap reconciliation**
+- `GET /api/v1/advisor/rule-summary`: findings and failing servers per rule, scoped. Compliance
+  uses it instead of counting the first 500 findings.
+- Settings `backup.notification_channels` (channels for backup events of backups no policy owns)
+  and `backup.allow_restore_without_safety_backup` (off by default).
+- `freshness_limit_hours` in the backup protection of a server. A manual policy without a maximum
+  age protects for at most 8 days.
+- Header `X-DBM-Export-Truncated` on audit CSV exports. A single export holds at most 200,000 rows.
+- Read-only settings show the MFA policy (`mfa_required_for`, `mfa_issuer`).
+- Migration `0013`: existing servers keep administration mode.
+- SQL Server and Oracle list a schema's constraints. SQL Server lists the roles of every
+  database the login can open (up to 100) on a server-level registration. Oracle connected to
+  CDB$ROOT lists the local users of every open PDB. Db2 LUW reads routine, package, sequence,
+  index, tablespace, module and column grants. Db2 LUW reports its largest tables.
+- UI:
+    - Backup history Pin/Unpin; Backup **Jobs** tab with Cancel; *Engine support* and *Jobs* in
+      the navigation.
+    - *Evaluate now* on Alert rules.
+    - `/platform/oidc`; *Identity wizard* and *OIDC* in the navigation.
+    - Palette actions *Create backup*, *Generate report*, *Account security*.
+    - Server picker for **+ Add → Database user**; `?create=1` for environments and users.
+    - Baseline preview of z-score rules for environment, tag and fleet scopes.
+    - Error states with retry on twelve pages.
+
 ### Changed
+- `management_mode` defaults to `monitoring` when a server has none. Set it to `administration`
+  at registration to allow administration actions. Migration `0013` keeps the mode of existing
+  servers.
+- A platform restore with `pre_restore_backup: false` returns `422 safety_backup_required` unless
+  `backup.allow_restore_without_safety_backup` is on. The restore wizard explains this.
+- `GET /api/v1/roles` requires `roles.manage`, `users.manage` or `rbac.manage`.
+- Report schedules can be changed, deleted and run only by their owner, their creator or a user
+  with `users.manage`.
+- Notification channels no longer return `config.url` and `config.headers`. They return
+  `url_display` (scheme and host), `header_names` and `has_url`. An update without a URL keeps the
+  stored one.
+- Storage: every engine returns its largest tables as `{schema, name, row_estimate, table_bytes,
+  index_bytes, total_bytes}`. MySQL/MariaDB previously used `db`/`data_bytes`, SQL Server
+  `schema_name`, and Oracle segment rows.
+- TLS mode `prefer` on MySQL/MariaDB negotiates TLS when the server offers it. `require` and
+  stricter modes fail when TLS was not negotiated.
+- The Docker Compose CI job ("Compose and restore drill") runs on every pull request and is a
+  required check. The restore drill also proves that an encrypted server credential still
+  connects after the restore.
+- Migration upgrade tests start from the published 0.12.0 (`0010`) and 0.13.0 (`0011`) schemas.
+- The removed setting `ai_insights.enabled` did nothing. It is gone, together with its switch.
 - `GET /api/v1/reports` no longer returns `planned_formats`; `formats` is `["csv", "pdf"]` for every
   report. PDF downloads return `200` instead of `422`.
 - The report scope printed in files and e-mails uses environment and server names instead of ids.
@@ -61,11 +119,62 @@ Upgrading from 0.13.0 applies migration `0012` automatically; no configuration c
   sourcing it (`scripts/lib/dotenv.sh`).
 
 ### Fixed
+- **MySQL/MariaDB SQL workspace and EXPLAIN** ran in the connection's default database instead
+  of the selected one (P0). Db2 LUW now refuses a database other than the connected one instead
+  of running in it.
+- Recommendations were auto-resolved when the tuning context could not be collected. Rule
+  windows used the window maximum as the "current" value.
+- Alerts of servers that left a rule's scope never resolved. Suppressed alerts lost their marker
+  when the maintenance window ended, so they were never released.
+- The scheduler leader lock stayed held by a pooled connection after an error, so no instance
+  could take over leadership.
+- Cancelling a running platform backup was ignored. A database backup that failed on storage was
+  reported as a generic failure; cancelled jobs were reported as failed. Backups no policy owns
+  notified nobody.
+- A manual backup policy without a maximum age counted any backup, however old, as protection.
+- MySQL 5.7 lock waits queried 8.0-only views.
+- Advisor rules (found by new per-rule tests):
+    - wrong catalog severities (DB2-SEC-002, MSSQL-SEC-003);
+    - GEN-PERF-011 without severity when the relative change was undefined;
+    - GEN-PERF-012 texts with negative days;
+    - the MariaDB end-of-life list was incomplete;
+    - DB2-SEC-004 fired without access to the DBM configuration;
+    - empty rule descriptions.
+- The storage page showed `undefined` table names for MySQL, MariaDB, SQL Server and Oracle, and
+  no tablespace sizes for Oracle and Db2.
+- The dashboard KPI strip overlapped at desktop widths, and the top bar overflowed at 1024 px.
+- Administration pages said changes go "through the SQL workspace". The Settings page loaded for
+  users without `settings.manage`. The server *Settings* tab was disabled for users with
+  `collectors.view` or `security.manage`.
+- Server lists in the UI stopped at 500 servers.
+- About: the GitHub and roadmap links could not be hidden with `off`.
 - The *Docker Compose* CI workflow failed in the restore drill since 0.11 (exit 127): `.env` was
   sourced as shell code and the unquoted value `DB Manager` ran `Manager` as a command. The 0.13.0
   release checklist wrongly listed this workflow as passing; corrected.
 
 ### Security
+- **Client address spoofing (P0)**: the backend trusted the leftmost `X-Forwarded-For` entry, and
+  the bundled nginx appended to the header instead of replacing it. Any client could therefore
+  choose the address recorded in the audit log and used by rate limits and API-token CIDR rules.
+  The address is now read right to left, past trusted proxies only (`DBM_TRUSTED_PROXIES`), and
+  nginx resolves the real client from `DBM_OUTER_PROXY`. Configure both when DBManager runs
+  behind another proxy.
+- MFA: the TOTP step ignored the account lockout, and a correct password reset the failure
+  counter before the second factor.
+- Webhook URLs and headers of notification channels (which carry tokens) were stored in plain
+  text, returned by the API and written to the audit log. They are now encrypted, write-only and
+  never audited; existing channels are migrated at startup. SIEM destination URLs are reduced to
+  their host in the audit log.
+- Backup & Restore: users with environment- or server-scoped grants saw every job, platform
+  policy, storage-target path and the platform protection, and could cancel any job. They now
+  see only their servers' backups, and cancelling needs the permission that started the job.
+  Restore previews (which decrypt archives) and storage-target checks are audited.
+- EXPLAIN ANALYZE of a modifying statement executed it on monitoring-only servers with the
+  monitoring credential. It now requires administration mode and the administration credential.
+- Audit and SQL workspace CSV exports were open to formula injection.
+- The SQL workspace on Oracle refuses Diagnostics and Tuning Pack objects (AWR, ASH, ADDM,
+  `DBMS_SQLTUNE`, SQL Monitor, …) unless the pack is declared licensed for the server.
+- Oracle `user/password@host` connect strings are redacted in logs and diagnostics.
 - CSV exports neutralise values that spreadsheets evaluate as formulas (`=`, `+`, `-`, `@`, tab,
   carriage return), numbers excepted.
 - Scheduled reports never exceed their owner's current access; choosing another owner requires
@@ -76,11 +185,30 @@ Upgrading from 0.13.0 applies migration `0012` automatically; no configuration c
   `Content-Security-Policy: default-src 'none'; sandbox`.
 
 ### Database Compatibility
-- No adapter changes. Reports read collected data for every engine; plan-change columns are filled
-  for Oracle and SQL Server only (no plan identity in the other engines' statement statistics).
-- PostgreSQL 16 adapter and backup suites re-run locally for this release.
+- Adapter changes (reconciliation):
+    - MySQL/MariaDB: database selection; TLS `prefer`/`require`; 5.7 lock views.
+    - Db2 LUW: database refusal; grant catalogs; largest tables.
+    - SQL Server: constraints; roles across databases.
+    - Oracle: constraints; PDB local users from CDB$ROOT; workspace pack guard.
+    - Every engine: the storage contract.
+- Re-run on local servers for this release:
+    - PostgreSQL 16.15: adapter suite 12 passed, backup 1 passed.
+    - MariaDB 10.11.14: adapter suite 14 passed, including database selection and TLS
+      `verify-ca`, wrong CA, `require` and `prefer`; backup 1 passed.
+    - VictoriaMetrics 1.122: 5 passed.
+- MySQL, SQL Server, Oracle and Db2 LUW are covered by unit tests. Their integration suites were
+  extended and must be run in the Docker test environment before the tag.
+- Db2 for z/OS: EXTERNAL VALIDATION REQUIRED (unchanged). Db2 LUW results are not used as z/OS
+  evidence.
+- Reports read collected data for every engine. Plan-change columns are filled for Oracle and
+  SQL Server only.
 
 ### User Interface
+- Recaptured documentation screenshots of the running application (43 images, light and dark),
+  with maintainable names. Four obsolete screenshots were removed.
+- The dashboard KPI strip uses five columns below 1536 px. The top bar fits at 1024 px.
+- Engine marks also in bulk onboarding. A guard test fails when a screen draws engines without
+  `DatabaseEngineIcon`.
 - New Reports page and Schedules tab with the shared wizard, history dialog and confirmations.
 - Engine marks in every list, filter and header that shows an engine; the dashboard engine
   distribution keeps click-to-filter and shows the active filter with its mark.
@@ -93,6 +221,16 @@ Upgrading from 0.13.0 applies migration `0012` automatically; no configuration c
   cropping and scaling only.
 
 ### Documentation
+- Roadmap reconciliation:
+    - [roadmap audit](docs/product/roadmap-audit.md), with every claim, its evidence and status;
+    - remediation sprints R1 – R7;
+    - `ROADMAP.md` (released and verified, remediation, current, next, future, external
+      dependencies);
+    - capability, engine and gap matrices, and traceability;
+    - real-engine report;
+    - client address behind proxies;
+    - `/metrics` exposure;
+    - the previous audits kept as history.
 - Reports guide rewritten (catalog, parameters, PDF, scheduled reports, owner access);
   `docs/development/brand-assets.md`; release notes 0.14.0; roadmap (0.14 DONE, 0.15 NEXT),
   current milestone, capability matrix, gap analysis (G-30, G-31, G-32 closed), traceability, roadmap
@@ -101,6 +239,10 @@ Upgrading from 0.13.0 applies migration `0012` automatically; no configuration c
   favicon; README logo and trademark notice.
 
 ### Known Limitations
+- The reconciliation's adapter changes are real-validated on PostgreSQL 16 and MariaDB 10.11 only.
+  MySQL, SQL Server, Oracle and Db2 LUW need the Docker matrix run before the tag.
+- `mypy` reports 104 type errors that predate the reconciliation. Type checking is not a CI gate.
+  Dependency major upgrades (open Dependabot pull requests) are scheduled for 0.15.
 - Scheduled reports are e-mailed only; PDF reports list at most 5,000 rows; no Excel format.
 - The full Docker real-engine matrix and the Docker image build run on the owner's Docker host
   (`scripts/integration-test`); the release-preparation environment cannot pull container images.

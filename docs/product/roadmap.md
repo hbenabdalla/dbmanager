@@ -19,9 +19,17 @@ or a page of documentation exists. The task-level evidence is in the
 
 ## Where the product stands
 
-The current version is **0.14.0**. It contains the baseline capability groups below (listed as the
+The current version is **0.14.0** (being released; **0.13.0** is the latest published release). It contains the baseline capability groups below (listed as the
 baseline, not as past releases) and milestones 0.9 – 0.14. **0.12.0** was the first public
 release. The milestone of this release is described in [Current milestone](current-milestone.md).
+
+!!! note "Roadmap reconciliation (0.14.0)"
+    Before 0.14.0, every DONE status below was audited again from the code, the tests and the
+    documentation. 61 claims were reopened because they were broken, partial, untested, or
+    present only in the UI or only in the backend. Two of them were P0 security issues. All 61
+    were fixed and verified again in the same release, as remediation sprints R1 – R7. The
+    statuses below are the verified ones. The row-by-row evidence is in the
+    [roadmap audit](roadmap-audit.md).
 
 ### Versioning
 
@@ -39,8 +47,8 @@ development states and were never released.
 | Seven engine adapters behind one contract with capability discovery; six real-engine validated (2026-10-18, again 2026-10-19 for 0.13.0); Db2 for z/OS partial | DONE |
 | Telemetry: collectors, scheduler with leader election, circuit breaker, normalized metric catalog, VictoriaMetrics storage, retention | DONE |
 | Query performance: statistics, fingerprints, history, graphical execution plans | DONE |
-| Advisors: 59 performance + 55 security rules with evidence, confidence, lifecycle; security posture | DONE |
-| Guarded administration (Monitoring Only default, preview → confirm → execute) | DONE |
+| Advisors: 61 performance + 55 security rules with evidence, confidence, lifecycle (each rule has a firing and a quiet test); security posture | DONE |
+| Guarded administration (Monitoring Only default — also for servers registered without the option — preview → confirm → execute; EXPLAIN ANALYZE of modifying statements only in administration mode) | DONE |
 | Simulation: deterministic demo fleets, isolated from real data | DONE |
 | UX: command-center dashboard, topology, replication topology, wizards (setup, LDAP, OIDC, onboarding, bulk), command palette, dark mode | DONE |
 | Real-engine test environment (`docker-compose.test.yml`, `scripts/integration-test`) | DONE |
@@ -204,6 +212,21 @@ recipient's owner may see.* Details: [reports](../user-guide/reports.md),
 | 0.14.3 PDF export | Server-side PDF (ReportLab): logo, scope, generated-for, repeated table header, landscape for wide tables, row cap with the CSV as complete export; CSV formula-injection guard | DONE |
 | 0.14.4 Branding & engine identity | DBManager logo in the product, documentation, README, favicon and app icons; `DatabaseEngineIcon` with DBManager's own engine marks (no vendor logos) everywhere engines are shown; optional operator-supplied licensed logos (`DBM_BRANDING_DIR`); trademark notice | DONE |
 
+## Remediation sprints R1 – R7 · DONE (0.14.0)
+
+Created by the roadmap reconciliation for the reopened claims. Details and evidence:
+[roadmap audit](roadmap-audit.md#remediation-sprints).
+
+| Sprint | Scope | Status |
+|---|---|---|
+| R1 Security | Client address behind proxies, MFA lockout, encrypted webhook URLs and headers, CSV formula injection, backup scoping, EXPLAIN ANALYZE guard, role catalog permission, report schedule ownership, Oracle pack guard in the workspace, Oracle connect-string redaction | DONE |
+| R2 Engine correctness | MySQL/MariaDB database selection, Db2 database refusal, TLS *prefer*/*require*, MySQL 5.7 locks, constraints on SQL Server and Oracle, roles across SQL Server databases, PDB users from CDB$ROOT, Db2 grant catalogs, one storage contract | DONE |
+| R3 Findings and alerts | No false auto-resolve, last values in rule windows, alerts outside a rule's scope resolve, suppression released after windows, Compliance counted server-side | DONE |
+| R4 Backup & Restore | Cancel running platform backups, storage-unavailable and cancelled notifications, notifications of manual backups, safety backup required, protection freshness for manual policies, audited previews and target checks, tests for scopes, export and metrics | DONE |
+| R5 Runtime and CI | Leader lock release, Compose restore drill required and proving credentials, management-mode default and migration `0013`, upgrade tests from published releases | DONE |
+| R6 User interface | Administration texts and links, guards, error states, UI for existing APIs (pin, jobs, evaluate, OIDC, palette), paged server lists, baseline preview for every scope, engine icon guard, layout at 1024 px | DONE |
+| R7 Documentation | Counts, statuses, navigation paths, screenshots recaptured from the running application | DONE |
+
 ## Milestone 0.15 — Cloud-Native Deployment · NEXT
 
 | Sprint | Scope | Status |
@@ -212,6 +235,7 @@ recipient's owner may see.* Details: [reports](../user-guide/reports.md),
 | 0.15.2 Helm chart | Chart with external PostgreSQL/VictoriaMetrics options, migrations hook | NEXT |
 | 0.15.3 Manifest validation | kubeconform + kind smoke test in CI; OpenShift restricted-v2 check | NEXT |
 | 0.15.4 HA & TLS reference | Multi-replica API, worker leader failover test, TLS termination and internal TLS guide | NEXT |
+| 0.15.5 Dependency majors | vite, recharts, lucide-react, pymdown-extensions and the other open Dependabot majors, with their migration work | NEXT |
 
 ## Milestone 1.0 — Production Release
 
@@ -240,6 +264,7 @@ recipient's owner may see.* Details: [reports](../user-guide/reports.md),
 
 ## Known limitations of the current release
 
+- The adapter changes of the reconciliation were validated here against PostgreSQL 16 and MariaDB 10.11. They are covered by unit tests for MySQL, SQL Server, Oracle and Db2 LUW, which still need a re-run in the Docker test environment ([audit](roadmap-audit.md#real-engine-regression)).
 - LDAP/AD were validated against OpenLDAP (no Active Directory server in the test environment); OIDC against Keycloak 26.
 - Scheduled reports are delivered by e-mail only (no webhook/file-share delivery); PDF reports list at most 5,000 rows (the CSV has all rows); no Excel format.
 - DBManager shows its own engine marks, not vendor logos; licensed logos can be supplied by the operator (`DBM_BRANDING_DIR`).

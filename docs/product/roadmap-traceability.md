@@ -11,7 +11,7 @@ the repository root; "—" means not yet created.
 | Engine adapters (7) with capability discovery | — | Baseline | `backend/app/adapters/{postgres,mysql,mssql,oracle,db2,db2zos}/` | `backend/tests/unit/test_{adapters,mssql,oracle,db2,mysql_family}.py`, `backend/tests/integration/` (75 real-engine tests) | `docs/development/adding-a-database-engine.md`, `docs/database-engines/permissions.md` |
 | Real-engine validation matrix | — | Baseline | `backend/tests/integration/{matrix,conftest}.py`, `backend/app/data/real_engine_validation.json`, `scripts/integration-test.{sh,ps1}` | the integration suites themselves | `docs/operations/index.md` |
 | Telemetry pipeline | — | Baseline | `backend/app/timeseries/`, `backend/app/services/collection.py`, `backend/app/jobs/` | `backend/tests/unit/test_timeseries.py`, `backend/tests/integration/test_victoriametrics.py`, `backend/tests/api/test_metrics.py` | `docs/monitoring/architecture.md`, `docs/monitoring/timeseries-storage.md` |
-| Advisors (performance + security rules) | — | Baseline | `backend/app/advisors/` | `backend/tests/unit/test_rules.py`, security/recommendation tests in integration suites | `docs/security/index.md` |
+| Advisors (performance + security rules) | — | Baseline | `backend/app/advisors/` | `backend/tests/unit/test_rules.py`, `backend/tests/unit/test_rules_coverage.py` (all 116 rules), security/recommendation tests in integration suites | `docs/security/index.md` |
 | RBAC & scopes | — | Baseline | `backend/app/domain/{permissions,scopes}.py`, `backend/app/services/authz.py` | `backend/tests/unit/test_authz.py`, `backend/tests/api/test_rbac.py` | `docs/administration/rbac.md` |
 | Guarded administration | — | Baseline | `backend/app/adapters/admin.py`, `backend/app/api/v1/admin_actions.py` | administration tests in each integration suite | `docs/database-engines/permissions.md` |
 | Onboarding & wizards | — | Baseline | `backend/app/api/v1/{setup,onboarding,idp_wizard}.py`, `frontend/src/features/{setup,onboarding}/` | `backend/tests/api/test_onboarding.py`, `frontend/src/test/wizards.test.tsx` | `docs/architecture/ux-audit.md` |
@@ -28,7 +28,7 @@ the repository root; "—" means not yet created.
 | CI | G-03 | 0.9.2 | `.github/workflows/` | workflows on GitHub | `CONTRIBUTING.md` | VERIFIED COMPLETE |
 | Documentation site | G-06 | 0.9.3 | `mkdocs.yml`, `.readthedocs.yaml`, `docs/requirements.txt`, `docs/**` | `mkdocs build --strict` (CI and Read the Docs) | [https://db-manager.readthedocs.io/en/latest/](https://db-manager.readthedocs.io/en/latest/) | VERIFIED COMPLETE |
 | Version & About page | G-04 | 0.9.4 | `backend/app/api/v1/about.py`, Platform → About, Help menu | `tests/api/test_alerting.py::test_about_and_version`, `tests/unit/test_about_links.py`, frontend `alerts.test.tsx` | [About](../administration/about.md) | VERIFIED COMPLETE |
-| Upgrade & recovery verification | G-20, G-22 | 0.9.5 | `scripts/backup.sh`, `scripts/restore.sh`, `scripts/restore-drill.sh` (Docker CI) | `tests/migrations/` (upgrade from empty, first and previous schema with data; downgrade; model parity; backup/restore round trip) | [upgrade](../operations/upgrade.md), [backup and restore](../operations/backup-restore.md) | VERIFIED COMPLETE |
+| Upgrade & recovery verification | G-20, G-22 | 0.9.5 | `scripts/backup.sh`, `scripts/restore.sh`, `scripts/restore-drill.sh` (Docker CI) | `tests/migrations/` (upgrade from empty, first schema and the published 0.12.0 / 0.13.0 schemas with data; downgrade; model parity; backup/restore round trip) | [upgrade](../operations/upgrade.md), [backup and restore](../operations/backup-restore.md) | VERIFIED COMPLETE |
 
 ## Milestones 0.10 and 0.11 — Operations, alerting and enterprise integration
 
@@ -88,3 +88,17 @@ the repository root; "—" means not yet created.
 | Db2 for z/OS validation and deep monitoring | G-56 | Future | BLOCKED |
 
 Back to the [roadmap](roadmap.md).
+
+## Remediation sprints R1 – R7 (roadmap reconciliation, 0.14.0)
+
+| Capability | Gap | Sprint | Implementation | Tests | Documentation | Status |
+|---|---|---|---|---|---|---|
+| Client address behind proxies | G-41 | R1 | `backend/app/api/deps.py::client_ip`, `frontend/nginx/default.conf.template` | `tests/unit/test_client_ip.py`, `tests/api/test_api_tokens.py` | [reverse proxy](../deployment/reverse-proxy-tls.md) | VERIFIED COMPLETE |
+| MFA lockout, webhook secrets, CSV injection, role catalog, report ownership, Oracle pack guard and redaction | G-43 | R1 | `api/v1/auth.py`, `services/notify.py`, `core/csvsafe.py`, `api/v1/rbac.py`, `api/v1/reports.py`, `adapters/oracle/adapter.py`, `core/redact.py` | `tests/api/test_mfa.py`, `test_alerting.py`, `test_audit_export.py`, `test_rbac.py`, `test_reports.py`, `tests/unit/test_oracle.py`, `test_redact.py` | [notifications](../administration/notifications.md), [MFA](../administration/mfa.md) | VERIFIED COMPLETE |
+| Engine correctness and depth | G-42, G-46 | R2 | `adapters/dbapi.py`, `adapters/mysql/`, `adapters/mssql/inventory.py`, `adapters/oracle/inventory.py`, `adapters/db2/` | `tests/integration/test_mysql_family.py` (MariaDB real), `tests/unit/test_{mssql,oracle,db2,mysql_family}.py` | [engine matrix](engine-matrix.md) | VERIFIED COMPLETE (MySQL, SQL Server, Oracle, Db2 LUW real re-run pending in Docker) |
+| Findings and alerts integrity | G-45 | R3 | `services/advisor.py`, `services/alerting.py`, `api/v1/advisor.py` | `tests/unit/test_rules_coverage.py`, `tests/api/test_alerting_completion.py`, `test_rule_summary.py`, `test_posture_score.py` | [recommendations](../performance/recommendations.md) | VERIFIED COMPLETE |
+| Backup & Restore scoping, cancel, notifications, safety backup, freshness | G-44 | R4 | `api/v1/backups.py`, `backup/service.py` | `tests/api/test_backup_scope.py`, `test_backup_extras.py`, `test_backup.py`, `tests/unit/test_backup_units.py` | [backup security](../backup-restore/security.md) | VERIFIED COMPLETE |
+| Leader lock, Compose drill, management mode, release-pinned upgrades | — | R5 | `jobs/runner.py`, `.github/workflows/ci-docker.yml`, `scripts/restore-drill.sh`, migration `0013` | `tests/api/test_runtime_guards.py`, `test_management_mode.py`, `tests/migrations/test_migrations.py` | [upgrade](../operations/upgrade.md) | VERIFIED COMPLETE |
+| User interface corrections | — | R6 | `frontend/src/features/**` | `frontend/src/test/ui-fixes.test.tsx`, `compliance.test.tsx`, `storage-tab.test.tsx`, `baseline-scope.test.tsx`, `engine-icon-guard.test.ts` | user guide | VERIFIED COMPLETE |
+| Documentation and screenshots | — | R7 | `docs/**`, `docs/assets/screenshots/` | `mkdocs build --strict` | [roadmap audit](roadmap-audit.md) | VERIFIED COMPLETE |
+
