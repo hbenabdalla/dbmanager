@@ -1,0 +1,26 @@
+# production-like rendering: external PostgreSQL over verified TLS, existing Secret, Ingress, HPA
+secrets:
+  existingSecret: dbmanager-secrets
+postgresql:
+  bundled: { enabled: false }
+  tls: { mode: verify-full, caSecret: { name: dbmanager-pg-ca, key: ca.crt } }
+timeseries:
+  bundled: { enabled: false }
+  external: { url: https://vm.monitoring.svc:8428 }
+  tls: { caSecret: { name: dbmanager-vm-ca, key: ca.crt } }
+ingress:
+  enabled: true
+  className: nginx
+  host: dbmanager.example.com
+  annotations: { cert-manager.io/cluster-issuer: letsencrypt }
+api:
+  autoscaling: { enabled: true, minReplicas: 2, maxReplicas: 5 }
+worker:
+  replicas: 3
+backupStorage:
+  persistence: { enabled: true }
+image:
+  backend: { digest: "sha256:0000000000000000000000000000000000000000000000000000000000000000" }
+networkPolicy:
+  extraApiIngressFrom:
+    - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: monitoring } }

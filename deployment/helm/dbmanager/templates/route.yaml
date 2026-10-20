@@ -1,0 +1,19 @@
+{{- if .Values.route.enabled }}
+# OpenShift: edge-terminated Route to the frontend (instead of an Ingress)
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: {{ include "dbm.fullname" . }}
+  labels: {{- include "dbm.labels" . | nindent 4 }}
+  annotations:
+    haproxy.router.openshift.io/timeout: 180s
+spec:
+  {{- with .Values.route.host }}
+  host: {{ . }}
+  {{- end }}
+  to: { kind: Service, name: {{ include "dbm.fullname" . }} }
+  port: { targetPort: http }
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect
+{{- end }}

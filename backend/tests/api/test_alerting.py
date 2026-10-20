@@ -271,7 +271,7 @@ async def test_about_and_version(admin, make_client) -> None:  # type: ignore[no
         a["links"]["roadmap"].endswith("/ROADMAP.md")
         and a["links"]["documentation"] == "https://db-manager.readthedocs.io/en/latest/"
     )
-    assert a["license"] == "Apache-2.0" and a["milestone"]["version"] == "v0.14"
+    assert a["license"] == "Apache-2.0" and a["milestone"]["version"] == "v0.15"
     engines = {e["engine"]: e for e in a["engines"]}
     assert "demo" not in engines and engines["postgresql"]["validation"] == "validated"
     assert engines["db2zos"]["support_level"] == "partial"

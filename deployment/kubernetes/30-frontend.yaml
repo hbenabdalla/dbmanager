@@ -8,10 +8,11 @@ spec:
   template:
     metadata: { labels: { app: dbmanager-frontend } }
     spec:
+      automountServiceAccountToken: false
       securityContext: { runAsNonRoot: true, seccompProfile: { type: RuntimeDefault } }
       containers:
         - name: web
-          image: registry.example.com/database-manager-frontend:1.0.0
+          image: ghcr.io/hbenabdalla/dbmanager-frontend:0.15.0
           env:
             - { name: BACKEND_URL, value: "http://backend:8000" }
             # address range of your ingress controller pods: nginx takes the client address from
@@ -20,7 +21,16 @@ spec:
           ports: [{ containerPort: 8080, name: http }]
           readinessProbe: { httpGet: { path: /nginx-health, port: http } }
           resources: { requests: { cpu: 50m, memory: 64Mi }, limits: { memory: 128Mi } }
-          securityContext: { allowPrivilegeEscalation: false, capabilities: { drop: [ALL] } }
+          securityContext: { allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: { drop: [ALL] } }
+          # nginx renders its configuration at start and keeps caches and its pid here
+          volumeMounts:
+            - { name: conf, mountPath: /etc/nginx/conf.d }
+            - { name: cache, mountPath: /var/cache/nginx }
+            - { name: tmp, mountPath: /tmp }
+      volumes:
+        - { name: conf, emptyDir: {} }
+        - { name: cache, emptyDir: {} }
+        - { name: tmp, emptyDir: {} }
 ---
 apiVersion: v1
 kind: Service

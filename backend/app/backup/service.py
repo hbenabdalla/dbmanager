@@ -318,6 +318,8 @@ def _audit_kw(job: BackupJob) -> dict[str, Any]:
 # ---- platform backup -----------------------------------------------------------------------------
 async def _metrics_export(workdir: Path, days: int) -> dict[str, Any]:
     """VictoriaMetrics native export of the telemetry (``/api/v1/export/native``)."""
+    from app.core.tlsclient import timeseries_verify
+
     s = get_settings()
     if not s.timeseries_enabled or s.timeseries_backend != "victoriametrics":
         return {"included": False, "reason": "time-series storage is not VictoriaMetrics"}
@@ -333,7 +335,9 @@ async def _metrics_export(workdir: Path, days: int) -> dict[str, Any]:
     )
     try:
         async with (
-            httpx.AsyncClient(base_url=s.timeseries_url.rstrip("/"), auth=auth, timeout=600) as c,
+            httpx.AsyncClient(
+                base_url=s.timeseries_url.rstrip("/"), auth=auth, timeout=600, verify=timeseries_verify(s)
+            ) as c,
             c.stream("GET", "/api/v1/export/native", params=params) as r,
         ):
             if r.status_code != 200:

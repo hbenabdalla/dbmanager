@@ -1,0 +1,70 @@
+{{- if .Values.postgresql.bundled.enabled }}
+{{- $c := dict "ctx" $ "component" "postgresql" }}
+{{- $pg := .Values.postgresql.bundled }}
+# Single-instance PostgreSQL for evaluation and small installations. Production: a managed or
+# operator-run HA PostgreSQL (postgresql.bundled.enabled=false, secrets.databaseUrl).
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "dbm.fullname" . }}-postgresql
+  labels: {{- include "dbm.labels" . | nindent 4 }}
+    app.kubernetes.io/component: postgresql
+spec:
+  serviceName: {{ include "dbm.fullname" . }}-postgresql
+  replicas: 1
+  selector:
+    matchLabels: {{- include "dbm.selector" $c | nindent 6 }}
+  template:
+    metadata:
+      labels: {{- include "dbm.selector" $c | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "dbm.serviceAccountName" . }}
+      automountServiceAccountToken: false
+      # the image's postgres user (uid 70 in the Alpine image) runs initdb and the server directly
+      securityContext: {{- include "dbm.podSecurity" (dict "ctx" $ "uid" 70 "gid" 70) | nindent 8 }}
+      containers:
+        - name: postgres
+          image: {{ $pg.image }}
+          env:
+            - { name: POSTGRES_DB, value: {{ $pg.database | quote }} }
+            - { name: POSTGRES_USER, value: {{ $pg.username | quote }} }
+            - name: POSTGRES_PASSWORD
+              valueFrom: { secretKeyRef: { name: {{ include "dbm.secretName" . }}, key: POSTGRES_PASSWORD } }
+            - { name: POSTGRES_INITDB_ARGS, value: "--auth-host=scram-sha-256" }
+            - { name: PGDATA, value: /var/lib/postgresql/data/pgdata }
+          ports: [{ containerPort: 5432, name: postgres }]
+          readinessProbe:
+            exec: { command: ["sh", "-c", "pg_isready -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\" -h 127.0.0.1"] }
+            periodSeconds: 10
+          livenessProbe:
+            exec: { command: ["sh", "-c", "pg_isready -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\" -h 127.0.0.1"] }
+            periodSeconds: 30
+            failureThreshold: 6
+          resources: {{- toYaml $pg.resources | nindent 12 }}
+          securityContext: {{- include "dbm.containerSecurity" . | nindent 12 }}
+          volumeMounts:
+            - { name: data, mountPath: /var/lib/postgresql/data }
+            - { name: run, mountPath: /var/run/postgresql }
+            - { name: tmp, mountPath: /tmp }
+      volumes:
+        - { name: run, emptyDir: {} }
+        - { name: tmp, emptyDir: {} }
+  volumeClaimTemplates:
+    - metadata: { name: data }
+      spec:
+        accessModes: [ReadWriteOnce]
+        {{- with $pg.persistence.storageClass }}
+        storageClassName: {{ . }}
+        {{- end }}
+        resources: { requests: { storage: {{ $pg.persistence.size }} } }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "dbm.fullname" . }}-postgresql
+  labels: {{- include "dbm.labels" . | nindent 4 }}
+    app.kubernetes.io/component: postgresql
+spec:
+  selector: {{- include "dbm.selector" $c | nindent 4 }}
+  ports: [{ port: 5432, targetPort: postgres, name: postgres }]
+{{- end }}

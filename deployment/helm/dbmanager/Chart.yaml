@@ -1,0 +1,19 @@
+apiVersion: v2
+name: dbmanager
+description: DBManager — unified administration, monitoring, performance, security and backup for heterogeneous relational database fleets
+type: application
+# chart version follows the product version (released together)
+version: 0.15.0
+appVersion: "0.15.0"
+kubeVersion: ">=1.27.0-0"
+home: https://github.com/hbenabdalla/dbmanager
+icon: https://raw.githubusercontent.com/hbenabdalla/dbmanager/main/frontend/public/icon-512.png
+sources:
+  - https://github.com/hbenabdalla/dbmanager
+keywords: [database, monitoring, postgresql, mysql, mariadb, sql-server, oracle, db2, dba]
+license: Apache-2.0
+maintainers:
+  - name: DBManager maintainers
+    url: https://github.com/hbenabdalla/dbmanager
+annotations:
+  artifacthub.io/license: Apache-2.0

@@ -128,6 +128,7 @@ def _configured() -> TimeSeriesRepository:
         from app.timeseries.memory import InMemoryTimeSeriesRepository
 
         return InMemoryTimeSeriesRepository()
+    from app.core.tlsclient import timeseries_verify
     from app.timeseries.victoriametrics import VictoriaMetricsRepository
 
     return VictoriaMetricsRepository(
@@ -136,6 +137,7 @@ def _configured() -> TimeSeriesRepository:
         password=s.timeseries_password.get_secret_value() or None,
         timeout=s.timeseries_timeout_seconds,
         retention=s.timeseries_retention,
+        verify=timeseries_verify(s),
     )
 
 

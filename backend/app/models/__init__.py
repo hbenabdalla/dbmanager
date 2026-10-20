@@ -36,7 +36,7 @@ from app.models.inventory import (
 )
 from app.models.reporting import ReportRun, ReportSchedule
 from app.models.simulation import SimulationRun
-from app.models.telemetry import CollectorJob, MetricSample, QueryFingerprint, QueryStatSnapshot
+from app.models.telemetry import CollectorJob, MetricSample, PlatformInstance, QueryFingerprint, QueryStatSnapshot
 
 __all__ = [
     "ApiToken",
@@ -71,6 +71,7 @@ __all__ = [
     "QueryHistory",
     "RateLimitWindow",
     "SiemDestination",
+    "PlatformInstance",
     "QueryStatSnapshot",
     "QueryPlanSnapshot",
     "Recommendation",

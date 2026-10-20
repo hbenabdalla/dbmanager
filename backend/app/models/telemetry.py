@@ -123,3 +123,24 @@ class CollectorJob(UUIDPk, Base):
     last_error: Mapped[str | None] = mapped_column(Text)
     result: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
+
+
+class PlatformInstance(Base):
+    """One running DBManager process (API, worker or both), kept current by its heartbeat.
+
+    With several replicas (Kubernetes, sprint 0.15.4) every instance reports here, so any API
+    replica can show the whole deployment: which processes run, their version, and which one
+    holds the scheduler leadership. A row is removed when its process stops cleanly; rows of
+    processes that died are shown as stale and pruned after a day."""
+
+    __tablename__ = "platform_instances"
+
+    id: Mapped[str] = mapped_column(String(160), primary_key=True)  # host:pid
+    role: Mapped[str] = mapped_column(String(16), nullable=False)  # all | api | worker
+    hostname: Mapped[str] = mapped_column(String(128), nullable=False)
+    version: Mapped[str] = mapped_column(String(32), nullable=False)
+    git_commit: Mapped[str | None] = mapped_column(String(40))
+    runs_worker: Mapped[bool] = mapped_column(nullable=False, default=False)
+    is_leader: Mapped[bool] = mapped_column(nullable=False, default=False)
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utcnow)
+    last_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utcnow)

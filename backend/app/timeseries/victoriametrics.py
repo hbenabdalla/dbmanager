@@ -100,6 +100,7 @@ class VictoriaMetricsRepository(TimeSeriesRepository):
         password: str | None = None,
         timeout: float = 10.0,
         retention: str | None = None,
+        verify: bool | str = True,
     ):
         self.url = url.rstrip("/")
         self.retention = retention
@@ -109,6 +110,7 @@ class VictoriaMetricsRepository(TimeSeriesRepository):
             auth=auth,
             timeout=httpx.Timeout(timeout, connect=min(timeout, 5.0)),
             limits=httpx.Limits(max_connections=20, max_keepalive_connections=10),
+            verify=verify,
         )
 
     # --- transport ------------------------------------------------------------------------

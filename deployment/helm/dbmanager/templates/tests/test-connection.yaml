@@ -1,0 +1,32 @@
+# helm test <release>: the frontend serves the UI, the API answers through it and is ready
+# (schema migrated, PostgreSQL and time-series storage reachable).
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ include "dbm.fullname" . }}-test
+  labels: {{- include "dbm.labels" . | nindent 4 }}
+    app.kubernetes.io/component: test
+  annotations:
+    helm.sh/hook: test
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+spec:
+  restartPolicy: Never
+  automountServiceAccountToken: false
+  securityContext: {{- include "dbm.podSecurity" (dict "ctx" $ "uid" 10001 "gid" 0) | nindent 4 }}
+  containers:
+    - name: check
+      image: {{ include "dbm.image" (dict "ctx" $ "img" .Values.image.backend) }}
+      command:
+        - python
+        - -c
+        - |
+          import json, sys, urllib.request
+          ui = "http://{{ include "dbm.fullname" . }}:{{ .Values.service.port }}"
+          api = "http://{{ include "dbm.fullname" . }}-api:8000"
+          assert urllib.request.urlopen(ui + "/nginx-health", timeout=10).status == 200
+          v = json.load(urllib.request.urlopen(ui + "/api/v1/version", timeout=10))
+          assert v["version"] == "{{ .Chart.AppVersion }}", v
+          r = json.load(urllib.request.urlopen(api + "/readyz", timeout=10))
+          assert r["status"] == "ready", r
+          print("DBManager", v["version"], "ready, schema", r.get("schema_version"))
+      securityContext: {{- include "dbm.containerSecurity" . | nindent 8 }}

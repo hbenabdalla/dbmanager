@@ -24,6 +24,10 @@ from app.db.session import dispose_engine, session_scope
 log = logging.getLogger("app")
 
 
+#: serialises the start-up work (migrations, bootstrap, data moves) of replicas starting together
+STARTUP_LOCK_ID = 0x44424D_535455  # "DBM" "STU"
+
+
 async def startup_tasks() -> None:
     s = get_settings()
     if placeholders := placeholder_settings(s):
@@ -31,6 +35,23 @@ async def startup_tasks() -> None:
             f"Configuration still contains CHANGE_ME placeholders: {', '.join(placeholders)}. {SETUP_HINT}"
         )
     get_keyring()  # fail fast when the master key is missing or malformed
+    from sqlalchemy import text
+
+    from app.db.session import get_engine
+
+    # one replica at a time: the others wait here and then find nothing left to do (bootstrap
+    # and the data moves are idempotent); the lock ends with the connection if a process dies
+    async with get_engine().connect() as lock:
+        await lock.execute(text("SELECT pg_advisory_lock(:k)"), {"k": STARTUP_LOCK_ID})
+        await lock.commit()
+        try:
+            await _startup_work(s)
+        finally:
+            await lock.execute(text("SELECT pg_advisory_unlock(:k)"), {"k": STARTUP_LOCK_ID})
+            await lock.commit()
+
+
+async def _startup_work(s) -> None:  # type: ignore[no-untyped-def]
     if s.run_migrations_on_start:
         from app.cli import run_migrations
 
@@ -72,10 +93,17 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     if s.runs_worker:
         job_runner.runner = job_runner.BackgroundRunner()
         job_runner.runner.start()
+    from app.services import instances
+
+    instances.heartbeat = instances.Heartbeat()
+    instances.heartbeat.start()
     log.info("DBManager started", extra={"version": __version__, "role": s.process_role, "env": s.env})
     try:
         yield
     finally:
+        if instances.heartbeat:
+            await instances.heartbeat.stop()
+            instances.heartbeat = None
         if job_runner.runner:
             await job_runner.runner.stop()
             job_runner.runner = None

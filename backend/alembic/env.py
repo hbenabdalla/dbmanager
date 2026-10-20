@@ -33,10 +33,25 @@ def _do_run(connection) -> None:  # type: ignore[no-untyped-def]
         context.run_migrations()
 
 
+#: serialises migrations of concurrently starting replicas (and a migrate Job): the second one
+#: waits, then finds the schema at head and has nothing to do
+MIGRATION_LOCK_ID = 0x44424D_4D4947  # "DBM" "MIG"
+
+
 async def run_migrations_online() -> None:
-    engine = create_async_engine(_url())
+    from sqlalchemy import text
+
+    from app.core.tlsclient import database_connect_args
+
+    engine = create_async_engine(_url(), connect_args=database_connect_args("dbmanager-migrate"))
     async with engine.connect() as conn:
-        await conn.run_sync(_do_run)
+        await conn.execute(text("SELECT pg_advisory_lock(:k)"), {"k": MIGRATION_LOCK_ID})
+        await conn.commit()
+        try:
+            await conn.run_sync(_do_run)
+        finally:
+            await conn.execute(text("SELECT pg_advisory_unlock(:k)"), {"k": MIGRATION_LOCK_ID})
+            await conn.commit()
     await engine.dispose()
 
 

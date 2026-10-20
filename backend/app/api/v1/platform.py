@@ -30,6 +30,15 @@ router = APIRouter(tags=["platform"])
 SECRET_CONFIG_KEYS = {"bind_password", "client_secret", "password", "secret"}
 
 
+# ---- deployment ------------------------------------------------------------------------
+@router.get("/platform/instances", summary="Running API and worker processes and the scheduler leader")
+async def platform_instances(db: DB, p: CurrentPrincipal) -> dict[str, Any]:
+    p.authz.require_anywhere("collectors.view")
+    from app.services import instances
+
+    return await instances.list_instances(db)
+
+
 # ---- collectors ------------------------------------------------------------------------
 @router.get("/collectors/status")
 async def collectors_status(db: DB, p: CurrentPrincipal) -> dict[str, Any]:
@@ -64,6 +73,8 @@ async def collectors_status(db: DB, p: CurrentPrincipal) -> dict[str, Any]:
             ).where(Server.circuit_open_until > datetime.now(UTC))
         )
     ).all()
+    from app.services import instances
+
     r = job_runner.runner
     s = get_settings()
     return {
@@ -79,6 +90,8 @@ async def collectors_status(db: DB, p: CurrentPrincipal) -> dict[str, Any]:
         "open_circuits": [
             {"server_id": str(i), "server_name": n, "until": u, "failures": f, "error": e} for i, n, u, f, e in circuits
         ],
+        # the whole deployment (every replica), not only the process answering this request
+        "deployment": (await instances.list_instances(db))["summary"],
     }
 
 

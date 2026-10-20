@@ -32,6 +32,10 @@ async def main() -> None:
     get_writer().start()  # collectors hand samples to the batch writer → time-series DB
     job_runner.runner = BackgroundRunner()
     job_runner.runner.start()
+    from app.services import instances
+
+    instances.heartbeat = instances.Heartbeat()
+    instances.heartbeat.start()
     probe = FastAPI(title="DBManager worker", docs_url=None, redoc_url=None, openapi_url=None)
     probe.include_router(ops_router)
     server = uvicorn.Server(
@@ -49,6 +53,7 @@ async def main() -> None:
     serve = asyncio.create_task(server.serve())
     await stop.wait()
     server.should_exit = True
+    await instances.heartbeat.stop()
     await job_runner.runner.stop()
     await get_writer().stop()  # final flush
     await get_repository().close()

@@ -7,12 +7,14 @@ spec:
   template:
     spec:
       restartPolicy: Never
+      automountServiceAccountToken: false
       securityContext: { runAsNonRoot: true, seccompProfile: { type: RuntimeDefault } }
       containers:
         - name: migrate
-          image: registry.example.com/database-manager-backend:1.0.0
+          image: ghcr.io/hbenabdalla/dbmanager-backend:0.15.0
           command: ["sh", "-c", "python -m app.cli migrate && python -m app.cli bootstrap"]
           envFrom:
             - configMapRef: { name: dbmanager-config }
             - secretRef: { name: dbmanager-secrets }
+          resources: { requests: { cpu: 100m, memory: 256Mi }, limits: { memory: 512Mi } }
           securityContext: { allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: { drop: [ALL] } }

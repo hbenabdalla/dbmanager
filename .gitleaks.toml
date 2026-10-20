@@ -5,13 +5,14 @@
 useDefault = true
 
 [allowlist]
-description = "fixed test-only values (simulation API test, identity and Vault integration fixtures) and the Vault KV mount name in .env.example"
+description = "fixed test-only values (simulation API test, identity and Vault integration fixtures) the Vault KV mount name in .env.example and the CI-only master key of the Helm chart test values"
 condition = "AND"
 paths = [
   '''^backend/tests/api/test_simulation\.py$''',
   '''^backend/tests/integration/identity/''',
   '''^backend/tests/integration/test_vault_real\.py$''',
   '''^\.env\.example$''',
+  '''^deployment/helm/dbmanager/ci/default-values\.yaml$''',
 ]
 regexTarget = "line"
 regexes = [
@@ -20,5 +21,6 @@ regexes = [
   '''it-dbmanager-client-secret''',
   '''Vault-Pg-Secret-1|Not-For-DBM''',
   '''^DBM_VAULT_KV_MOUNT=secret$''',
+  '''masterKey: "Y2ktb25seS1tYXN0ZXIta2V5LTMyLWJ5dGVzLS0tLS0="''',
 ]
 

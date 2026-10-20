@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Command } from "cmdk";
-import { Archive, BarChart3, BellRing, BookOpen, Info, KeyRound, Layers, Lock, type LucideIcon, Moon, Network, Search, Server as ServerIcon, ShieldCheck, Wand2 } from "lucide-react";
+import { Archive, BarChart3, BellRing, BookOpen, Info, KeyRound, Layers, Lock, Moon, Network, Search, Server as ServerIcon, ShieldCheck, Wand2, type LucideIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { get } from "@/api/client";
@@ -45,6 +45,7 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
     { label: "Run the platform setup wizard", icon: Wand2, run: () => go("/setup"), keywords: "setup onboarding first run checklist", ok: canPlatform("settings.manage") },
     { label: "Create backup", icon: Archive, run: () => go("/platform/backups/new"), keywords: "backup snapshot dump protect new", ok: can("backup.create") },
     { label: "Generate report", icon: BarChart3, run: () => go("/reports"), keywords: "report export pdf csv summary generate", ok: can("reports.view") },
+    { label: "Deployment and scheduler leader", icon: Network, run: () => go("/platform/collectors"), keywords: "deployment replicas instances pods workers leader ha kubernetes scheduler", ok: can("collectors.view") },
     { label: "Account security", icon: Lock, run: () => go("/account/security"), keywords: "mfa two-factor totp password account security passkey", ok: true },
     { label: "Show active alerts", icon: BellRing, run: () => go("/alerts"), keywords: "alerts alarms firing incidents notifications", ok: can("alerts.view") },
     { label: "Open the documentation", icon: BookOpen, run: () => { onOpenChange(false); window.open(docs!, "_blank", "noopener,noreferrer"); }, keywords: "help docs documentation manual guide", ok: !!docs },

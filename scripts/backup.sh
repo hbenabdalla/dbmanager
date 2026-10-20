@@ -30,7 +30,8 @@ if [ "$METRICS" = 1 ]; then
 import os, sys, httpx
 s = os.environ
 auth = (s["DBM_TIMESERIES_USERNAME"], s["DBM_TIMESERIES_PASSWORD"]) if s.get("DBM_TIMESERIES_USERNAME") else None
-r = httpx.get(s.get("DBM_TIMESERIES_URL", "http://timeseries:8428").rstrip("/") + sys.argv[1], auth=auth, timeout=120)
+url = s.get("DBM_TIMESERIES_URL", "http://timeseries:8428").rstrip("/") + sys.argv[1]
+r = httpx.get(url, auth=auth, timeout=120, verify=s.get("DBM_TIMESERIES_TLS_CA_FILE") or True)
 r.raise_for_status()
 print(r.text)
 PY

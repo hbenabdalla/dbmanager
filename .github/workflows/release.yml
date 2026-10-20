@@ -1,0 +1,136 @@
+name: Release
+
+# Sprint 0.15.1: a version tag (vX.Y.Z) publishes signed images with SBOM and provenance
+# attestations to GitHub Container Registry, the Helm chart as a signed OCI artifact, and the
+# GitHub release (notes from docs/release-notes/X.Y.Z.md, SBOMs attached).
+#
+#   ghcr.io/<owner>/dbmanager-backend:X.Y.Z   ghcr.io/<owner>/dbmanager-frontend:X.Y.Z
+#   oci://ghcr.io/<owner>/charts/dbmanager --version X.Y.Z
+#
+# Verify:  cosign verify ghcr.io/<owner>/dbmanager-backend:X.Y.Z \
+#            --certificate-identity-regexp 'https://github.com/<owner>/dbmanager/.github/workflows/release.yml@refs/tags/v.*' \
+#            --certificate-oidc-issuer https://token.actions.githubusercontent.com
+on:
+  push:
+    tags: ["v[0-9]+.[0-9]+.[0-9]+"]
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Tag matches the product version
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+    steps:
+      - uses: actions/checkout@v7
+      - id: v
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          app=$(sed -n 's/^__version__ = "\(.*\)"/\1/p' backend/app/__init__.py)
+          chart=$(sed -n 's/^version: //p' deployment/helm/dbmanager/Chart.yaml)
+          [ "$tag" = "$app" ] && [ "$tag" = "$chart" ] || { echo "tag $tag, app $app, chart $chart differ" >&2; exit 1; }
+          test -f "docs/release-notes/$tag.md" || { echo "docs/release-notes/$tag.md missing" >&2; exit 1; }
+          echo "version=$tag" >> "$GITHUB_OUTPUT"
+
+  images:
+    name: Image ${{ matrix.name }}
+    needs: check
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write      # push to ghcr.io
+      id-token: write      # keyless signing (Sigstore)
+      attestations: write
+    strategy:
+      matrix:
+        include:
+          - { name: backend, context: backend, target: runtime }
+          - { name: frontend, context: frontend, target: "" }
+    steps:
+      - uses: actions/checkout@v7
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/login-action@v4
+        with: { registry: ghcr.io, username: "${{ github.actor }}", password: "${{ secrets.GITHUB_TOKEN }}" }
+      - id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/dbmanager-${{ matrix.name }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+          labels: |
+            org.opencontainers.image.title=dbmanager-${{ matrix.name }}
+            org.opencontainers.image.licenses=Apache-2.0
+            org.opencontainers.image.documentation=https://db-manager.readthedocs.io/
+      - id: build
+        uses: docker/build-push-action@v7
+        with:
+          context: ${{ matrix.context }}
+          target: ${{ matrix.target }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            DBM_BUILD_VERSION=${{ needs.check.outputs.version }}
+            DBM_GIT_COMMIT=${{ github.sha }}
+            VITE_BUILD_VERSION=${{ needs.check.outputs.version }}
+          # SBOM and SLSA provenance as registry attestations
+          sbom: true
+          provenance: mode=max
+      - uses: sigstore/cosign-installer@v4
+      - name: Sign the image (keyless, by digest)
+        run: cosign sign --yes "ghcr.io/${{ github.repository_owner }}/dbmanager-${{ matrix.name }}@${{ steps.build.outputs.digest }}"
+      - name: SBOM file for the release (SPDX JSON)
+        uses: anchore/sbom-action@v0
+        with:
+          image: ghcr.io/${{ github.repository_owner }}/dbmanager-${{ matrix.name }}@${{ steps.build.outputs.digest }}
+          format: spdx-json
+          output-file: dbmanager-${{ matrix.name }}-${{ needs.check.outputs.version }}.spdx.json
+          upload-release-assets: false
+      - uses: actions/upload-artifact@v7
+        with:
+          name: sbom-${{ matrix.name }}
+          path: dbmanager-${{ matrix.name }}-${{ needs.check.outputs.version }}.spdx.json
+
+  chart:
+    name: Helm chart
+    needs: [check, images]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: azure/setup-helm@v5
+      - uses: sigstore/cosign-installer@v4
+      - name: Package and push to oci://ghcr.io/${{ github.repository_owner }}/charts
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io -u "${{ github.actor }}" --password-stdin
+          helm package deployment/helm/dbmanager -d dist
+          out=$(helm push "dist/dbmanager-${{ needs.check.outputs.version }}.tgz" "oci://ghcr.io/${{ github.repository_owner }}/charts" 2>&1)
+          echo "$out"
+          digest=$(echo "$out" | sed -n 's/^Digest: //p')
+          echo "${{ secrets.GITHUB_TOKEN }}" | cosign login ghcr.io -u "${{ github.actor }}" --password-stdin
+          cosign sign --yes "ghcr.io/${{ github.repository_owner }}/charts/dbmanager@${digest}"
+      - uses: actions/upload-artifact@v7
+        with: { name: chart, path: dist/*.tgz }
+
+  github-release:
+    name: GitHub release
+    needs: [check, images, chart]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with: { path: assets, merge-multiple: true }
+      - uses: softprops/action-gh-release@v3
+        with:
+          name: DBManager ${{ needs.check.outputs.version }}
+          body_path: docs/release-notes/${{ needs.check.outputs.version }}.md
+          make_latest: "true"
+          files: assets/*

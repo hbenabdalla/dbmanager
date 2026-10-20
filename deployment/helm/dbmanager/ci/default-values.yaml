@@ -1,0 +1,9 @@
+# values used by CI to render and install the chart (test-only secrets)
+secrets:
+  masterKey: "Y2ktb25seS1tYXN0ZXIta2V5LTMyLWJ5dGVzLS0tLS0="
+  bootstrapAdminPassword: "Ci-Only-Admin-Passw0rd!"
+  postgresPassword: "ci-only-pg-password"
+  timeseriesPassword: "ci-only-ts-password"
+config:
+  cookieSecure: false
+  publicBaseUrl: http://localhost:8080

@@ -1,0 +1,24 @@
+DBManager {{ .Chart.AppVersion }} is deployed as release "{{ .Release.Name }}".
+
+{{- if .Values.ingress.enabled }}
+Open: http{{ if .Values.ingress.tls.enabled }}s{{ end }}://{{ .Values.ingress.host }}
+{{- else }}
+Open the UI locally:
+  kubectl -n {{ .Release.Namespace }} port-forward svc/{{ include "dbm.fullname" . }} 8080:{{ .Values.service.port }}
+  then http://localhost:8080 (set config.cookieSecure=false for plain HTTP)
+{{- end }}
+
+Sign in as "admin" with secrets.bootstrapAdminPassword (only used on an empty database).
+Check the deployment: helm test {{ .Release.Name }} -n {{ .Release.Namespace }}
+Running processes and the scheduler leader: Platform -> Collectors -> Deployment.
+
+{{- if .Values.postgresql.bundled.enabled }}
+
+NOTE: the bundled PostgreSQL is a single instance for evaluation. For production use a managed
+or operator-run HA PostgreSQL (postgresql.bundled.enabled=false, secrets.databaseUrl).
+{{- end }}
+{{- if not .Values.secrets.existingSecret }}
+
+Back up DBM_MASTER_KEY from Secret {{ include "dbm.secretName" . }}: stored database credentials
+cannot be decrypted without it. The Secret is kept when the release is uninstalled.
+{{- end }}

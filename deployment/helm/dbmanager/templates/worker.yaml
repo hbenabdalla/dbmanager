@@ -1,0 +1,86 @@
+{{- $c := dict "ctx" $ "component" "worker" }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "dbm.fullname" . }}-worker
+  labels: {{- include "dbm.labels" . | nindent 4 }}
+    app.kubernetes.io/component: worker
+spec:
+  # any number: one holds the scheduler advisory lock (it moves when that pod goes away),
+  # all claim collection jobs with SKIP LOCKED
+  replicas: {{ .Values.worker.replicas }}
+  revisionHistoryLimit: 5
+  selector:
+    matchLabels: {{- include "dbm.selector" $c | nindent 6 }}
+  template:
+    metadata:
+      labels: {{- include "dbm.selector" $c | nindent 8 }}
+        {{- with .Values.podLabels }}{{ toYaml . | nindent 8 }}{{ end }}
+      annotations:
+        checksum/config: {{ include "dbm.configChecksum" . }}
+        {{- with .Values.podAnnotations }}{{ toYaml . | nindent 8 }}{{ end }}
+    spec:
+      serviceAccountName: {{ include "dbm.serviceAccountName" . }}
+      automountServiceAccountToken: false
+      # give in-flight collections time to finish and the leader lock to be released cleanly
+      terminationGracePeriodSeconds: 45
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext: {{- include "dbm.podSecurity" (dict "ctx" $ "uid" 10001 "gid" 0) | nindent 8 }}
+      {{- include "dbm.spread" (dict "ctx" $ "component" "worker" "enabled" .Values.worker.topologySpread) | nindent 6 }}
+      containers:
+        - name: worker
+          image: {{ include "dbm.image" (dict "ctx" $ "img" .Values.image.backend) }}
+          imagePullPolicy: {{ .Values.image.backend.pullPolicy }}
+          command: ["python", "-m", "app.worker"]
+          env:
+            - { name: DBM_PROCESS_ROLE, value: worker }
+            {{- include "dbm.backendEnv" . | nindent 12 }}
+          envFrom:
+            - configMapRef: { name: {{ include "dbm.fullname" . }}-config }
+          ports: [{ containerPort: 8001, name: probe }]
+          startupProbe: { httpGet: { path: /healthz, port: probe }, periodSeconds: 5, failureThreshold: 60 }
+          readinessProbe: { httpGet: { path: /readyz, port: probe }, periodSeconds: 15 }
+          livenessProbe: { httpGet: { path: /healthz, port: probe }, periodSeconds: 30 }
+          resources: {{- toYaml .Values.worker.resources | nindent 12 }}
+          securityContext: {{- include "dbm.containerSecurity" . | nindent 12 }}
+          volumeMounts: {{- include "dbm.backendVolumeMounts" . | nindent 12 }}
+      volumes: {{- include "dbm.backendVolumes" . | nindent 8 }}
+      {{- with .Values.worker.nodeSelector }}
+      nodeSelector: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.worker.tolerations }}
+      tolerations: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.worker.affinity }}
+      affinity: {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- if and .Values.worker.podDisruptionBudget.enabled (gt (int .Values.worker.replicas) 1) }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "dbm.fullname" . }}-worker
+  labels: {{- include "dbm.labels" . | nindent 4 }}
+spec:
+  minAvailable: {{ .Values.worker.podDisruptionBudget.minAvailable }}
+  selector:
+    matchLabels: {{- include "dbm.selector" $c | nindent 6 }}
+{{- end }}
+{{- if .Values.backupStorage.persistence.enabled }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "dbm.fullname" . }}-backups
+  labels: {{- include "dbm.labels" . | nindent 4 }}
+  annotations:
+    helm.sh/resource-policy: keep
+spec:
+  accessModes: {{- toYaml .Values.backupStorage.persistence.accessModes | nindent 4 }}
+  {{- with .Values.backupStorage.persistence.storageClass }}
+  storageClassName: {{ . }}
+  {{- end }}
+  resources: { requests: { storage: {{ .Values.backupStorage.persistence.size }} } }
+{{- end }}

@@ -27,8 +27,7 @@ def upgrade() -> None:
     op.add_column("alerts", sa.Column("notify_count", sa.Integer(), nullable=False, server_default="0"))
     # existing firing/acknowledged alerts were notified when they fired (unless suppressed)
     op.execute(
-        "UPDATE alerts SET notified_at = fired_at, notify_count = 1 "
-        "WHERE fired_at IS NOT NULL AND suppressed = false"
+        "UPDATE alerts SET notified_at = fired_at, notify_count = 1 WHERE fired_at IS NOT NULL AND suppressed = false"
     )
 
     op.create_table(

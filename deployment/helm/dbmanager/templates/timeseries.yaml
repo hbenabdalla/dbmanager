@@ -1,0 +1,65 @@
+{{- if .Values.timeseries.bundled.enabled }}
+{{- $c := dict "ctx" $ "component" "timeseries" }}
+{{- $t := .Values.timeseries.bundled }}
+# VictoriaMetrics single node. Only DBManager pods reach it (NetworkPolicy); it is never exposed.
+# For large fleets or HA use the VictoriaMetrics cluster version / operator and set
+# timeseries.bundled.enabled=false + timeseries.external.url (docs/deployment/scaling.md).
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "dbm.fullname" . }}-timeseries
+  labels: {{- include "dbm.labels" . | nindent 4 }}
+    app.kubernetes.io/component: timeseries
+spec:
+  serviceName: {{ include "dbm.fullname" . }}-timeseries
+  replicas: 1
+  selector:
+    matchLabels: {{- include "dbm.selector" $c | nindent 6 }}
+  template:
+    metadata:
+      labels: {{- include "dbm.selector" $c | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "dbm.serviceAccountName" . }}
+      automountServiceAccountToken: false
+      securityContext: {{- include "dbm.podSecurity" (dict "ctx" $ "uid" 65534 "gid" 65534) | nindent 8 }}
+      containers:
+        - name: victoriametrics
+          image: {{ $t.image }}
+          args:
+            - -storageDataPath=/storage
+            - -retentionPeriod={{ .Values.config.timeseriesRetention }}
+            - -dedup.minScrapeInterval=1ms
+            - -search.latencyOffset=5s
+            - -search.maxQueryLen=1MB
+            - -memory.allowedPercent=60
+            - -envflag.enable
+            - -loggerFormat=json
+          env:
+            - { name: httpAuth_username, value: {{ .Values.timeseries.username | quote }} }
+            - name: httpAuth_password
+              valueFrom: { secretKeyRef: { name: {{ include "dbm.secretName" . }}, key: DBM_TIMESERIES_PASSWORD } }
+          ports: [{ containerPort: 8428, name: http }]
+          readinessProbe: { httpGet: { path: /health, port: http }, periodSeconds: 10 }
+          livenessProbe: { httpGet: { path: /health, port: http }, periodSeconds: 30, failureThreshold: 6 }
+          resources: {{- toYaml $t.resources | nindent 12 }}
+          securityContext: {{- include "dbm.containerSecurity" . | nindent 12 }}
+          volumeMounts: [{ name: data, mountPath: /storage }]
+  volumeClaimTemplates:
+    - metadata: { name: data }
+      spec:
+        accessModes: [ReadWriteOnce]
+        {{- with $t.persistence.storageClass }}
+        storageClassName: {{ . }}
+        {{- end }}
+        resources: { requests: { storage: {{ $t.persistence.size }} } }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "dbm.fullname" . }}-timeseries
+  labels: {{- include "dbm.labels" . | nindent 4 }}
+    app.kubernetes.io/component: timeseries
+spec:
+  selector: {{- include "dbm.selector" $c | nindent 4 }}
+  ports: [{ port: 8428, targetPort: http, name: http }]
+{{- end }}

@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "dbm.fullname" . }}-config
+  labels: {{- include "dbm.labels" . | nindent 4 }}
+data:
+  DBM_ENV: {{ .Values.config.env | quote }}
+  DBM_PUBLIC_BASE_URL: {{ .Values.config.publicBaseUrl | quote }}
+  DBM_COOKIE_SECURE: {{ .Values.config.cookieSecure | quote }}
+  DBM_TRUSTED_PROXIES: {{ .Values.config.trustedProxies | quote }}
+  DBM_COLLECTOR_CONCURRENCY: {{ .Values.config.collectorConcurrency | quote }}
+  DBM_LOG_LEVEL: {{ .Values.config.logLevel | quote }}
+  DBM_LOG_JSON: "true"
+  # every replica migrates on start; PostgreSQL advisory locks let exactly one do the work
+  DBM_RUN_MIGRATIONS_ON_START: "true"
+  # rate-limit counters shared by all API replicas
+  DBM_RATE_LIMIT_BACKEND: database
+  DBM_TIMESERIES_ENABLED: "true"
+  DBM_TIMESERIES_URL: {{ include "dbm.timeseriesUrl" . | quote }}
+  DBM_TIMESERIES_USERNAME: {{ .Values.timeseries.username | quote }}
+  DBM_TIMESERIES_RETENTION: {{ .Values.config.timeseriesRetention | quote }}
+  {{- with .Values.postgresql.tls.mode }}
+  DBM_DATABASE_TLS_MODE: {{ . | quote }}
+  {{- end }}
+  {{- with .Values.config.documentationUrl }}
+  DBM_DOCUMENTATION_URL: {{ . | quote }}
+  {{- end }}
+  {{- range $k, $v := .Values.config.extraEnv }}
+  {{- if not (hasPrefix "DBM_" $k) }}
+  {{- fail (printf "config.extraEnv: %s is not a DBM_* setting" $k) }}
+  {{- end }}
+  {{ $k }}: {{ $v | quote }}
+  {{- end }}

@@ -1,0 +1,6 @@
+openshift: true
+secrets:
+  existingSecret: dbmanager-secrets
+route:
+  enabled: true
+  host: dbmanager.apps.example.com

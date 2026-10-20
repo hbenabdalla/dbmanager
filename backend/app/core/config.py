@@ -26,12 +26,19 @@ class Settings(BaseSettings):
     log_json: bool = True
     app_name: str = "DBManager"
     public_base_url: str = "http://localhost:8080"
+    #: how often each process reports itself in platform_instances (stale after 3 intervals)
+    instance_heartbeat_seconds: int = Field(default=15, ge=5, le=300)
 
     # --- application database -----------------------------------------------------------
     database_url: SecretStr = Field(
         default=SecretStr(""),
         description="postgresql+asyncpg://user:pass@host:5432/db",
     )
+    #: TLS to the control-plane PostgreSQL: "" keeps what DBM_DATABASE_URL says (asyncpg's default
+    #: is ``prefer``); require = encrypted, no certificate check; verify-ca = certificate signed by
+    #: DBM_DATABASE_TLS_CA_FILE (or the system CAs); verify-full = also the host name
+    database_tls_mode: Literal["", "disable", "prefer", "require", "verify-ca", "verify-full"] = ""
+    database_tls_ca_file: str = ""
     database_pool_size: int = 10
     database_max_overflow: int = 10
     #: connections reserved for the rate limiter (``DBM_RATE_LIMIT_BACKEND=database``); a pool of
@@ -128,6 +135,8 @@ class Settings(BaseSettings):
     timeseries_username: str = ""
     timeseries_password: SecretStr = Field(default=SecretStr(""))
     timeseries_timeout_seconds: float = 10.0
+    #: CA bundle (PEM) that signed the certificate of an ``https://`` DBM_TIMESERIES_URL
+    timeseries_tls_ca_file: str = ""
     #: retention the time-series container was started with (informational; VictoriaMetrics
     #: enforces its own -retentionPeriod). Format: 30d, 90d, 1y …
     timeseries_retention: str = "90d"

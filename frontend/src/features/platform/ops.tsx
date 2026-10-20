@@ -17,6 +17,7 @@ import { EmptyState, ErrorState, SkeletonRows } from "@/components/ui/states";
 import { useAuth } from "@/lib/auth";
 import { Lock } from "lucide-react";
 import { dateTime, ms, relTime } from "@/lib/format";
+import { DeploymentCard } from "@/features/platform/deployment";
 import { PROVIDER_LABEL, useSecretProviders, vaultStatus, type SecretProvider } from "@/features/shared/secret-source";
 
 interface CredRow { server_id: string; server_name: string; engine: string; is_demo: boolean; environment: string | null; tls_mode: string; connection_status: string; monitoring: CredentialInfo | null; admin: CredentialInfo | null }
@@ -69,7 +70,7 @@ export function CredentialsPage() {
   );
 }
 
-interface Status { process_role: string; worker_running: boolean; is_leader: boolean; started_at: string | null; last_scheduler_tick: string | null; concurrency: number; pending: number; last_hour: Record<string, number>; by_kind: { kind: string; status: string; count: number; avg_ms: number }[]; open_circuits: { server_id: string; server_name: string; until: string; failures: number; error: string | null }[] }
+interface Status { deployment?: import("@/features/platform/deployment").DeploymentSummary; process_role: string; worker_running: boolean; is_leader: boolean; started_at: string | null; last_scheduler_tick: string | null; concurrency: number; pending: number; last_hour: Record<string, number>; by_kind: { kind: string; status: string; count: number; avg_ms: number }[]; open_circuits: { server_id: string; server_name: string; until: string; failures: number; error: string | null }[] }
 
 export function CollectorsPage() {
   const s = useQuery({ queryKey: ["collectors"], queryFn: () => get<Status>("/collectors/status"), refetchInterval: 10_000 });
@@ -83,12 +84,13 @@ export function CollectorsPage() {
       {s.error && !d ? <Card className="mb-4"><ErrorState error={s.error} onRetry={() => s.refetch()} /></Card> : !d ? <SkeletonRows /> : (
         <>
           <Card className="mb-4 grid grid-cols-2 divide-x divide-border sm:grid-cols-5">
-            <Stat label="This process" value={d.process_role} sub={d.worker_running ? (d.is_leader ? "worker, scheduler leader" : "worker") : "API only"} />
+            <Stat label="This process" value={d.process_role} sub={d.worker_running ? (d.is_leader ? "worker, scheduler leader" : "worker") : d.deployment?.workers ? `API only; ${d.deployment.workers} worker(s) elsewhere` : "API only"} />
             <Stat label="Pending jobs" value={d.pending} />
             <Stat label="Done (1h)" value={d.last_hour.done ?? 0} tone="ok" />
             <Stat label="Failed (1h)" value={d.last_hour.failed ?? 0} tone={d.last_hour.failed ? "crit" : undefined} />
             <Stat label="Last scheduler tick" value={<span className="text-[15px]">{relTime(d.last_scheduler_tick)}</span>} sub={`concurrency ${d.concurrency}`} />
           </Card>
+          <DeploymentCard />
           <div className="mb-4 grid gap-4 xl:grid-cols-2">
             <Card>
               <CardHeader title="Jobs by kind (last hour)" />

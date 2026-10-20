@@ -8,6 +8,7 @@ from contextlib import asynccontextmanager
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
 
 from app.core.config import get_settings
+from app.core.tlsclient import database_connect_args
 
 _engine: AsyncEngine | None = None
 _sessionmaker: async_sessionmaker[AsyncSession] | None = None
@@ -27,7 +28,7 @@ def get_engine() -> AsyncEngine:
             max_overflow=s.database_max_overflow,
             pool_pre_ping=True,
             pool_recycle=1800,
-            connect_args={"server_settings": {"application_name": "dbmanager"}},
+            connect_args=database_connect_args("dbmanager", s),
         )
         _sessionmaker = async_sessionmaker(_engine, expire_on_commit=False, autoflush=False)
     return _engine
@@ -45,7 +46,7 @@ def get_limiter_engine() -> AsyncEngine:
             pool_timeout=5,
             pool_pre_ping=True,
             pool_recycle=1800,
-            connect_args={"server_settings": {"application_name": "dbmanager-ratelimit"}},
+            connect_args=database_connect_args("dbmanager-ratelimit", s),
         )
     return _limiter_engine
 

@@ -33,9 +33,7 @@ DEFAULT_ENVIRONMENTS = ("Production", "DR", "UAT", "Development", "Test")
 
 def upgrade() -> None:
     for table in TABLES:
-        op.add_column(
-            table, sa.Column("data_source", sa.String(length=16), server_default="real", nullable=False)
-        )
+        op.add_column(table, sa.Column("data_source", sa.String(length=16), server_default="real", nullable=False))
         op.create_check_constraint(
             op.f(f"ck_{table}_{table}_data_source"), table, "data_source IN ('real','simulated','system')"
         )

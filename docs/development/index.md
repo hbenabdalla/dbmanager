@@ -51,7 +51,7 @@ docker-compose.yml  application stack · docker-compose.test.yml  real-engine te
 
 === "Local processes"
 
-    Requirements: Python 3.12+, Node.js 22 (as in CI), a PostgreSQL database for the application.
+    Requirements: Python 3.12+, Node.js 24 LTS (as in CI and the image build; 22.12+ also works), a PostgreSQL database for the application.
 
     ```bash
     cd backend && pip install -e ".[dev]" && cd ..

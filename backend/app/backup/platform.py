@@ -95,6 +95,7 @@ EXCLUDED: dict[str, str] = {
     "backup_jobs": "backup job history stays with the running platform",
     "backups": "the backup catalog stays with the running platform",
     "report_runs": "report delivery history",
+    "platform_instances": "running processes report themselves again after a restore",
 }
 
 TABLE_COMPONENT = {t: c for c, ts in COMPONENTS.items() for t in ts}

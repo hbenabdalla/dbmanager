@@ -9,10 +9,11 @@ spec:
   template:
     metadata: { labels: { app: dbmanager-api } }
     spec:
+      automountServiceAccountToken: false
       securityContext: { runAsNonRoot: true, seccompProfile: { type: RuntimeDefault } }
       containers:
         - name: api
-          image: registry.example.com/database-manager-backend:1.0.0
+          image: ghcr.io/hbenabdalla/dbmanager-backend:0.15.0
           env: [{ name: DBM_PROCESS_ROLE, value: api }]
           envFrom:
             - configMapRef: { name: dbmanager-config }
@@ -35,10 +36,11 @@ spec:
   template:
     metadata: { labels: { app: dbmanager-worker } }
     spec:
+      automountServiceAccountToken: false
       securityContext: { runAsNonRoot: true, seccompProfile: { type: RuntimeDefault } }
       containers:
         - name: worker
-          image: registry.example.com/database-manager-backend:1.0.0
+          image: ghcr.io/hbenabdalla/dbmanager-backend:0.15.0
           command: ["python", "-m", "app.worker"]
           env: [{ name: DBM_PROCESS_ROLE, value: worker }]
           envFrom:

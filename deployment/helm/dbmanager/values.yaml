@@ -1,0 +1,174 @@
+# DBManager Helm chart values. Documentation: docs/deployment/kubernetes-helm.md
+#
+# Minimal evaluation install (bundled PostgreSQL and VictoriaMetrics):
+#   helm install dbm oci://ghcr.io/hbenabdalla/charts/dbmanager \
+#     --set secrets.masterKey="$(head -c32 /dev/urandom | base64)" \
+#     --set secrets.bootstrapAdminPassword='<a strong password>' \
+#     --set secrets.postgresPassword='<a strong password>' --set secrets.timeseriesPassword='<…>'
+# Production: an external PostgreSQL (postgresql.bundled.enabled=false + secrets.databaseUrl or
+# secrets.existingSecret), Ingress with TLS, and a secret manager feeding secrets.existingSecret.
+
+nameOverride: ""
+fullnameOverride: ""
+
+# OpenShift: leave runAsUser/fsGroup to the restricted-v2 SCC (arbitrary UIDs). Elsewhere the
+# images' own non-root users are pinned (backend 10001, frontend 101, PostgreSQL 70, VictoriaMetrics 65534).
+openshift: false
+
+imagePullSecrets: []
+
+image:
+  backend:
+    repository: ghcr.io/hbenabdalla/dbmanager-backend
+    tag: ""          # defaults to the chart's appVersion
+    digest: ""       # sha256:… pins an exact (signed) image and wins over the tag
+    pullPolicy: IfNotPresent
+  frontend:
+    repository: ghcr.io/hbenabdalla/dbmanager-frontend
+    tag: ""
+    digest: ""
+    pullPolicy: IfNotPresent
+
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+
+# ---- secrets ------------------------------------------------------------------------------
+# Either name an existing Secret (recommended: External Secrets, Sealed Secrets, Vault Agent …)
+# with the keys below, or let the chart create one from these values.
+#   DBM_MASTER_KEY               base64 of 32 random bytes — back it up: stored credentials need it
+#   DBM_BOOTSTRAP_ADMIN_PASSWORD first administrator (used once, on an empty database)
+#   DBM_DATABASE_URL             external PostgreSQL (postgresql+asyncpg://user:pass@host:5432/db)
+#   POSTGRES_PASSWORD            bundled PostgreSQL only
+#   DBM_TIMESERIES_PASSWORD      time-series storage (bundled VictoriaMetrics or your own)
+secrets:
+  existingSecret: ""
+  masterKey: ""
+  bootstrapAdminPassword: ""
+  databaseUrl: ""
+  postgresPassword: ""
+  timeseriesPassword: ""
+
+# ---- application settings (DBM_* environment, non-secret) ------------------------------------
+config:
+  env: production
+  publicBaseUrl: https://dbmanager.example.com
+  cookieSecure: true
+  # pod network of the frontend pods: the backend trusts their X-Forwarded-For only
+  trustedProxies: "10.0.0.0/8"
+  collectorConcurrency: 16
+  logLevel: INFO
+  timeseriesRetention: 90d
+  documentationUrl: ""
+  # any further DBM_* setting (docs/deployment/index.md#environment-variables)
+  extraEnv: {}
+
+# ---- API (stateless; sessions live in PostgreSQL) ----------------------------------------------
+api:
+  replicas: 2
+  resources:
+    requests: { cpu: 200m, memory: 256Mi }
+    limits: { memory: 768Mi }
+  podDisruptionBudget: { enabled: true, minAvailable: 1 }
+  autoscaling: { enabled: false, minReplicas: 2, maxReplicas: 6, targetCPUUtilizationPercentage: 70 }
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  topologySpread: true   # spread replicas across nodes (best effort)
+
+# ---- workers (collectors, scheduler with leader election, backups) ------------------------------
+worker:
+  replicas: 2            # one holds the scheduler lock; all claim collection jobs
+  resources:
+    requests: { cpu: 250m, memory: 256Mi }
+    limits: { memory: 1Gi }
+  podDisruptionBudget: { enabled: true, minAvailable: 1 }
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  topologySpread: true
+
+# ---- frontend (nginx serving the UI, proxying /api) ----------------------------------------------
+frontend:
+  replicas: 2
+  # address range of the Ingress controller pods: nginx takes the client address from their
+  # X-Forwarded-For only
+  outerProxy: "10.0.0.0/8"
+  resources:
+    requests: { cpu: 50m, memory: 64Mi }
+    limits: { memory: 128Mi }
+  podDisruptionBudget: { enabled: true, minAvailable: 1 }
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+service:
+  type: ClusterIP
+  port: 8080
+
+ingress:
+  enabled: false
+  className: ""
+  host: dbmanager.example.com
+  annotations: {}
+  tls:
+    enabled: true
+    secretName: dbmanager-tls   # e.g. issued by cert-manager (annotations)
+
+# OpenShift Route (edge TLS) instead of an Ingress
+route:
+  enabled: false
+  host: ""
+
+# ---- backups written by DBManager (Backup & Restore → local storage targets) --------------------
+backupStorage:
+  persistence:
+    enabled: false      # S3-compatible targets need no volume
+    size: 50Gi
+    storageClass: ""
+    accessModes: [ReadWriteMany]   # every worker writes; use RWX storage or one worker
+
+# ---- control-plane PostgreSQL ---------------------------------------------------------------------
+postgresql:
+  bundled:
+    # a single-instance PostgreSQL for evaluation; use a managed / HA PostgreSQL in production
+    enabled: true
+    image: postgres:16-alpine
+    database: dbmanager
+    username: dbmanager
+    persistence: { size: 20Gi, storageClass: "" }
+    resources:
+      requests: { cpu: 250m, memory: 512Mi }
+      limits: { memory: 2Gi }
+  tls:
+    # TLS to PostgreSQL: "" (as the URL says) | require | verify-ca | verify-full
+    mode: ""
+    # Secret with the CA certificate (PEM) that signed the server certificate
+    caSecret: { name: "", key: ca.crt }
+
+# ---- time-series storage (monitoring telemetry) ---------------------------------------------------
+timeseries:
+  username: dbm
+  bundled:
+    enabled: true
+    image: victoriametrics/victoria-metrics:v1.122.0
+    persistence: { size: 50Gi, storageClass: "" }
+    resources:
+      requests: { cpu: 500m, memory: 1Gi }
+      limits: { memory: 4Gi }
+  # used when bundled.enabled=false
+  external:
+    url: ""            # http(s)://victoria-metrics:8428
+  tls:
+    caSecret: { name: "", key: ca.crt }   # CA of an https:// time-series URL
+
+networkPolicy:
+  # PostgreSQL and VictoriaMetrics accept connections from DBManager pods only; the API from the
+  # frontend pods only (add your Prometheus here to scrape /metrics on port 8000)
+  enabled: true
+  extraApiIngressFrom: []
+  #  - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: monitoring } }
+
+podAnnotations: {}
+podLabels: {}

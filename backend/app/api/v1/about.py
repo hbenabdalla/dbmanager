@@ -21,7 +21,7 @@ router = APIRouter(tags=["about"])
 
 PRODUCT = "DBManager"
 #: the roadmap milestone this build belongs to (kept in step with ROADMAP.md)
-CURRENT_MILESTONE = {"version": "v0.14", "name": "Reporting"}
+CURRENT_MILESTONE = {"version": "v0.15", "name": "Cloud-Native Deployment"}
 _SAFE = re.compile(r"[^0-9A-Za-z.+_:\-]")
 
 
@@ -95,6 +95,18 @@ async def about(db: DB, p: CurrentPrincipal) -> dict[str, Any]:
             }
         )
     s = get_settings()
+    from app.services import instances
+
+    try:
+        deployment = (await instances.list_instances(db))["summary"]
+    except Exception:  # noqa: BLE001 - informational
+        deployment = None
+    if r and r.started_at:
+        background = "running"
+    elif deployment and deployment["workers"]:
+        background = "running_elsewhere"  # another replica runs the collectors (API-only pod)
+    else:
+        background = "stopped" if s.runs_worker else "no_worker"
     return {
         "product": PRODUCT,
         "description": "Unified administration, monitoring, performance, security and optimization "
@@ -108,8 +120,7 @@ async def about(db: DB, p: CurrentPrincipal) -> dict[str, Any]:
             "api": "ok",
             "database": db_status,
             "timeseries": ts.get("status"),
-            "background_jobs": "running"
-            if r and r.started_at
-            else ("not_in_this_process" if not s.runs_worker else "stopped"),
+            "background_jobs": background,
         },
+        "deployment": deployment,
     }

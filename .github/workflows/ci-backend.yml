@@ -21,8 +21,8 @@ jobs:
     runs-on: ubuntu-24.04
     defaults: { run: { working-directory: backend } }
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with: { python-version: "3.12", cache: pip, cache-dependency-path: backend/pyproject.toml }
       - run: pip install "ruff>=0.5"
       - run: ruff check .
@@ -52,14 +52,24 @@ jobs:
       DBM_IT_PG_PASSWORD: ci-only-password
       DBM_IT_PG_DB: dbmanager_test
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with: { python-version: "3.12", cache: pip, cache-dependency-path: backend/pyproject.toml }
       - name: Install unixODBC (pyodbc wheel dependency)
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends unixodbc libxml2
       - run: pip install -e ".[dev]"
       - name: Unit tests
         run: pytest tests/unit -q -rs
+      - name: Serve TLS from the PostgreSQL service (control-plane TLS tests)
+        run: |
+          python tests/integration/tls/make_certs.py /tmp/pgtls
+          C="${{ job.services.postgres.id }}"
+          docker cp /tmp/pgtls/server-cert.pem "$C":/var/lib/postgresql/server.crt
+          docker cp /tmp/pgtls/server-key.pem "$C":/var/lib/postgresql/server.key
+          docker exec "$C" sh -c "chown postgres /var/lib/postgresql/server.* && chmod 600 /var/lib/postgresql/server.key"
+          docker exec -u postgres "$C" psql -U dbm -d dbmanager_test -c "ALTER SYSTEM SET ssl_cert_file = '/var/lib/postgresql/server.crt'" \
+            -c "ALTER SYSTEM SET ssl_key_file = '/var/lib/postgresql/server.key'" -c "ALTER SYSTEM SET ssl = on" -c "SELECT pg_reload_conf()"
+          echo "DBM_TEST_DATABASE_TLS_CA=/tmp/pgtls/ca.pem" >> "$GITHUB_ENV"
       - name: API tests
         run: pytest tests/api -q -rs
       - name: Migrations (step-by-step upgrade, downgrade, model parity) and backup/restore round trip

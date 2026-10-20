@@ -23,7 +23,7 @@ docker-compose.test.yml  real database engines for integration tests only
 
 ## Development environment
 
-Requirements: Python 3.12, Node.js 22, Docker (Compose v2), PostgreSQL 16 for API tests.
+Requirements: Python 3.12, Node.js 24 LTS (22.12+ works), Docker (Compose v2), PostgreSQL 16 for API tests.
 
 ### Backend
 

@@ -35,3 +35,12 @@ def test_frontend_matches() -> None:
     assert json.loads(pkg.read_text())["version"] == __version__
     lock = json.loads((ROOT / "frontend" / "package-lock.json").read_text())
     assert lock["version"] == __version__ and lock["packages"][""]["version"] == __version__
+
+
+def test_chart_and_reference_manifests_match() -> None:
+    chart = (ROOT / "deployment" / "helm" / "dbmanager" / "Chart.yaml").read_text()
+    assert re.search(rf"^version: {re.escape(__version__)}$", chart, re.M)
+    assert re.search(rf'^appVersion: "{re.escape(__version__)}"$', chart, re.M)
+    for f in sorted((ROOT / "deployment" / "kubernetes").glob("*.yaml")):
+        for tag in re.findall(r"ghcr\.io/hbenabdalla/dbmanager-(?:backend|frontend):(\S+)", f.read_text()):
+            assert tag == __version__, f.name

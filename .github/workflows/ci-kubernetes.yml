@@ -1,0 +1,100 @@
+name: Kubernetes
+
+# Sprint 0.15.3: the Helm chart and the reference manifests are validated on every pull request
+# (schema, restricted Pod Security, OpenShift restricted-v2), and the chart is installed into a
+# kind cluster: pods become ready, `helm test` passes, the UI and API answer, and the scheduler
+# leadership moves to another worker when the leader pod is deleted.
+on:
+  pull_request:
+  push:
+    branches: [main]
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: kubernetes-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  KUBECONFORM_VERSION: v0.8.0
+  CHART: deployment/helm/dbmanager
+
+jobs:
+  manifests:
+    name: Manifest validation
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: azure/setup-helm@v5
+      - uses: actions/setup-python@v7
+        with: { python-version: "3.12" }
+      - run: pip install pyyaml
+      - name: Install kubeconform
+        run: |
+          curl -fsSL "https://github.com/yannh/kubeconform/releases/download/${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz" \
+            | sudo tar -xz -C /usr/local/bin kubeconform
+      - name: helm lint
+        run: |
+          for v in default production openshift; do helm lint "$CHART" -f "$CHART/ci/$v-values.yaml"; done
+      - name: Render, validate schemas (Kubernetes 1.29 and 1.31), check pod security
+        run: |
+          mkdir -p rendered
+          for v in default production openshift; do
+            helm template dbm "$CHART" -f "$CHART/ci/$v-values.yaml" > "rendered/$v.yaml"
+            for k in 1.29.0 1.31.0; do
+              # Route is an OpenShift API: not in the Kubernetes schemas
+              kubeconform -strict -summary -kubernetes-version "$k" -skip Route "rendered/$v.yaml"
+            done
+          done
+          python scripts/k8s-policy-check.py rendered/default.yaml rendered/production.yaml
+          python scripts/k8s-policy-check.py --openshift rendered/openshift.yaml
+      - name: Reference manifests (deployment/kubernetes)
+        run: |
+          kubeconform -strict -summary deployment/kubernetes/*.yaml
+          python scripts/k8s-policy-check.py deployment/kubernetes/*.yaml
+      - name: Chart tests (backend/tests/deploy)
+        working-directory: backend
+        run: |
+          pip install -e ".[dev]" >/dev/null
+          pytest tests/deploy -q -rs
+
+  kind:
+    name: kind install and failover
+    runs-on: ubuntu-24.04
+    needs: manifests
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+      - uses: azure/setup-helm@v5
+      - uses: docker/setup-buildx-action@v4
+      - name: Build the images
+        run: |
+          docker build --target runtime --build-arg MSODBC_OPTIONAL=true -t dbmanager-backend:ci backend
+          docker build -t dbmanager-frontend:ci frontend
+      - uses: helm/kind-action@v1
+        with: { cluster_name: dbm }
+      - name: Load the images into kind
+        run: kind load docker-image dbmanager-backend:ci dbmanager-frontend:ci --name dbm
+      - name: helm install (bundled PostgreSQL and VictoriaMetrics, test-only secrets)
+        run: |
+          helm install dbm "$CHART" --namespace dbm --create-namespace --wait --timeout 15m \
+            -f "$CHART/ci/default-values.yaml" \
+            --set image.backend.repository=dbmanager-backend --set image.backend.tag=ci --set image.backend.pullPolicy=Never \
+            --set image.frontend.repository=dbmanager-frontend --set image.frontend.tag=ci --set image.frontend.pullPolicy=Never \
+            --set postgresql.bundled.persistence.size=2Gi --set timeseries.bundled.persistence.size=2Gi
+          kubectl -n dbm get pods -o wide
+      - name: helm test
+        run: helm test dbm --namespace dbm --logs
+      - name: UI, API and scheduler failover through the frontend Service
+        run: |
+          kubectl -n dbm port-forward svc/dbm-dbmanager 8080:8080 >/dev/null 2>&1 &
+          for i in $(seq 1 30); do curl -fsS http://127.0.0.1:8080/nginx-health >/dev/null && break; sleep 2; done
+          python3 scripts/k8s-failover-check.py --base http://127.0.0.1:8080 --namespace dbm \
+            --password 'Ci-Only-Admin-Passw0rd!'
+      - name: Diagnostics on failure
+        if: failure()
+        run: |
+          kubectl -n dbm get all,pvc,events -o wide || true
+          for p in $(kubectl -n dbm get pods -o name); do echo "== $p"; kubectl -n dbm logs "$p" --all-containers --tail=80 || true; done
