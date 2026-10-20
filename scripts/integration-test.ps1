@@ -93,6 +93,15 @@ function Invoke-Docker([string[]]$a) {
   } finally { $ErrorActionPreference = $prev }
 }
 
+# the runner image is built first: it also generates the test TLS material for MySQL/MariaDB
+$rc = Invoke-Docker ($compose + @('--profile', 'runner', 'build', 'it-runner'))
+if ($rc -ne 0) { throw 'building the test runner image failed (see integration-results\run.log)' }
+
+if (($Engines -contains 'mysql') -or ($Engines -contains 'mariadb')) {
+  $rc = Invoke-Docker ($compose + @('--profile', 'certs', 'run', '--rm', 'tls-certs'))
+  if ($rc -ne 0) { Write-Warning "no test TLS material (exit $rc); MySQL/MariaDB certificate checks will fail" }
+}
+
 $svc = $Engines | ForEach-Object { $services[$_] } | ForEach-Object { $_ }
 $profiles = $Engines | ForEach-Object { '--profile'; $_ }
 # first start of Oracle XE / Db2 creates the database: allow up to 40 minutes
@@ -114,9 +123,6 @@ if ($Engines -contains 'identity') {
   $rc = Invoke-Docker ($compose + @('--profile', 'identity', 'exec', '-T', 'openldap', 'ldapmodify', '-Y', 'EXTERNAL', '-Q', '-H', 'ldapi:///', '-f', $acl))
   if ($rc -ne 0) { Write-Warning "could not set the OpenLDAP access rules (exit $rc); LDAP tests may fail" }
 }
-
-$rc = Invoke-Docker ($compose + @('--profile', 'runner', 'build', 'it-runner'))
-if ($rc -ne 0) { throw 'building the test runner image failed (see integration-results\run.log)' }
 
 $envArgs = $Engines | ForEach-Object { foreach ($v in @($hostEnv[$_])) { '-e'; $v } }
 $rc = Invoke-Docker ($compose + @('--profile', 'runner', 'run', '--rm') + $envArgs + @('it-runner'))

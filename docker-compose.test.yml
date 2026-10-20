@@ -37,10 +37,24 @@ services:
       retries: 30
     profiles: [postgresql, all]
 
+  # Test-only TLS material (CA + server certificate for the mysql / mariadb hosts) so the suite
+  # exercises verify-ca, verify-full and a wrong CA instead of skipping certificate checks.
+  # The wrappers run it once before the engines start: docker compose --profile certs run --rm tls-certs
+  tls-certs:
+    image: database-manager-backend:it
+    user: "0"
+    entrypoint: ["python", "/tls/make_certs.py", "/certs"]
+    volumes:
+      - ./backend/tests/integration/tls:/tls:ro
+      - itcerts:/certs
+    profiles: [certs]
+
   mysql:
     <<: *limits
     image: mysql:8.4
-    command: ["--performance-schema=ON"]
+    # without the files (tls-certs not run) MySQL logs an SSL error and serves plain text only
+    command: ["--performance-schema=ON", "--ssl-ca=/certs/ca.pem", "--ssl-cert=/certs/server-cert.pem", "--ssl-key=/certs/server-key.pem"]
+    volumes: [itcerts:/certs:ro]
     environment: { MYSQL_ROOT_PASSWORD: "${IT_MYSQL_PASSWORD:?run scripts/integration-test to create .env.test}" }
     ports: ["127.0.0.1:13306:3306"]
     healthcheck:
@@ -54,7 +68,8 @@ services:
   mariadb:
     <<: *limits
     image: mariadb:11.4
-    command: ["--performance-schema=ON"]
+    command: ["--performance-schema=ON", "--ssl-ca=/certs/ca.pem", "--ssl-cert=/certs/server-cert.pem", "--ssl-key=/certs/server-key.pem"]
+    volumes: [itcerts:/certs:ro]
     environment: { MARIADB_ROOT_PASSWORD: "${IT_MARIADB_PASSWORD:?run scripts/integration-test to create .env.test}" }
     ports: ["127.0.0.1:13307:3306"]
     healthcheck:
@@ -242,6 +257,7 @@ services:
       - ./backend/pyproject.toml:/app/pyproject.toml:ro
       - ./integration-results:/results
       - ./backend/app/data:/merge
+      - itcerts:/certs:ro
     environment:
       DBM_IT_MERGE_INTO: /merge/real_engine_validation.json
       # extra pytest options, e.g. -k backup (scripts/integration-test -K / --select)
@@ -252,9 +268,11 @@ services:
       DBM_IT_MYSQL_PORT: "3306"
       DBM_IT_MYSQL_USER: root
       DBM_IT_MYSQL_PASSWORD: "${IT_MYSQL_PASSWORD:-}"
+      DBM_IT_MYSQL_TLS_CA: /certs/ca.pem
       DBM_IT_MARIADB_PORT: "3306"
       DBM_IT_MARIADB_USER: root
       DBM_IT_MARIADB_PASSWORD: "${IT_MARIADB_PASSWORD:-}"
+      DBM_IT_MARIADB_TLS_CA: /certs/ca.pem
       DBM_IT_MSSQL_PORT: "1433"
       DBM_IT_MSSQL_USER: sa
       DBM_IT_MSSQL_PASSWORD: "${IT_MSSQL_SA_PASSWORD:-}"
@@ -275,6 +293,7 @@ services:
       DBM_IT_VAULT_TOKEN: "${IT_VAULT_TOKEN:-}"
 
 volumes:
+  itcerts: {}
   mssqldata: {}
   oradata: {}
   oradata-ee: {}

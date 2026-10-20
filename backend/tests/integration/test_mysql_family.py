@@ -339,9 +339,13 @@ async def test_tls_modes(flavor: str) -> None:
     from app.adapters.base import AdapterTLSError
 
     with admin_conn(flavor) as c, c.cursor() as cur:
+        # `have_ssl` was removed in MySQL 8.4: a loaded server certificate (Ssl_server_not_after,
+        # MySQL 5.7+ and MariaDB) is the version-independent sign that the server offers TLS
         cur.execute("SHOW VARIABLES LIKE 'have_ssl'")
         row = cur.fetchone()
-    server_tls = bool(row) and str(row[1]).upper() == "YES"
+        cur.execute("SHOW GLOBAL STATUS LIKE 'Ssl_server_not_after'")
+        cert = cur.fetchone()
+    server_tls = (bool(row) and str(row[1]).upper() == "YES") or bool(cert and str(cert[1] or "").strip())
     if not server_tls:
         with pytest.raises(AdapterTLSError):
             async with FLAVORS[flavor](spec(flavor, tls_mode="require")) as a:

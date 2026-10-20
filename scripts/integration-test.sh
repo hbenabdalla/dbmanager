@@ -46,6 +46,11 @@ LOG=integration-results/run.log
 echo "== $(date -u +%FT%TZ) engines: ${ENGINES[*]}" > "$LOG"
 run() { echo "+ $*"; "$@" 2>&1 | tee -a "$LOG"; return "${PIPESTATUS[0]}"; }
 
+# the runner image is built first: it also generates the test TLS material for MySQL/MariaDB
+run "${C[@]}" --profile runner build it-runner || { echo "building the test runner failed" >&2; exit 1; }
+if [[ " ${ENGINES[*]} " == *" mysql "* || " ${ENGINES[*]} " == *" mariadb "* ]]; then
+  run "${C[@]}" --profile certs run --rm tls-certs || echo "WARNING: no test TLS material; certificate checks will fail"
+fi
 run "${C[@]}" "${PROFILES[@]}" up -d --wait --wait-timeout 2400 "${SERVICES[@]}" \
   || echo "WARNING: an engine did not become healthy; its tests will report the failure"
 if [[ " ${ENGINES[*]} " == *" db2 "* ]]; then
@@ -59,7 +64,6 @@ if [[ " ${ENGINES[*]} " == *" identity "* ]]; then
     -f /container/service/slapd/assets/config/bootstrap/ldif/custom/40-dbm-it-acl.ldif \
     || echo "WARNING: could not set the OpenLDAP access rules; LDAP tests may fail"
 fi
-run "${C[@]}" --profile runner build it-runner || { echo "building the test runner failed" >&2; exit 1; }
 run "${C[@]}" --profile runner run --rm "${ENVS[@]}" it-runner; rc=$?
 [ -f integration-results/real-engine-matrix.md ] && tee -a "$LOG" < integration-results/real-engine-matrix.md
 [ "${KEEP_RUNNING:-0}" = 1 ] || "${C[@]}" "${PROFILES[@]}" stop >/dev/null 2>&1

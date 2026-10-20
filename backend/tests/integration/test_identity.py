@@ -51,6 +51,12 @@ LDAP_CFG = {
 }
 
 
+def _read_text(path: str) -> str:
+    from pathlib import Path
+
+    return Path(path).read_text()
+
+
 @pytest.mark.engine("openldap")
 @pytest.mark.capability("authentication", "group_mapping")
 @pytest.mark.skipif(not LDAP_HOST, reason="DBM_IT_LDAP_HOST not set (start: integration-test identity)")
@@ -92,6 +98,12 @@ async def test_ldap_starttls() -> None:
     strict = {**cfg, "verify_cert": True}
     with pytest.raises(Exception):  # noqa: B017 - ldap3 raises its own socket/TLS exception types
         ldap_auth._ldap_lookup_and_bind(strict, "It-Bind-Passw0rd", "alice", "It-Alice-Passw0rd")
+    # with the directory's CA (DBM_IT_LDAP_TLS_CA, PEM) the verified StartTLS bind succeeds
+    ca_path = os.environ.get("DBM_IT_LDAP_TLS_CA")
+    if ca_path:
+        verified = {**strict, "ca_pem": _read_text(ca_path)}
+        entry = ldap_auth._ldap_lookup_and_bind(verified, "It-Bind-Passw0rd", "alice", "It-Alice-Passw0rd")
+        assert entry is not None and entry.username == "alice"
 
 
 # ---- OpenID Connect -------------------------------------------------------------------------------------

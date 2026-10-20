@@ -22,15 +22,25 @@ docker compose exec -T postgres pg_restore --list < "$OUT/dbmanager-$TS.dump" > 
 docker compose exec -T backend python -m alembic current 2>/dev/null | tail -1 > "$OUT/dbmanager-$TS.revision" || true
 
 if [ "$METRICS" = 1 ]; then
-  VMU="${DBM_TIMESERIES_USERNAME:-dbm}"
-  SNAP=$(docker compose exec -T timeseries wget -qO- --user "$VMU" --password "$DBM_TIMESERIES_PASSWORD" \
-    http://127.0.0.1:8428/snapshot/create | sed -n 's/.*"snapshot":"\([^"]*\)".*/\1/p')
+  # Ask VictoriaMetrics for a snapshot through the backend container: it already holds the
+  # time-series credentials in its environment, so they never appear on a command line (and the
+  # BusyBox wget of the VictoriaMetrics image has no --user/--password options).
+  vm() {  # vm <path> -> response body
+    docker compose exec -T backend python - "$1" <<'PY'
+import os, sys, httpx
+s = os.environ
+auth = (s["DBM_TIMESERIES_USERNAME"], s["DBM_TIMESERIES_PASSWORD"]) if s.get("DBM_TIMESERIES_USERNAME") else None
+r = httpx.get(s.get("DBM_TIMESERIES_URL", "http://timeseries:8428").rstrip("/") + sys.argv[1], auth=auth, timeout=120)
+r.raise_for_status()
+print(r.text)
+PY
+  }
+  SNAP=$(vm /snapshot/create | sed -n 's/.*"snapshot":"\([^"]*\)".*/\1/p')
   [ -n "$SNAP" ] || { echo "snapshot creation failed" >&2; exit 1; }
   VOL=$(docker volume ls --format '{{.Name}}' | grep -E '_tsdata$' | head -1)
   echo "metric history snapshot $SNAP -> $OUT/tsdata-$SNAP.tgz"
   docker run --rm -v "$VOL":/storage:ro -v "$(cd "$OUT" && pwd)":/backup alpine \
     tar czf "/backup/tsdata-$SNAP.tgz" -C /storage/snapshots "$SNAP"
-  docker compose exec -T timeseries wget -qO- --user "$VMU" --password "$DBM_TIMESERIES_PASSWORD" \
-    "http://127.0.0.1:8428/snapshot/delete?snapshot=$SNAP" > /dev/null
+  vm "/snapshot/delete?snapshot=$SNAP" > /dev/null
 fi
 echo "done. Keep DBM_MASTER_KEY (in .env) with these files: without it stored credentials cannot be decrypted."

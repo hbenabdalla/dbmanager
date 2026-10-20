@@ -7,6 +7,7 @@ bind as the user DN with the supplied password → read group membership → map
 from __future__ import annotations
 
 import asyncio
+import ipaddress
 import ssl
 from dataclasses import dataclass
 from typing import Any
@@ -33,8 +34,45 @@ def provider_secret(p: IdentityProvider) -> str | None:
     return get_keyring().decrypt(EncryptedBlob.from_dict(p.secret), f"idp:{p.id}")
 
 
+def match_hostname(cert: dict[str, Any], hostname: str, _dns_match: Any = None) -> None:
+    """Host name check for ldap3 that also accepts **IP address** subject alternative names.
+
+    Python 3.12 removed ``ssl.match_hostname``; ldap3 then falls back to a backport that refuses
+    every IP address, so a correctly issued certificate for ``ldaps://10.0.0.5`` failed
+    verification. IP hosts are compared with the certificate's IP SAN entries (RFC 6125: never
+    with the common name); DNS names keep ldap3's own matching."""
+    try:
+        ip = ipaddress.ip_address(hostname.strip("[]"))
+    except ValueError:
+        return (_dns_match or _LDAP3_MATCH)(cert, hostname)
+    for key, value in cert.get("subjectAltName", ()):
+        if key == "IP Address":
+            try:
+                if ipaddress.ip_address(str(value).strip()) == ip:
+                    return None
+            except ValueError:
+                continue
+    from ldap3.utils.tls_backport import CertificateError
+
+    raise CertificateError(f"IP address {hostname!r} is not among the certificate's IP subject alternative names")
+
+
+def _install_hostname_check() -> None:
+    import ldap3.core.tls as ldap3_tls
+
+    global _LDAP3_MATCH
+    if getattr(ldap3_tls.match_hostname, "__module__", "") != __name__:
+        _LDAP3_MATCH = ldap3_tls.match_hostname
+        ldap3_tls.match_hostname = match_hostname
+
+
+_LDAP3_MATCH: Any = None
+
+
 def _server(cfg: dict[str, Any]):  # type: ignore[no-untyped-def]
     from ldap3 import NONE, Server, Tls
+
+    _install_hostname_check()
 
     uri: str = cfg["server_uri"]
     tls = None
