@@ -2,90 +2,91 @@
 
 | | |
 |---|---|
-| **Milestone** | 0.14 — Reporting (with the DBManager branding and engine-identity workstream) |
-| **Status** | DONE. Release **0.14.0** also contains the roadmap reconciliation (remediation sprints R1 – R7); only publishing remains |
-| **Release target** | 0.14.0 (this release). Next: milestone 0.15 — Cloud-Native Deployment (**NEXT, not started**) |
+| **Milestone** | 0.15 — Cloud-Native Deployment |
+| **Status** | DONE. Release **0.15.0**; publishing (push, real-engine re-run on the Docker host, tag) remains |
+| **Release target** | 0.15.0 (this release). Next: milestone 1.0 — Production Release (**NEXT, not started**) |
+| **Previous release** | 0.14.0 (published 2026-10-20) — reporting, branding, roadmap reconciliation |
 
 ## Objective
 
-Give people the reports they pass on — security findings for the auditor, the heaviest statements
-for the application team, regressions and storage forecasts for capacity reviews — as CSV or PDF,
-on demand or e-mailed on a schedule, without ever sending more than the person the report runs for
-may see. In the same release, give the product a consistent visual identity: the DBManager logo
-everywhere the product introduces itself, and one engine mark per database engine everywhere a
-server is listed — DBManager's own marks, because vendor logos need the vendors' permission.
+Run DBManager on Kubernetes and OpenShift the way production platforms expect: installable with
+one Helm command from signed images, several API and worker replicas that coordinate safely and
+show who leads, encrypted connections to the control-plane databases, and every deployment
+artefact validated in CI — including a real install with a leader failover.
 
-## Roadmap reconciliation in this release
+## Scope
 
-Before 0.14.0 was published, every earlier milestone was audited again from the code. The 62
-claims that were not true were fixed in remediation sprints R1 – R7, and the
-[roadmap audit](roadmap-audit.md) holds the evidence. The fixes change some behaviour:
+In scope: Helm chart; published, signed images with SBOM and provenance; manifest validation
+(kubeconform, Pod Security, OpenShift restricted-v2, kind install); HA (multi-replica API, worker
+leader failover, concurrent start); internal TLS (control-plane PostgreSQL, time-series store);
+the deployment registry in the UI; dependency upgrades. Also in this release: the fixes of the
+clean validation that preceded it ([test validation](test-validation.md)).
 
-- Servers registered without a management mode are monitoring-only. Migration `0013` keeps
-  existing servers in administration mode.
-- Webhook URLs and headers of notification channels are write-only.
-- Behind a proxy, set `DBM_TRUSTED_PROXIES` (backend) and `DBM_OUTER_PROXY` (frontend nginx).
-- A platform restore without a safety backup needs
-  `backup.allow_restore_without_safety_backup`.
-- Report schedules can be changed only by their owner, their creator or a user manager.
+Out of scope (later milestones): an operator, a VictoriaMetrics cluster chart, cloud-provider
+specific charts, a PostgreSQL HA chart (use a managed service or an operator).
 
-## Next milestone (not started)
+## Carried over from the 0.14.0 validation
 
-**0.15 — Cloud-Native Deployment** is NEXT: published, signed images with an SBOM, a Helm chart,
-manifest validation, an HA and TLS reference, and the dependency major upgrades. No work on it has
-started. [Scope](roadmap.md#milestone-015-cloud-native-deployment-next).
+Fixed before any 0.15 feature work, each with a regression test ([details](test-validation.md#failures-and-root-causes)):
+
+- the Compose restore drill (`scripts/backup.sh` used BusyBox `wget` options that do not exist);
+- the MySQL 8.4 TLS test (detection through the removed `have_ssl`);
+- TLS for MySQL and MariaDB in the Docker test environment (generated test CA);
+- LDAP StartTLS against a server addressed by IP (ldap3 IP SAN handling).
 
 ## Sprints
 
 | Sprint | Scope | Status |
 |---|---|---|
-| 0.14.1 Report coverage | New definitions *Security findings* (statuses, minimum severity, lifecycle dates, remediation), *Query statistics* (window 1–744 h, share of the server's time, masked text), *Query regressions*, *Capacity forecast* (per server / database / tablespace); environment, server and engine parameters for every report; 50-row preview; Reports page grouped by area with a generate dialog | DONE |
-| 0.14.2 Scheduled reports | Schedules (daily / weekly / monthly at a time in a time zone) e-mailed as attachments through e-mail channels; each run re-loads the owner's roles — a disabled or deleted owner, or one who lost the report's permission, fails the run and nothing is sent; attachment size limit; status per run and per channel; *Send now*; history; audit `report.delivered`, `report_schedule.*`; permission `reports.schedule`; wizard; migration `0012` | DONE |
-| 0.14.3 PDF export | Server-side PDF (ReportLab, BSD licence): logo, title, generated-for, time, scope and row count, header repeated on every page, landscape for wide tables, 5,000-row cap with the CSV as the complete export, data-classification footer; CSV values that a spreadsheet would execute are neutralised | DONE |
-| 0.14.4 Branding & engine identity | DBManager logo (as provided, only scaled) on sign-in, setup wizard, sidebar (expanded and collapsed), About, loading and first-run screens, README and documentation; favicon, app icons and web manifest; `DatabaseEngineIcon` with DBManager's own engine marks (Db2 LUW and Db2 for z/OS distinct, unknown fallback, accessible names) replacing the letter badges across the product; optional operator-supplied licensed logos (`DBM_BRANDING_DIR`); [brand assets](../development/brand-assets.md) with trademark notice; product name *DBManager* in all current text | DONE |
+| 0.15.1 Container images | `release.yml`: on a `vX.Y.Z` tag that matches the product and chart version and has release notes, images `ghcr.io/hbenabdalla/dbmanager-{backend,frontend}` tagged `X.Y.Z` and `X.Y`, OCI labels, SBOM and SLSA provenance attestations, keyless cosign signatures by digest, SPDX SBOM files on the GitHub release | DONE (runs on the tag) |
+| 0.15.2 Helm chart | `deployment/helm/dbmanager`: API, worker and frontend Deployments, bundled or external PostgreSQL and VictoriaMetrics, Secret or existing Secret (required values, kept on uninstall), migrations on start under a lock, Ingress or OpenShift Route, PDBs, optional HPA, topology spread, NetworkPolicies, `helm test`, values schema; published as a signed OCI chart | DONE |
+| 0.15.3 Manifest validation | `ci-kubernetes.yml`: `helm lint`, kubeconform (Kubernetes 1.29 and 1.31, strict), restricted Pod Security and OpenShift restricted-v2 checks (`scripts/k8s-policy-check.py`), chart tests, reference manifests; kind job: build images, install, `helm test`, sign-in through the frontend, delete the leader pod, another worker leads | DONE (kind job runs on push) |
+| 0.15.4 HA & TLS reference | Advisory locks for migrations and start-up work (concurrent start fixed); instance registry (migration `0014`), heartbeat, `GET /api/v1/platform/instances`, Deployment card on **Platform → Collectors**, About summary, command palette entry; leader failover test with killed processes; `DBM_DATABASE_TLS_MODE` / `DBM_DATABASE_TLS_CA_FILE`, `DBM_TIMESERIES_TLS_CA_FILE`; CI runs the API suite against PostgreSQL with `verify-full`; [Helm](../deployment/kubernetes-helm.md) and [high availability](../deployment/high-availability.md) guides | DONE |
+| 0.15.5 Dependency majors | Applied: Vite 8 (Rolldown) with plugin-react 6, Vitest 5, jest-dom 7, TanStack Query 5.104, lucide-react 0.577, Node 24 LTS for the build image and CI, nginx-unprivileged 1.31, mkdocs-material 9.7.7, GitHub Actions majors. Declined with reasons below | DONE |
 
 ## Decisions
 
-* **No vendor logos in the product.** The PostgreSQL, Microsoft, IBM, Oracle/MySQL and MariaDB
-  trademark policies do not allow their logos in a third-party product without permission.
-  DBManager ships its own marks and lets a licensed organisation supply logos locally; see
-  [brand assets](../development/brand-assets.md).
-* **E-mail only for schedules.** Webhook channels (Slack, Teams, generic) cannot carry files; a
-  schedule accepts e-mail channels only.
-* **Owner's access, every run.** A schedule stores who it runs as, not a snapshot of their rights.
-* **Version 0.14.0** (semantic versioning, minor): new features, an additive migration, no removed
-  endpoints. `GET /reports` no longer has `planned_formats`; `fleet-health.pdf` and every other
-  report now answer with a PDF instead of `422`.
-* **MFA issuer.** The default `DBM_MFA_ISSUER` is now `DBManager`; existing authenticator entries keep
-  their label and keep working.
+* **Migrations on start, under a lock**, instead of a Helm hook Job: a hook Job runs before the
+  Secret exists on the first install and blocks `--wait` installs; every replica starting with the
+  lock is safe and needs no extra RBAC. Operators who prefer a Job set
+  `DBM_RUN_MIGRATIONS_ON_START=false` and run `python -m app.cli migrate`.
+* **Bundled PostgreSQL is for evaluation.** Production uses a managed or operator-run PostgreSQL;
+  the chart does not try to be a PostgreSQL HA chart.
+* **About shows counts only.** It is open to every signed-in user; host names and process ids stay
+  on the Collectors page (`collectors.view`).
+* **Keyless signing** (Sigstore, GitHub OIDC): no signing key to store or rotate; verification
+  pins the release workflow identity.
+* **Declined upgrades:**
+    * Python 3.14 base image: the backend's binary dependencies (database drivers, ODBC, cryptography wheels) are validated on 3.12; revisit for 1.x.
+    * Node 26 build image: not an LTS line; Node 24 LTS is used.
+    * TypeScript 7: the native compiler is a new major whose project-reference build mode is not yet proven for this code base; stays on 5.9.
+    * Recharts 3: API changes in every chart need a visual review of all monitoring pages; planned with the 1.0 UI review.
+    * jsdom 30: its `Blob` is rejected by Node's `fetch` `Response` in tests ([#9](test-validation.md#failures-and-root-causes)); jsdom 26 stays.
+* **Version 0.15.0** (semantic versioning, minor): new features, one additive migration (`0014`),
+  no removed endpoints. The About response's `deployment` object is new.
 
 ## Dependencies
 
-* E-mail notification channels and SMTP (milestone 0.10).
-* Statement statistics, regression detection and capacity forecasts (milestone 0.13) for the new
-  query and forecast reports.
-* ReportLab 4.2+ in the backend image (pure Python; installed from `pyproject.toml`).
-* Migration `0012` (applied automatically on upgrade).
+* Helm 3.8+ (OCI charts), Kubernetes 1.27+ or OpenShift 4.14+ (Kubernetes 1.27).
+* GitHub Container Registry and Sigstore for publishing (release workflow only).
+* PostgreSQL advisory locks (any supported PostgreSQL 15+).
 
 ## Acceptance criteria
 
 | Criterion | Evidence |
 |---|---|
-| Every report downloads as CSV and as a valid PDF; unknown reports answer 404 and unknown formats 422 | `tests/api/test_reports.py::test_every_report_downloads_as_csv_and_pdf` |
-| Parameters filter the rows (server, engine, minimum severity, statuses, window) and invalid values answer 422; scope is printed with names | `test_parameters_filter_and_validate` |
-| Reports contain only servers the caller may see; the audit report needs platform `audit.view`; downloads are audited | `test_reports_respect_scope_and_permissions` |
-| Query text is masked | `test_query_text_is_masked_in_query_statistics` |
-| A schedule e-mails the PDF (and, after an edit, the CSV) to every recipient of its channels through a real SMTP server; runs, last status and audit are recorded | `test_schedule_lifecycle_delivers_pdf_by_email` (aiosmtpd) |
-| A disabled owner fails the run with the reason and nothing is sent | `test_disabled_owner_fails_the_run_without_sending` |
-| The scheduler runs a due schedule once and advances it | `test_scheduler_job_runs_due_schedules` |
-| Invalid schedules (frequency, time, time zone, day of month, empty channels, webhook channel, unknown report or format) answer 422 | `test_schedule_validation` |
-| The PDF renderer handles empty, wide, long and hostile content; CSV neutralises formulas but not numbers | `tests/unit/test_report_pdf.py` |
-| The UI previews with parameters, downloads with the same scope, creates a schedule through the wizard, sends now and shows history | `frontend/src/test/reports.test.tsx` |
-| Engine marks have accessible names, keep Db2 LUW and z/OS apart, fall back for unknown engines, use no external resources; licensed logos are shown unaltered and fall back on error | `frontend/src/test/engine-icon.test.tsx` |
-| Licensed logos are served only for whitelisted names, with nosniff and a sandboxing CSP | `tests/api/test_branding.py` |
-| Upgrade from 0.13.0 keeps all data | `tests/migrations/test_migrations.py::test_existing_installation_upgrades_to_head_with_its_data[previous]` |
+| The chart renders for default, production and OpenShift values, passes lint, Kubernetes schemas (1.29, 1.31) and restricted Pod Security; OpenShift mode pins no UID | `tests/deploy/test_helm_chart.py::test_lint_and_restricted_pod_security`, `test_openshift_mode_leaves_uids_to_the_scc_and_adds_a_route`, `ci-kubernetes.yml` manifests job |
+| Default install bundles the stores and migrates on start; production values use the external database with `verify-full`, an existing Secret and the HPA | `test_default_install_bundles_stores_and_migrates_on_start`, `test_production_values_external_tls_existing_secret_hpa` |
+| Missing secrets are refused at render time | `test_incomplete_settings_are_refused` |
+| Chart, reference manifests and product carry one version | `test_chart_version_follows_the_product`, `tests/unit/test_version_consistency.py` |
+| Three replicas starting at once on an empty database migrate and bootstrap once | `tests/migrations/test_concurrent_start.py` |
+| Killing the leader process moves the scheduler leadership to another worker | `tests/api/test_leader_failover.py`; on Kubernetes `scripts/k8s-failover-check.py` in the kind job |
+| Every process is listed with role, version and heartbeat; crashed ones turn stale and are pruned; the list needs `collectors.view`; About shows no host names | `tests/api/test_instances.py` |
+| The API suite runs against PostgreSQL with TLS `verify-full`; a wrong CA is refused | `tests/api/test_control_plane_tls.py`, `tests/unit/test_tlsclient.py` |
+| Deployment card and About row in the UI | `frontend/src/test/deployment.test.tsx` |
+| Upgrade from 0.14.0 keeps all data | `tests/migrations/test_migrations.py::test_existing_installation_upgrades_to_head_with_its_data[0.14.0]` |
 
 ## Next
 
-Milestone **0.15 — Cloud-Native Deployment** (NEXT): published and signed images with SBOM, Helm
-chart, manifest validation in CI, HA and TLS reference. See the [roadmap](roadmap.md).
+Milestone **1.0 — Production Release** is NEXT and has not started: scale and security testing,
+accessibility, upgrade drill from every 0.x schema, release candidate. See the [roadmap](roadmap.md).

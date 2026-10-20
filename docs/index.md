@@ -35,8 +35,9 @@ administration with role-based access control and a complete audit trail.
 
 ## Project status
 
-**Version 0.14.0** — reporting (report catalog, PDF export, scheduled e-mail delivery) and the
-roadmap reconciliation (see the [release notes](release-notes/0.14.0.md), the
+**Version 0.15.0** — cloud-native deployment: a Helm chart for Kubernetes and OpenShift, signed
+images with SBOMs, highly available replicas with a visible scheduler leader, and TLS to the
+control-plane databases (see the [release notes](release-notes/0.15.0.md), the
 [changelog](https://github.com/hbenabdalla/dbmanager/blob/main/CHANGELOG.md) and
 [versioning](product/roadmap.md#versioning)). DBManager is pre-1.0 software. The capability status of every area is tracked honestly in the
 [capability matrix](product/capability-matrix.md) and the [roadmap](product/roadmap.md):

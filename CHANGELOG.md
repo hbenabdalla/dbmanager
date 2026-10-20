@@ -5,6 +5,124 @@ All notable changes to DBManager are documented here. The format follows
 [Semantic Versioning](https://semver.org/). Pre-1.0 minor versions may contain breaking changes;
 they are listed under **Changed** with migration notes.
 
+## [0.15.0] — 2026-10-20
+
+Milestone 0.15 (Cloud-Native Deployment), preceded by a clean validation of the whole repository
+whose failures were fixed first ([test validation](docs/product/test-validation.md)). Upgrading
+from 0.14.0 applies migration `0014` automatically. No endpoint was removed and no setting
+changed its meaning.
+
+### Added
+
+- **Helm chart** `deployment/helm/dbmanager` (0.15.2): API, worker and frontend Deployments;
+  bundled (evaluation) or external PostgreSQL and VictoriaMetrics; generated or existing Secret
+  with required values, kept on uninstall; Ingress or OpenShift Route; PodDisruptionBudgets,
+  optional HorizontalPodAutoscaler, topology spread; NetworkPolicies; `helm test`; values schema;
+  `openshift=true` for the restricted-v2 SCC. Guide: [Kubernetes and OpenShift with Helm](docs/deployment/kubernetes-helm.md).
+- **Release workflow** `release.yml` (0.15.1): on a `vX.Y.Z` tag that matches the product and chart
+  versions and has release notes, publishes `ghcr.io/hbenabdalla/dbmanager-backend` and
+  `-frontend` (`X.Y.Z`, `X.Y`) with SBOM and SLSA provenance attestations and keyless cosign
+  signatures, the chart as a signed OCI artifact, and the GitHub release with SPDX SBOMs.
+- **Kubernetes CI** `ci-kubernetes.yml` (0.15.3): `helm lint`, kubeconform (Kubernetes 1.29 and
+  1.31), restricted Pod Security and OpenShift checks (`scripts/k8s-policy-check.py`), chart tests
+  (`backend/tests/deploy`), reference manifests; a kind job installs the chart, runs `helm test`,
+  signs in through the frontend and deletes the scheduler leader's pod until another worker leads
+  (`scripts/k8s-failover-check.py`).
+- **Instance registry** (0.15.4): every API and worker process reports role, host, version,
+  commit and leadership every `DBM_INSTANCE_HEARTBEAT_SECONDS` (15 s); `GET /api/v1/platform/instances`
+  (`collectors.view`); **Deployment** card on Platform → Collectors (processes, leader, stale
+  processes, mixed versions, no-worker warning); Deployment row and *running elsewhere* state on
+  About; command palette entry *Deployment and scheduler leader*. Migration `0014`
+  (`platform_instances`, not part of platform backups).
+- **TLS to the control-plane databases** (0.15.4): `DBM_DATABASE_TLS_MODE` (`disable`, `prefer`,
+  `require`, `verify-ca`, `verify-full`) and `DBM_DATABASE_TLS_CA_FILE` for the application,
+  migrations and start-up; `DBM_TIMESERIES_TLS_CA_FILE` for an `https://` time-series store
+  (collectors, dashboards, platform backup export, `scripts/backup.sh`). Guide:
+  [high availability](docs/deployment/high-availability.md).
+
+### Changed
+
+- Migrations and start-up work (bootstrap, data upgrades) run under PostgreSQL advisory locks, so
+  any number of replicas can start at once.
+- `GET /api/v1/about` has a `deployment` object (counts only) and `background_jobs` can be
+  `running_elsewhere` (an API-only process while a worker runs elsewhere) or `no_worker`.
+- `GET /api/v1/collectors/status` has a `deployment` summary.
+- Reference manifests `deployment/kubernetes/`: images `ghcr.io/hbenabdalla/dbmanager-*:0.15.0`,
+  no service-account token, read-only root filesystem for the frontend, resources for the
+  migration Job.
+- **Dependencies (0.15.5):** Vite 8 (Rolldown; vendor chunks configured as a function),
+  `@vitejs/plugin-react` 6, Vitest 5, `@testing-library/jest-dom` 7, TanStack Query 5.104,
+  lucide-react 0.577; frontend build image `node:24-alpine` and CI on Node 24 LTS (Node 22.12+
+  still works, `engines` declared); runtime `nginxinc/nginx-unprivileged:1.31-alpine`;
+  mkdocs-material 9.7.7; GitHub Actions `checkout`/`setup-*`/`upload-artifact` v7, Docker actions
+  v4/v7, gitleaks-action v3. Declined: Python 3.14, Node 26, TypeScript 7, Recharts 3, jsdom 30
+  ([reasons](docs/product/current-milestone.md#decisions)).
+
+### Fixed
+
+- **Compose restore drill**: `scripts/backup.sh` called BusyBox `wget` with options it does not
+  support for the VictoriaMetrics snapshot; the snapshot now goes through the backend container
+  (with the time-series CA).
+- **Concurrent replica start**: replicas starting together on an empty database failed with
+  duplicate-object errors.
+- **LDAP StartTLS** against a server addressed by IP: ldap3 ignored IP subject alternative names
+  and refused valid certificates.
+
+### Security
+
+- About, which every signed-in user can open, no longer returns the scheduler leader's host name
+  and process id (found before release in the new deployment summary); the per-process list
+  requires `collectors.view`.
+- The chart's pods meet the restricted Pod Security Standard; secrets have no defaults; database
+  and time-series ports accept only DBManager pods; the API accepts only the frontend pods.
+- Images and chart are signed (Sigstore keyless) and carry SBOM and provenance attestations.
+- Control-plane PostgreSQL TLS with certificate and host-name verification, minimum TLS 1.2.
+
+### Database Compatibility
+
+- No adapter changed. The last full Docker run (2026-10-20, 0.14.0 code) passed on PostgreSQL
+  16.15, MySQL 8.4.11 (except the TLS test, a test bug fixed here), MariaDB 11.4.13, SQL Server
+  2022, Oracle 21c XE and Db2 LUW 11.5.9; it is repeated on the release commit. Db2 for z/OS:
+  EXTERNAL VALIDATION REQUIRED. Oracle licensed packs stay disabled by default.
+- Control plane: PostgreSQL 15+ with or without TLS; VictoriaMetrics over HTTP or HTTPS.
+
+### Testing / Reliability
+
+- Backend 869 tests (684 unit, 164 API, 8 migration, 13 chart), none skipped; frontend 183.
+- New: concurrent start of three replicas, leader failover with killed processes, instance
+  registry and RBAC, control-plane TLS `verify-full` and wrong CA (CI PostgreSQL now serves TLS),
+  Helm chart rendering and policy, version consistency of chart and manifests, IP-SAN hostname
+  check, operations-script guards.
+- Upgrade tests now start from 0.14.0 as well (schema `0013`), with report schedules seeded.
+- The MySQL TLS integration test detects TLS on MySQL 8.4; MySQL and MariaDB in
+  `docker-compose.test.yml` serve TLS from a generated test CA, so their TLS tests no longer skip.
+
+### User Interface
+
+- Platform → Collectors: Deployment card. Platform → About: Deployment row and replica-aware
+  background-job status. Command palette: *Deployment and scheduler leader*. Screenshots
+  `collectors.png` and `about.png` recaptured.
+
+### Documentation
+
+- New: [Kubernetes and OpenShift with Helm](docs/deployment/kubernetes-helm.md),
+  [high availability](docs/deployment/high-availability.md),
+  [test validation](docs/product/test-validation.md).
+- Updated: environment reference (new settings), scaling, collectors, About, README (Helm quick
+  start), development requirements (Node 24), roadmap documents, capability matrix, gap analysis,
+  traceability, roadmap audit (clean-validation section), real-engine report, release checklist.
+
+### Known Limitations
+
+- The bundled PostgreSQL and VictoriaMetrics of the chart are single instances for evaluation; no
+  operator and no VictoriaMetrics cluster chart.
+- The chart was installed in kind (CI) only; OpenShift mode is checked against restricted-v2 rules
+  but not installed on an OpenShift cluster.
+- Images, chart signatures and the kind job run on GitHub; they could not be executed in the
+  environment that prepared this release.
+- Db2 for z/OS (EXTERNAL VALIDATION REQUIRED), Oracle TCPS (no listener), cloud secret stores,
+  native Azure/GCS backup targets and PITR remain as in 0.14.0.
+
 ## [0.14.0] — 2026-10-20
 
 Milestone 0.14 (Reporting), the DBManager branding and database-engine identity workstream, and

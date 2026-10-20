@@ -5,15 +5,39 @@ container images**, driven by the integration suite (`backend/tests/integration/
 `scripts/integration-test.ps1` / `.sh`. Nothing here comes from mocks or the simulation. Results
 also ship in `backend/app/data/real_engine_validation.json` (shown on **Platform → Engine support**).
 
-Last full Docker run: **2026-10-19 21:34 UTC** (pytest JUnit timestamp; matrix written
-21:36:02 UTC), release 0.13.0, commit `43c48a3`. It covered:
+Last full Docker run: **2026-10-20 07:26 UTC**, by the owner on Docker Desktop (WSL 2) with
+`scripts/integration-test.ps1`, on the 0.14.0 code: **90 tests, 87 passed, 1 failed, 2 skipped**.
 
-- plan identity in Oracle and SQL Server query statistics;
-- database and tablespace size series built from real storage data;
-- a MySQL restore with binary logging on;
-- the Db2 backup as a SYSMAINT operator.
+- The failure was MySQL TLS: the test looked for `have_ssl`, which MySQL 8.4 removed. **Test bug**,
+  fixed in 0.15.0 (TLS is now detected from `Ssl_server_not_after`).
+- MariaDB TLS was skipped because the test containers served no TLS; `docker-compose.test.yml`
+  now generates a test CA and starts MySQL and MariaDB with a server certificate.
+- Oracle TCPS was skipped (no TCPS listener in the Oracle XE image).
 
-An earlier run (20:31 UTC, 84 passed, 1 failed: MySQL backup/restore, error 1419) is superseded.
+These results are what `backend/app/data/real_engine_validation.json` ships (Platform → Engine
+support). In the matrix below the MySQL TLS cell is FAIL for that run; the other TLS cells stay NOT TESTED
+where no passing real TLS test exists yet in a Docker run. **The full run is repeated on the 0.15.0 release commit before the
+tag** ([test validation](test-validation.md)).
+
+The earlier run of 2026-10-19 21:34 UTC (release 0.13.0, commit `43c48a3`, 85 passed, 1 skipped)
+covered plan identity in Oracle and SQL Server query statistics, database and tablespace size
+series, a MySQL restore with binary logging on and the Db2 backup as a SYSMAINT operator.
+
+## Release 0.15.0: deployment work, no adapter changes
+
+0.15 changed no engine adapter. It changed how DBManager connects to its **own** databases (TLS
+to the control-plane PostgreSQL and to VictoriaMetrics) and fixed LDAP StartTLS against servers
+addressed by IP. Runs made on 2026-10-20 in the cloud workspace on the 0.15.0 code:
+
+| Engine | Suite | Result |
+|---|---|---|
+| PostgreSQL 16.15 | adapter suite + database backup/restore; API suite over TLS `verify-full` | 12 + 1 passed; 164 API tests passed |
+| MariaDB 10.11.14 (TLS with the generated test CA) | adapter suite incl. `verify-ca`, wrong CA refused, `require`, `prefer` + database backup/restore | 14 + 1 passed |
+| VictoriaMetrics 1.122.0 | time-series suite | 5 passed |
+| OpenLDAP 2.6.10 (StartTLS, CA verified, IP address) | identity suite | 2 passed (Keycloak not available) |
+
+MySQL, SQL Server, Oracle, Db2 LUW, Keycloak and Vault could not run there (no container
+runtime). Db2 for z/OS remains EXTERNAL VALIDATION REQUIRED; Db2 LUW results are never used for it.
 
 ## Release 0.14.0: roadmap reconciliation
 
@@ -66,7 +90,7 @@ validated only in part.
 | Engine | Version | Connection | TLS | Inventory | Users | Roles | Privileges | Sessions | Locks | Blocking | Performance Metrics | Storage | Queries | Execution Plans | Replication | Security | Recommendations | Administration | Backup | Restore | Overall |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | PostgreSQL | 16.15 | PASS | NOT TESTED | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PARTIAL | PASS | PASS | PASS | PASS | PASS | PASS |
-| MySQL | 8.4.11 | PASS | NOT TESTED | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PARTIAL | PASS | PASS | PASS | PASS | PASS | PASS |
+| MySQL | 8.4.11 | PASS | FAIL (test bug, fixed in 0.15.0; re-run pending) | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PARTIAL | PASS | PASS | PASS | PASS | PASS | PASS |
 | MariaDB | 11.4.13 | PASS | NOT TESTED | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PARTIAL | PASS | PASS | PASS | PASS | PASS | PASS |
 | SQL Server | 16.0.4305.5 (2022) | PASS | PARTIAL | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PARTIAL | PASS | PASS | PASS | PASS | PASS | PASS |
 | Oracle | 21.3.0.0.0 XE | PASS | NOT TESTED | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PARTIAL | PASS | PASS | PASS | PASS | PASS | PASS |
@@ -88,7 +112,7 @@ Summary (as requested for the release report):
 ## Run details
 
 - **Environment:** Docker Desktop on Windows (WSL 2), `docker-compose.test.yml` via `scripts/integration-test.ps1`, the backend `it` image as the test runner
-- **Result:** 86 tests: 85 passed, 0 failed, 1 skipped (Oracle TCPS)
+- **Result (2026-10-20 07:26 UTC):** 90 tests: 87 passed, 1 failed (MySQL TLS, test bug fixed in 0.15.0), 2 skipped (MariaDB TLS: no TLS in the containers, fixed in 0.15.0; Oracle TCPS). Previous run (2026-10-19): 86 tests: 85 passed, 1 skipped (Oracle TCPS)
 - **Identity and secrets:** OpenLDAP (osixia/openldap 1.5.0): bind, search, groups, StartTLS — PASS; Keycloak 26.0.7: OIDC authorization code flow with PKCE — PASS; HashiCorp Vault 1.17.6: KV v2 with token and AppRole — PASS
 - **Time-series:** VictoriaMetrics v1.122.0 suite not part of this run
 - **Passwords:** generated per environment into `.env.test`; never in this report or the repository

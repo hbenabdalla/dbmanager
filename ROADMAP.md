@@ -1,11 +1,13 @@
 # Roadmap
 
-DBManager **0.14.0** is the release being prepared. **0.13.0** is the latest published release,
+DBManager **0.15.0** is the release being prepared. **0.14.0** is the latest published release,
 and **0.12.0** was the first. The roadmap is organised by milestone and promises no dates.
 
 - [Full roadmap](docs/product/roadmap.md): sprints, acceptance criteria, Definition of Done.
 - [Roadmap audit](docs/product/roadmap-audit.md): every claim checked against code, tests and
   documentation (the evidence lives there, not here).
+- [Test validation](docs/product/test-validation.md): the clean validation of this release, with
+  before/after numbers and the root cause of every failure.
 - [Capability matrix](docs/product/capability-matrix.md),
   [engine matrix](docs/product/engine-matrix.md),
   [real-engine validation](docs/product/real-engine-validation.md).
@@ -25,7 +27,8 @@ present on only one side (UI or backend). All of them were fixed and verified ag
 | 0.11 | Enterprise integration: API tokens, rate limiting, LDAP/OIDC/Vault validation, SIEM forwarding, Vault, MFA | VERIFIED COMPLETE (reconciled); cloud secret stores PLANNED (0.11.7) |
 | 0.12 | Asset protection: backup and restore of the platform and of managed databases | VERIFIED COMPLETE (reconciled); native Azure/GCS (0.12.6) and PITR (0.12.7) PLANNED |
 | 0.13 | Performance intelligence: z-score rules, regressions, forecasts, comparisons, outcome validation | VERIFIED COMPLETE (reconciled) |
-| 0.14 | Reporting (definitions, preview, PDF, schedules) and DBManager branding | VERIFIED COMPLETE (release 0.14.0) |
+| 0.14 | Reporting (definitions, preview, PDF, schedules) and DBManager branding | VERIFIED COMPLETE (release 0.14.0, published) |
+| 0.15 | Cloud-native deployment: Helm chart, signed images with SBOM, manifest validation and kind install in CI, HA (concurrent start, instance registry, leader failover), internal TLS, dependency majors | VERIFIED COMPLETE (release 0.15.0) |
 
 ## Remediation
 
@@ -35,21 +38,21 @@ present on only one side (UI or backend). All of them were fixed and verified ag
 
 ## Current
 
-**0.14.0 release**: reporting, branding and the roadmap reconciliation. The code is complete and
-tested. What remains is the publishing step: push, tag and GitHub release (see
-[release checklist](docs/product/release-checklist.md)).
+**0.15.0 release**: cloud-native deployment, and the fixes of the clean validation that preceded
+it ([test validation](docs/product/test-validation.md)). The code is complete and tested. What
+remains is the publishing step: push, the full real-engine run on the Docker host, tag (the tag
+publishes images, chart and GitHub release; see [release checklist](docs/product/release-checklist.md)).
 
 ## Next
 
 | Milestone | Theme | Status |
 |---|---|---|
-| 0.15 | Cloud-native deployment: published, signed images with an SBOM; Helm chart; manifest validation (kubeconform, kind, OpenShift); HA and TLS reference; dependency major upgrades | NEXT, not started |
+| 1.0 | Production release: scale and security testing, accessibility, upgrade drill from every 0.x schema, deferred dependency majors (Recharts 3, TypeScript 7, Python 3.14), release candidate | NEXT, not started |
 
 ## Future
 
 | Milestone | Theme | Status |
 |---|---|---|
-| 1.0 | Production release: scale and security testing, accessibility, upgrade drill from every 0.x schema, release candidate | PLANNED |
 | — | Anomaly detection beyond z-score rules, custom rules and dashboards, database logs, cloud discovery, OpenTelemetry | FUTURE |
 
 ## External dependencies
@@ -61,6 +64,6 @@ tested. What remains is the publishing step: push, tag and GitHub release (see
 | Oracle TCPS | A TCPS listener in the test environment | FUTURE |
 | Cloud secret stores (AWS, Azure, Google) | Cloud accounts to validate against | PLANNED (0.11.7) |
 
-**Versioning:** the product version follows the milestones. 0.14.0 is a minor version under
-semantic versioning (0.x). It adds new features and two additive migrations (`0012`, `0013`), and
-removes no endpoints. Changed behaviour is listed in the [changelog](CHANGELOG.md).
+**Versioning:** the product version follows the milestones. 0.15.0 is a minor version under
+semantic versioning (0.x). It adds new features and one additive migration (`0014`), and removes
+no endpoints. Changed behaviour is listed in the [changelog](CHANGELOG.md).

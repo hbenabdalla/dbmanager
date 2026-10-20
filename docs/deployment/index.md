@@ -70,6 +70,7 @@ External Secrets, …). Engine credentials are never configured here.
 | `DBM_PUBLIC_BASE_URL` | `http://localhost:8080` | external URL: OIDC redirect URIs, links in notifications |
 | `DBM_RUN_MIGRATIONS_ON_START` | `true` | set `false` when a migration Job runs them |
 | `DBM_WORKER_PORT` | `8001` | port of the probe endpoint (`/healthz`, `/readyz`, `/metrics`) of a stand-alone worker (`python -m app.worker`) |
+| `DBM_INSTANCE_HEARTBEAT_SECONDS` | 15 | interval of the instance registry heartbeat (5–300); stale after three missed beats ([high availability](high-availability.md#the-instance-registry)) |
 | `DBM_DEMO_MODE` | `false` | **deprecated, ignored** (a warning is logged). Demo data is generated under Platform → Simulation |
 
 ### Application database and secrets
@@ -78,6 +79,8 @@ External Secrets, …). Engine credentials are never configured here.
 |---|---|---|
 | `DBM_DATABASE_URL` | — | `postgresql+asyncpg://user:pass@host:5432/db` (PostgreSQL 15+). Compose builds it from `POSTGRES_USER`, `POSTGRES_PASSWORD` and `POSTGRES_DB` |
 | `DBM_DATABASE_POOL_SIZE`, `DBM_DATABASE_MAX_OVERFLOW` | 10 / 10 | connection pool of each backend process |
+| `DBM_DATABASE_TLS_MODE` | — | TLS to this database: empty (as the URL says), `disable`, `prefer`, `require`, `verify-ca`, `verify-full` ([high availability](high-availability.md#tls-to-the-control-plane-postgresql)) |
+| `DBM_DATABASE_TLS_CA_FILE` | — | CA certificate (PEM) for `verify-ca` / `verify-full`; system trust store when empty |
 | `DBM_MASTER_KEY`, `DBM_MASTER_KEY_ID`, `DBM_PREVIOUS_MASTER_KEYS` | — / `k1` / — | secret encryption key ring (base64 32-byte key; previous keys as `id:base64` for decryption only) |
 | `DBM_SECRET_FILE_DIRS` | `/run/secrets,/var/run/secrets,/etc/dbmanager/secrets` | allowed locations of `file:` secret references |
 | `DBM_BOOTSTRAP_ADMIN_USERNAME`, `DBM_BOOTSTRAP_ADMIN_PASSWORD`, `DBM_BOOTSTRAP_ADMIN_EMAIL` | `admin` / — / `admin@example.local` | first administrator, created only when no user exists |
@@ -149,6 +152,7 @@ See [Secret providers](../administration/secret-providers.md).
 | `DBM_TIMESERIES_URL` | `http://timeseries:8428` | VictoriaMetrics (single node, or a gateway in front of a cluster) |
 | `DBM_TIMESERIES_USERNAME`, `DBM_TIMESERIES_PASSWORD` | — | basic authentication (Compose: also the container's `httpAuth`) |
 | `DBM_TIMESERIES_TIMEOUT_SECONDS` | 10 | request timeout |
+| `DBM_TIMESERIES_TLS_CA_FILE` | — | CA certificate (PEM) of an `https://` time-series URL when not in the system trust store |
 | `DBM_TIMESERIES_RETENTION` | `90d` | Compose: VictoriaMetrics `-retentionPeriod`; the backend only displays it |
 | `DBM_METRIC_BATCH_SIZE`, `DBM_METRIC_FLUSH_INTERVAL` | 2000 / 5 | batch writer: samples per request, seconds between writes |
 | `DBM_METRIC_BUFFER_MAX`, `DBM_METRIC_WRITE_MAX_BACKOFF_SECONDS` | 200000 / 60 | in-memory buffer while the database is unreachable (oldest dropped first), longest retry backoff |
@@ -219,7 +223,12 @@ stand-alone worker on `DBM_WORKER_PORT`), and the frontend nginx does not proxy 
 
 ## Kubernetes / OpenShift
 
-Reference manifests in `deployment/kubernetes/` and `deployment/openshift/`:
+The supported installation is the Helm chart: [Kubernetes and OpenShift with Helm](kubernetes-helm.md)
+(signed images and chart, restricted Pod Security, OpenShift mode, HA defaults). Replica
+coordination, the instance registry and TLS to the databases are described in
+[high availability](high-availability.md).
+
+Plain reference manifests remain in `deployment/kubernetes/` and `deployment/openshift/`:
 
 * `dbmanager-api` Deployment (`DBM_PROCESS_ROLE=api`, N replicas, stateless — sessions are in PostgreSQL);
 * `dbmanager-worker` Deployment (`python -m app.worker`, M replicas). One worker holds the scheduler

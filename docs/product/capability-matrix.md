@@ -26,6 +26,10 @@ Paths are relative to the repository root (`backend/app/...`, `frontend/src/...`
 > - frontend: 180;
 > - real-engine runs in this audit: PostgreSQL 16 (13), MariaDB 10.11 (15) and VictoriaMetrics (5);
 > - the other engines: the last Docker run, see the [real-engine validation report](real-engine-validation.md).
+>
+> **Updated for 0.15.0** after a clean validation ([test validation](test-validation.md)):
+> backend 869 (684 unit, 164 API, 8 migration, 13 Helm chart), frontend 183, local real-engine
+> runs 35 passed (PostgreSQL 16, MariaDB 10.11 with TLS, VictoriaMetrics, OpenLDAP StartTLS).
 
 ## Platform
 
@@ -42,7 +46,7 @@ Paths are relative to the repository root (`backend/app/...`, `frontend/src/...`
 | Logging | COMPLETE | Structured JSON logging `backend/app/core/logging.py`, request IDs in `backend/app/core/middleware.py`, secrets masked (`clean_message`) |
 | Observability (self-metrics) | COMPLETE | Prometheus `GET /metrics` (`backend/app/core/metrics.py`: HTTP, collectors, scheduler leader, pipeline counters) |
 | Diagnostics | COMPLETE | Collectors page, monitoring-storage page, driver health and a redacted per-server diagnostic bundle (`GET /servers/{id}/diagnostics`, `app/services/diagnostics.py`, `tests/api/test_diagnostics.py`, `tests/unit/test_redact.py`) |
-| Version / build metadata | COMPLETE | `0.14.0` in `backend/app/__init__.py`, `pyproject.toml`, `frontend/package.json`; build args `DBM_BUILD_VERSION/DBM_GIT_COMMIT/DBM_BUILD_DATE`; `GET /api/v1/version` (exact keys tested), `GET /api/v1/about`; Platform → About |
+| Version / build metadata | COMPLETE | `0.15.0` in `backend/app/__init__.py`, `pyproject.toml`, `frontend/package.json`; build args `DBM_BUILD_VERSION/DBM_GIT_COMMIT/DBM_BUILD_DATE`; `GET /api/v1/version` (exact keys tested), `GET /api/v1/about`; Platform → About |
 
 ## Identity
 
@@ -219,11 +223,11 @@ Paths are relative to the repository root (`backend/app/...`, `frontend/src/...`
 | Capability | Status | Evidence |
 |---|---|---|
 | Docker Compose | COMPLETE | `docker-compose.yml`; backend image with ODBC Driver 18 (`backend/Dockerfile`) |
-| Kubernetes readiness | PARTIAL | Plain manifests `deployment/kubernetes/` (ConfigMap, Secret, migrate Job, Deployments, StatefulSet, Ingress, NetworkPolicy); **no Helm chart**, not CI-validated |
-| OpenShift readiness | PARTIAL | Non-root UID 10001 / GID 0 images, `deployment/openshift/route.yaml`; not tested on a cluster |
+| Kubernetes readiness | COMPLETE | Helm chart `deployment/helm/dbmanager` (API, workers, frontend, bundled or external PostgreSQL/VictoriaMetrics, PDB, HPA, NetworkPolicy, Ingress, `helm test`, values schema) and reference manifests `deployment/kubernetes/`; restricted Pod Security; CI: kubeconform 1.29/1.31, policy check, `tests/deploy/test_helm_chart.py`, kind install with `helm test` and leader failover (`ci-kubernetes.yml`) |
+| OpenShift readiness | PARTIAL | Chart `openshift=true` (no pinned UID/GID/fsGroup, Route with edge TLS) checked against restricted-v2 rules in CI (`scripts/k8s-policy-check.py --openshift`); not installed on an OpenShift cluster |
 | Backup / restore | COMPLETE | In-app Backup & Restore for the platform and managed databases (see Platform); stack scripts `scripts/backup.sh`, `restore.sh`, `restore-drill.sh` |
-| Upgrade | PARTIAL | Migrations tested step by step and for model parity; no upgrade test between two *released* versions yet (no release tagged) |
-| High availability | PARTIAL | Stateless API, scheduler leader election (`dbm_scheduler_leader`), `process_role` split (api/worker); HA of PostgreSQL/VictoriaMetrics left to the operator |
+| Upgrade | COMPLETE | Migrations step by step, model parity, upgrades with data from the first schema and the releases 0.12.0, 0.13.0 and 0.14.0 (`tests/migrations/test_migrations.py`); concurrent replica start (`test_concurrent_start.py`); Helm rolling upgrade with migrations under a lock |
+| High availability | COMPLETE | Stateless API replicas, scheduler leader election with failover tests (`tests/api/test_leader_failover.py`, kind pod deletion), concurrent-start locks, instance registry (`app/services/instances.py`, `GET /api/v1/platform/instances`, Deployment card, `tests/api/test_instances.py`), TLS to PostgreSQL (`DBM_DATABASE_TLS_*`, `tests/api/test_control_plane_tls.py`) and VictoriaMetrics; HA of PostgreSQL/VictoriaMetrics themselves is left to the operator ([high availability](../deployment/high-availability.md)) |
 | Scaling | PARTIAL | Collector concurrency, worker processes (`docs/deployment/scaling.md`); no load test |
 | Troubleshooting | PARTIAL | Troubleshooting table in `docs/operations/index.md`; full guide being written |
 | Real-engine test environment | COMPLETE | `docker-compose.test.yml`, `scripts/integration-test.{sh,ps1}`, matrix in `backend/app/data/real_engine_validation.json` |
@@ -255,7 +259,8 @@ Paths are relative to the repository root (`backend/app/...`, `frontend/src/...`
 |---|---|---|
 | Source control | COMPLETE | Public repository [hbenabdalla/dbmanager](https://github.com/hbenabdalla/dbmanager), `main` branch, logical commits |
 | License | COMPLETE | Apache-2.0 — `LICENSE`, README, `backend/pyproject.toml`, `frontend/package.json`, About page |
-| CI | COMPLETE | `.github/workflows/` backend (lint, unit, API, migrations, PostgreSQL real engine), frontend, docs (`mkdocs build --strict`), Docker images + Compose health + restore drill, security (gitleaks, pip-audit, npm audit); required checks run on every pull request (no path filters) |
+| CI | COMPLETE | `.github/workflows/` backend (lint, unit, API, migrations, PostgreSQL real engine, control-plane TLS), frontend, Kubernetes (manifests, chart tests, kind install and failover), docs (`mkdocs build --strict`), Docker images + Compose health + restore drill, security (gitleaks, pip-audit, npm audit); required checks run on every pull request (no path filters) |
 | Contribution / security policy | COMPLETE | `CONTRIBUTING.md`, `SECURITY.md` (private advisories), `CODE_OF_CONDUCT.md`, issue forms, PR template |
-| Changelog / versioning | COMPLETE | `CHANGELOG.md` (Keep a Changelog, SemVer); version `0.14.0` (published tags: v0.12.0, v0.13.0) |
+| Changelog / versioning | COMPLETE | `CHANGELOG.md` (Keep a Changelog, SemVer); version `0.15.0` (published tags: v0.12.0, v0.13.0, v0.14.0) |
+| Release artefacts | COMPLETE (runs on the tag) | `.github/workflows/release.yml`: GHCR images with SBOM and SLSA provenance, keyless cosign signatures, signed OCI Helm chart, SPDX SBOMs and notes on the GitHub release |
 | Published documentation | COMPLETE | Read the Docs project `db-manager`: [https://db-manager.readthedocs.io/en/latest/](https://db-manager.readthedocs.io/en/latest/), built from `.readthedocs.yaml` with `mkdocs build --strict`; linked from the app's Help menu and About page |

@@ -98,7 +98,17 @@ async def about(db: DB, p: CurrentPrincipal) -> dict[str, Any]:
     from app.services import instances
 
     try:
-        deployment = (await instances.list_instances(db))["summary"]
+        summary = (await instances.list_instances(db))["summary"]
+        # every signed-in user reads this page: counts only, no host names or process ids
+        # (the per-process view is Platform -> Collectors, permission collectors.view)
+        deployment = {
+            "api": summary["api"],
+            "workers": summary["workers"],
+            "stale": summary["stale"],
+            "has_leader": summary["leader"] is not None,
+            "versions": summary["versions"],
+            "mixed_versions": summary["mixed_versions"],
+        }
     except Exception:  # noqa: BLE001 - informational
         deployment = None
     if r and r.started_at:

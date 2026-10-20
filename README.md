@@ -12,15 +12,16 @@ administration for PostgreSQL, MySQL, MariaDB, Microsoft SQL Server, Oracle Data
 [![Frontend](https://github.com/hbenabdalla/dbmanager/actions/workflows/ci-frontend.yml/badge.svg)](https://github.com/hbenabdalla/dbmanager/actions/workflows/ci-frontend.yml)
 [![Docs](https://github.com/hbenabdalla/dbmanager/actions/workflows/ci-docs.yml/badge.svg)](https://github.com/hbenabdalla/dbmanager/actions/workflows/ci-docs.yml)
 [![Documentation](https://readthedocs.org/projects/db-manager/badge/?version=latest)](https://db-manager.readthedocs.io/en/latest/)
-[![Version](https://img.shields.io/badge/version-0.14.0-blue)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.15.0-blue)](CHANGELOG.md)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 
 **Documentation: [db-manager.readthedocs.io/en/latest](https://db-manager.readthedocs.io/en/latest/)**
 
-> **Version 0.14.0: reporting and the roadmap reconciliation.** DBManager is pre-1.0, and 0.12.0
-> was its first public release. Every earlier milestone was audited again from the code, and what
-> was not true was fixed ([roadmap audit](docs/product/roadmap-audit.md)). What changed is in the
-> [changelog](CHANGELOG.md); what remains before 1.0 is in the [roadmap](ROADMAP.md).
+> **Version 0.15.0: cloud-native deployment.** A Helm chart for Kubernetes and OpenShift, signed
+> images with SBOMs, highly available API and worker replicas with a visible scheduler leader, and
+> TLS to the control-plane databases. DBManager is pre-1.0; 0.12.0 was its first public release.
+> What changed is in the [changelog](CHANGELOG.md); what remains before 1.0 is in the
+> [roadmap](ROADMAP.md).
 
 ![Fleet dashboard](docs/assets/screenshots/dashboard-overview.png)
 
@@ -129,6 +130,22 @@ each engine: [database engines](docs/database-engines/index.md). Walkthrough:
 [add your first database](docs/getting-started/first-database.md).
 
 No database at hand? **Platform → Simulation** generates a clearly labelled simulated fleet.
+
+## Kubernetes and OpenShift (Helm)
+
+```bash
+helm install dbm oci://ghcr.io/hbenabdalla/charts/dbmanager --version 0.15.0 \
+  --namespace dbmanager --create-namespace \
+  --set secrets.masterKey="$(head -c32 /dev/urandom | base64)" \
+  --set secrets.bootstrapAdminPassword='<a strong password>' \
+  --set secrets.postgresPassword='<a strong password>' --set secrets.timeseriesPassword='<a strong password>'
+```
+
+The chart runs two API and two worker replicas under the restricted Pod Security Standard (and
+OpenShift restricted-v2 with `--set openshift=true`); images and chart are signed with cosign.
+Production values (external PostgreSQL with `verify-full` TLS, Ingress, existing Secret) and
+signature verification: [Kubernetes and OpenShift with Helm](docs/deployment/kubernetes-helm.md);
+replicas and leader election: [high availability](docs/deployment/high-availability.md).
 
 ## Configuration
 

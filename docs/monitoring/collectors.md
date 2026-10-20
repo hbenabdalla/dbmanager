@@ -29,7 +29,10 @@ failures until …*; updating its credentials or **Collect now** resets the brea
 ## Collector health
 
 **Platform → Collectors** shows the scheduler leader, pending jobs, failures per job kind and
-paused servers. Prometheus metrics: `dbm_collector_jobs_total`, `dbm_collector_job_duration_seconds`,
+paused servers. Its **Deployment** card lists every API and worker process of the deployment
+(host or pod name, role, version, last heartbeat), marks the scheduler leader, and warns about
+mixed versions, stale processes and a deployment without any worker
+([high availability](../deployment/high-availability.md#the-instance-registry)). Prometheus metrics: `dbm_collector_jobs_total`, `dbm_collector_job_duration_seconds`,
 `dbm_collector_inflight`, `dbm_target_connections_open`, `dbm_scheduler_leader`.
 
 Per server, **Overview → Collection status** shows each component's last result. A missing

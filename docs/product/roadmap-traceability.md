@@ -28,7 +28,7 @@ the repository root; "—" means not yet created.
 | CI | G-03 | 0.9.2 | `.github/workflows/` | workflows on GitHub | `CONTRIBUTING.md` | VERIFIED COMPLETE |
 | Documentation site | G-06 | 0.9.3 | `mkdocs.yml`, `.readthedocs.yaml`, `docs/requirements.txt`, `docs/**` | `mkdocs build --strict` (CI and Read the Docs) | [https://db-manager.readthedocs.io/en/latest/](https://db-manager.readthedocs.io/en/latest/) | VERIFIED COMPLETE |
 | Version & About page | G-04 | 0.9.4 | `backend/app/api/v1/about.py`, Platform → About, Help menu | `tests/api/test_alerting.py::test_about_and_version`, `tests/unit/test_about_links.py`, frontend `alerts.test.tsx` | [About](../administration/about.md) | VERIFIED COMPLETE |
-| Upgrade & recovery verification | G-20, G-22 | 0.9.5 | `scripts/backup.sh`, `scripts/restore.sh`, `scripts/restore-drill.sh` (Docker CI) | `tests/migrations/` (upgrade from empty, first schema and the published 0.12.0 / 0.13.0 schemas with data; downgrade; model parity; backup/restore round trip) | [upgrade](../operations/upgrade.md), [backup and restore](../operations/backup-restore.md) | VERIFIED COMPLETE |
+| Upgrade & recovery verification | G-20, G-22 | 0.9.5 | `scripts/backup.sh`, `scripts/restore.sh`, `scripts/restore-drill.sh` (Docker CI) | `tests/migrations/` (upgrade from empty, first schema and the published 0.12.0 / 0.13.0 / 0.14.0 schemas with data; downgrade; model parity; backup/restore round trip) | [upgrade](../operations/upgrade.md), [backup and restore](../operations/backup-restore.md) | VERIFIED COMPLETE |
 
 ## Milestones 0.10 and 0.11 — Operations, alerting and enterprise integration
 
@@ -78,12 +78,22 @@ the repository root; "—" means not yet created.
 | Server-side PDF | G-31 | 0.14.3 | `app/services/report_pdf.py` | `tests/unit/test_report_pdf.py`, `tests/api/test_reports.py` | [reports](../user-guide/reports.md#generating-a-report) | DONE |
 | Branding and engine identity | — | 0.14.4 | `frontend/src/components/brand.tsx`, `engine-icon.tsx`, `lib/engines.ts`, `app/api/v1/branding.py`, `frontend/public/*` icons | `frontend/src/test/engine-icon.test.tsx`, `tests/api/test_branding.py` | [brand assets](../development/brand-assets.md) | DONE |
 
+## Milestone 0.15 — Cloud-Native Deployment (DONE)
+
+| Capability | Gap | Sprint | Implementation | Tests | Documentation | Status |
+|---|---|---|---|---|---|---|
+| Signed images, SBOM, provenance, OCI chart, GitHub release | — | 0.15.1 | `.github/workflows/release.yml` | tag/version/notes check in the workflow; actionlint | [Helm guide](../deployment/kubernetes-helm.md#images-and-signatures) | VERIFIED COMPLETE (executes on the tag) |
+| Helm chart | G-41 | 0.15.2 | `deployment/helm/dbmanager/` | `backend/tests/deploy/test_helm_chart.py` (13), `helm test` in kind | [Kubernetes and OpenShift with Helm](../deployment/kubernetes-helm.md) | VERIFIED COMPLETE |
+| Manifest validation and kind install | G-42 | 0.15.3 | `.github/workflows/ci-kubernetes.yml`, `scripts/k8s-policy-check.py`, `scripts/k8s-failover-check.py` | the workflow (kubeconform 1.29/1.31, policy, chart tests, kind install, failover) | same | VERIFIED COMPLETE (kind job on push) |
+| Concurrent start, instance registry, leader failover | G-44 | 0.15.4 | `backend/app/main.py` (start-up lock), `alembic/env.py` (migration lock), `app/services/instances.py`, `app/models/telemetry.py::PlatformInstance`, migration `0014`, `api/v1/platform.py`, `frontend/src/features/platform/deployment.tsx` | `tests/migrations/test_concurrent_start.py`, `tests/api/test_instances.py`, `tests/api/test_leader_failover.py`, `frontend/src/test/deployment.test.tsx` | [high availability](../deployment/high-availability.md) | VERIFIED COMPLETE |
+| Internal TLS (PostgreSQL, VictoriaMetrics) | G-45 | 0.15.4 | `app/core/tlsclient.py`, `app/db/session.py`, `alembic/env.py`, `app/timeseries/victoriametrics.py`, `scripts/backup.sh` | `tests/unit/test_tlsclient.py`, `tests/api/test_control_plane_tls.py` (CI: `verify-full`) | [high availability](../deployment/high-availability.md#tls-to-the-control-plane-postgresql) | VERIFIED COMPLETE |
+| Dependency majors | — | 0.15.5 | `frontend/package.json`, `frontend/vite.config.ts`, `frontend/Dockerfile`, `docs/requirements.txt`, workflows | frontend suite, build on Node 22 and 24, `mkdocs build --strict` | [current milestone](current-milestone.md#decisions) | VERIFIED COMPLETE |
+
 ## Later milestones
 
 | Capability | Gap | Sprint | Status |
 |---|---|---|---|
-| Helm, images, manifest CI, HA/TLS reference | G-41, G-42, G-44, G-45 | 0.15.x | NEXT |
-| Scale, security, accessibility, upgrade drill, RC | G-54, G-58, G-22 | 1.0.x | PLANNED |
+| Scale, security, accessibility, upgrade drill, deferred majors, RC | G-54, G-58, G-22 | 1.0.x | NEXT |
 | Oracle TCPS validation | G-55 | Future | PLANNED |
 | Db2 for z/OS validation and deep monitoring | G-56 | Future | BLOCKED |
 

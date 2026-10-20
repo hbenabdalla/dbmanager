@@ -8,6 +8,8 @@ import { relTime } from "@/lib/format";
 
 /** GET /platform/instances: every running DBManager process (all replicas). */
 export interface DeploymentSummary { api: number; workers: number; stale: number; leader: string | null; versions: string[]; mixed_versions: boolean }
+/** The About page's view of the deployment: counts only (no host names), open to every user. */
+export type AboutDeployment = Omit<DeploymentSummary, "leader"> & { has_leader: boolean };
 export interface Instance {
   id: string; role: "all" | "api" | "worker"; hostname: string; version: string; git_commit: string | null; runs_worker: boolean;
   is_leader: boolean; started_at: string; last_seen_at: string; status: "active" | "stale"; this_instance: boolean;
@@ -17,7 +19,7 @@ export interface Instances { instances: Instance[]; summary: DeploymentSummary; 
 const ROLE: Record<Instance["role"], string> = { all: "API + worker", api: "API", worker: "Worker" };
 
 /** One line for the About page: how many API and worker processes run, and who leads. */
-export function deploymentText(d: DeploymentSummary | null | undefined): string {
+export function deploymentText(d: Pick<DeploymentSummary, "api" | "workers" | "stale"> | null | undefined): string {
   if (!d) return "unknown";
   const parts = [`${d.api} API`, `${d.workers} worker${d.workers === 1 ? "" : "s"}`];
   if (d.stale) parts.push(`${d.stale} stale`);

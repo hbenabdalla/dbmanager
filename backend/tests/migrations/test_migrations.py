@@ -134,6 +134,7 @@ SEEDED = [
     "security_findings",
     "backup_targets",
     "backup_policies",
+    "report_schedules",
     "app_settings",
 ]
 
@@ -228,10 +229,10 @@ async def _row_ids(tables: list[str]) -> dict[str, list[str]]:
         await conn.close()
 
 
-#: schema head of every published release (tags v0.12.0, v0.13.0): upgrades are tested from each
-#: of them, not from "the revision before head" (a release may add several migrations)
-RELEASES = {"0.12.0": "0010", "0.13.0": "0011"}
-LATEST_RELEASE = "0.13.0"
+#: schema head of every published release (tags v0.12.0, v0.13.0, v0.14.0): upgrades are tested
+#: from each of them, not from "the revision before head" (a release may add several migrations)
+RELEASES = {"0.12.0": "0010", "0.13.0": "0011", "0.14.0": "0013"}
+LATEST_RELEASE = "0.14.0"
 
 
 @pytest.mark.parametrize("start", ["first", *RELEASES])
@@ -252,9 +253,11 @@ def test_existing_installation_upgrades_to_head_with_its_data(start: str) -> Non
     alembic("upgrade", "head")
     assert revs[-1] in alembic("current")
     assert asyncio.run(_row_ids(present)) == before
-    # 0013: servers registered without a management mode keep their previous behaviour
-    modes = asyncio.run(_management_modes())
-    assert modes and all(m == "administration" for m in modes), modes
+    # 0013: servers registered without a management mode keep their previous behaviour (an
+    # installation already at 0013 ran that backfill before these rows were written)
+    if rev < "0013":
+        modes = asyncio.run(_management_modes())
+        assert modes and all(m == "administration" for m in modes), modes
 
 
 async def _management_modes() -> list[str | None]:

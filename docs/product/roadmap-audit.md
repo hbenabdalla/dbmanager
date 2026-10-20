@@ -10,6 +10,29 @@ same change set (commit `30027b2` and the documentation commit after it), and ch
 The audits made before each release are kept in the
 [audit history](roadmap-audit-history.md).
 
+## Release 0.15.0: clean validation and re-check of earlier sprints
+
+Before milestone 0.15 started, the whole repository was validated again from the `v0.14.0` commit
+without reusing earlier results ([test validation](test-validation.md)). The earlier sprints were
+re-checked against those runs. Four claims did not hold and were fixed before any 0.15 feature
+work; two more problems were found while 0.15 was built.
+
+| Milestone | Sprint | Claim | Finding | Classification | Fix and evidence | Status |
+|---|---|---|---|---|---|---|
+| R5 | Compose drill | the restore drill is a required, passing CI check | failed on GitHub: `scripts/backup.sh` used `wget` options BusyBox lacks | PRODUCT BUG | snapshots through the backend container; `tests/unit/test_ops_scripts.py` | VERIFIED COMPLETE (CI on push) |
+| R2 | TLS modes | MySQL TLS validated in the Docker matrix | the test read `have_ssl`, removed in MySQL 8.4; MariaDB TLS skipped (no TLS in the containers) | TEST BUG + ENVIRONMENT | detection by `Ssl_server_not_after`; generated test CA for MySQL and MariaDB in `docker-compose.test.yml` | VERIFIED COMPLETE locally (MariaDB); Docker re-run before the tag |
+| 0.11 | 0.11.3 LDAP | StartTLS validated | refused by ldap3 against a server addressed by IP (IP SAN) | PRODUCT BUG (dependency) | IP-SAN-aware hostname check; `tests/unit/test_ldap_hostname.py`, `test_identity.py` | VERIFIED COMPLETE |
+| 0.9 | 0.9.5 Upgrade testing | upgrades tested from every published release | 0.14.0 was missing from the release list | STALE TEST | `RELEASES` includes 0.14.0 (`0013`) | VERIFIED COMPLETE |
+| 0.9 | 0.9.4 About | About never shows host names | the 0.15 deployment summary leaked the leader's host name and pid to every user (found in review before release) | PRODUCT BUG | counts only; `tests/api/test_instances.py` | VERIFIED COMPLETE |
+| Baseline | Scheduler leader election | replicas can run side by side | replicas starting together on an empty database failed (concurrent migrations) | PRODUCT BUG | advisory locks; `tests/migrations/test_concurrent_start.py` | VERIFIED COMPLETE |
+
+All other sprints of 0.9 – 0.14 and R1 – R7 were re-run green: backend 869, frontend 183,
+documentation strict build, gitleaks, local real-engine suites (35 passed). No test was skipped,
+weakened or deleted to pass; the only assertion changed in this release was made stricter
+(`test_instances.py`).
+
+The rest of this page is the reconciliation audit of release 0.14.0.
+
 ## How the audit was done
 
 - The code was read against each roadmap claim: backend services, API routes, adapters, the
@@ -215,9 +238,10 @@ Db2 LUW skip only because their connection variables are not set in this environ
 
 ## Remaining known issues (not regressions)
 
-- `mypy` reports 104 type errors that predate this audit, down from 106. Type checking is not a
+- `mypy` reports 104 type errors that predate this audit, down from 106 (still 104 at 0.15.0; the code added in 0.15 has none). Type checking is not a
   CI gate. This is P4 work, scheduled for 1.0.2.
-- Seven Dependabot pull requests with major upgrades (vite, recharts, lucide-react,
-  pymdown-extensions, …) are still open. They are P4 and scheduled for 0.15.
+- Dependency majors: done in 0.15.5 (Vite 8, Vitest 5, Node 24 LTS, …). Recharts 3, TypeScript 7
+  and Python 3.14 were declined with reasons and are planned for 1.0
+  ([decisions](current-milestone.md#decisions)).
 - `app/adapters/planned.py` is kept on purpose. It is the scaffolding that describes an engine
   before its adapter exists, and `test_planned_adapter_raises` exercises it.

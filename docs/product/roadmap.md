@@ -19,8 +19,8 @@ or a page of documentation exists. The task-level evidence is in the
 
 ## Where the product stands
 
-The current version is **0.14.0** (being released; **0.13.0** is the latest published release). It contains the baseline capability groups below (listed as the
-baseline, not as past releases) and milestones 0.9 – 0.14. **0.12.0** was the first public
+The current version is **0.15.0** (being released; **0.14.0** is the latest published release). It contains the baseline capability groups below (listed as the
+baseline, not as past releases) and milestones 0.9 – 0.15. **0.12.0** was the first public
 release. The milestone of this release is described in [Current milestone](current-milestone.md).
 
 !!! note "Roadmap reconciliation (0.14.0)"
@@ -34,7 +34,7 @@ release. The milestone of this release is described in [Current milestone](curre
 ### Versioning
 
 Milestone numbers double as version numbers. The product version is the highest milestone with
-completed work: **0.14.0** adds milestone 0.14 (reporting, with the branding and engine-identity
+completed work: **0.15.0** adds milestone 0.15 (cloud-native deployment) to **0.14.0**, which added milestone 0.14 (reporting, with the branding and engine-identity
 work) to **0.13.0**, which added milestone 0.13 (performance intelligence) to **0.12.0**, which
 contained milestones 0.9 (release foundation), 0.10 (operations & alerting), 0.11 (enterprise
 integration) and 0.12 (asset protection — backup & restore). Versions 0.9, 0.10 and 0.11 were
@@ -227,25 +227,32 @@ Created by the roadmap reconciliation for the reopened claims. Details and evide
 | R6 User interface | Administration texts and links, guards, error states, UI for existing APIs (pin, jobs, evaluate, OIDC, palette), paged server lists, baseline preview for every scope, engine icon guard, layout at 1024 px | DONE |
 | R7 Documentation | Counts, statuses, navigation paths, screenshots recaptured from the running application | DONE |
 
-## Milestone 0.15 — Cloud-Native Deployment · NEXT
+## Milestone 0.15 — Cloud-Native Deployment · DONE (0.15.0)
+
+*Goal: install and operate DBManager on Kubernetes and OpenShift from signed images, with
+replicas that coordinate safely and encrypted connections to the control-plane databases, every
+artefact validated in CI.* Details: [Kubernetes and OpenShift with Helm](../deployment/kubernetes-helm.md),
+[high availability](../deployment/high-availability.md), [current milestone](current-milestone.md),
+[test validation](test-validation.md). Closes the capability gaps G-41 (Helm chart), G-42 (manifests validated in CI), G-44 (HA reference) and G-45 (internal TLS) of the [gap analysis](gap-analysis.md#product-capability-gaps); G-43 (operator) stays P4.
 
 | Sprint | Scope | Status |
 |---|---|---|
-| 0.15.1 Container images | Published, versioned, signed images; SBOM | NEXT |
-| 0.15.2 Helm chart | Chart with external PostgreSQL/VictoriaMetrics options, migrations hook | NEXT |
-| 0.15.3 Manifest validation | kubeconform + kind smoke test in CI; OpenShift restricted-v2 check | NEXT |
-| 0.15.4 HA & TLS reference | Multi-replica API, worker leader failover test, TLS termination and internal TLS guide | NEXT |
-| 0.15.5 Dependency majors | vite, recharts, lucide-react, pymdown-extensions and the other open Dependabot majors, with their migration work | NEXT |
+| 0.15.1 Container images | Release workflow: GHCR images per version, SBOM and SLSA provenance attestations, keyless cosign signatures, SPDX SBOMs on the GitHub release | DONE — runs on the `v0.15.0` tag |
+| 0.15.2 Helm chart | Chart with bundled or external PostgreSQL/VictoriaMetrics, existing-Secret support, migrations on start under an advisory lock, Ingress/Route, PDB, HPA, NetworkPolicy, `helm test`, values schema; signed OCI chart | DONE |
+| 0.15.3 Manifest validation | kubeconform (1.29, 1.31), restricted Pod Security and OpenShift restricted-v2 policy check, chart tests; kind install with `helm test` and leader failover in CI | DONE — kind job runs on push |
+| 0.15.4 HA & TLS reference | Concurrent-start locks, instance registry (`0014`) with Deployment card and API, leader failover tests (processes and pods), control-plane PostgreSQL TLS modes, time-series CA, guides | DONE |
+| 0.15.5 Dependency majors | Vite 8, plugin-react 6, Vitest 5, jest-dom 7, Node 24 LTS, nginx-unprivileged 1.31, mkdocs-material 9.7.7, Actions majors; Python 3.14, Node 26, TypeScript 7, Recharts 3 and jsdom 30 declined with reasons ([decisions](current-milestone.md#decisions)) | DONE |
 
-## Milestone 1.0 — Production Release
+## Milestone 1.0 — Production Release · NEXT
 
 | Sprint | Scope | Status |
 |---|---|---|
-| 1.0.1 Scale testing | 1,000+ simulated servers: collector throughput, UI responsiveness, TSDB cardinality | PLANNED |
-| 1.0.2 Security review | Threat model review, dependency audit, authenticated DAST, fixes | PLANNED |
-| 1.0.3 Accessibility | axe in CI, WCAG 2.1 AA fixes | PLANNED |
-| 1.0.4 Upgrade & recovery drill | Upgrade from every 0.x schema; backup/restore drill | PLANNED |
-| 1.0.5 Release candidate | Freeze, RC builds, documentation review, `v1.0.0` tag | PLANNED |
+| 1.0.1 Scale testing | 1,000+ simulated servers: collector throughput, UI responsiveness, TSDB cardinality | NEXT |
+| 1.0.2 Security review | Threat model review, dependency audit, authenticated DAST, fixes | NEXT |
+| 1.0.3 Accessibility | axe in CI, WCAG 2.1 AA fixes | NEXT |
+| 1.0.6 Deferred majors | Recharts 3 (with the visual review of every chart), TypeScript 7, Python 3.14 base image | PLANNED |
+| 1.0.4 Upgrade & recovery drill | Upgrade from every 0.x schema; backup/restore drill | NEXT |
+| 1.0.5 Release candidate | Freeze, RC builds, documentation review, `v1.0.0` tag | NEXT |
 
 ## Future
 
@@ -264,11 +271,11 @@ Created by the roadmap reconciliation for the reopened claims. Details and evide
 
 ## Known limitations of the current release
 
-- The adapter changes of the reconciliation were validated here against PostgreSQL 16 and MariaDB 10.11. They are covered by unit tests for MySQL, SQL Server, Oracle and Db2 LUW, which still need a re-run in the Docker test environment ([audit](roadmap-audit.md#real-engine-regression)).
+- The last full Docker real-engine run (2026-10-20, 0.14.0 code) passed except one MySQL TLS test bug, fixed since; 0.15 changed no adapter. The full matrix is re-run on the Docker host before the `v0.15.0` tag ([test validation](test-validation.md)).
 - LDAP/AD were validated against OpenLDAP (no Active Directory server in the test environment); OIDC against Keycloak 26.
 - Scheduled reports are delivered by e-mail only (no webhook/file-share delivery); PDF reports list at most 5,000 rows (the CSV has all rows); no Excel format.
 - DBManager shows its own engine marks, not vendor logos; licensed logos can be supplied by the operator (`DBM_BRANDING_DIR`).
-- Kubernetes/OpenShift manifests are provided but not validated in CI; no Helm chart (milestone 0.15).
+- Kubernetes: the Helm chart bundles a single-instance PostgreSQL and VictoriaMetrics for evaluation only; production needs a managed or operator-run PostgreSQL. No operator and no VictoriaMetrics cluster chart. The kind install and leader failover run in GitHub Actions, not on a production-size cluster.
 - Database backups: real-engine runs passed for all six engines ([validation report](real-engine-validation.md)). No point-in-time recovery; Db2 LUW restores and Oracle RMAN are external.
 - Backup storage targets: local / mounted / NFS directories and S3-compatible buckets; Azure Blob and GCS natively are planned.
 - Cloud secret managers (AWS, Azure, Google) are planned; HashiCorp Vault is available.

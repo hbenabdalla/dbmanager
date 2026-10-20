@@ -214,6 +214,8 @@ nav:
       - Troubleshooting: backup-restore/troubleshooting.md
   - Deployment:
       - deployment/index.md
+      - Kubernetes and OpenShift (Helm): deployment/kubernetes-helm.md
+      - High availability: deployment/high-availability.md
       - Reverse proxy and TLS: deployment/reverse-proxy-tls.md
       - Scaling: deployment/scaling.md
   - Operations:
@@ -253,9 +255,11 @@ nav:
       - Roadmap: product/roadmap.md
       - Current milestone: product/current-milestone.md
       - Real-engine validation: product/real-engine-validation.md
+      - Test validation: product/test-validation.md
       - Roadmap traceability: product/roadmap-traceability.md
       - Roadmap audit: product/roadmap-audit.md
       - Roadmap audit history: product/roadmap-audit-history.md
+      - Release notes 0.15.0: release-notes/0.15.0.md
       - Release notes 0.14.0: release-notes/0.14.0.md
       - Release notes 0.13.0: release-notes/0.13.0.md
       - Release notes 0.12.0: release-notes/0.12.0.md

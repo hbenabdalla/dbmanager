@@ -98,7 +98,7 @@ async def list_instances(db: AsyncSession, *, now: datetime | None = None) -> di
         )
     active_items = [i for i in items if i["status"] == "active"]
     leaders = [i["id"] for i in active_items if i["is_leader"]]
-    versions = sorted({i["version"] for i in active_items})
+    versions = sorted({str(i["version"]) for i in active_items})
     return {
         "instances": items,
         "summary": {

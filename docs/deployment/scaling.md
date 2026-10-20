@@ -92,6 +92,11 @@ for current fleet health above ~5,000 servers or with many concurrent dashboard 
 
 ## Kubernetes / OpenShift
 
+The Helm chart ([Kubernetes and OpenShift with Helm](kubernetes-helm.md)) runs 2 API and 2 worker
+replicas by default, with PodDisruptionBudgets, an optional HorizontalPodAutoscaler for the API and
+topology spread across nodes; raise `worker.replicas` for collection capacity. Replica coordination
+is described in [high availability](high-availability.md).
+
 `deployment/kubernetes/15-timeseries.yaml`: VictoriaMetrics `StatefulSet` with a
 PersistentVolumeClaim, ClusterIP service `timeseries`, `NetworkPolicy` that admits only the
 API and worker pods, credentials from the `dbmanager-secrets` Secret, non-root and

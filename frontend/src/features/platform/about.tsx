@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { deploymentText, type DeploymentSummary } from "@/features/platform/deployment";
+import { deploymentText, type AboutDeployment } from "@/features/platform/deployment";
 import { BookOpen, ExternalLink, Github, Map as MapIcon } from "lucide-react";
 import { BrandLogo } from "@/components/brand";
 import { get } from "@/api/client";
@@ -19,7 +19,7 @@ export interface About {
   links: { documentation: string | null; github: string | null; roadmap: string | null };
   engines: { engine: string; display_name: string; support_level: string; validation: string | null; validated_version: string | null }[];
   status: { api: string; database: string; timeseries: string; background_jobs: string };
-  deployment?: DeploymentSummary | null;
+  deployment?: AboutDeployment | null;
 }
 
 export const FRONTEND_VERSION = __APP_VERSION__;

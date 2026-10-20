@@ -67,9 +67,15 @@ async def test_instances_heartbeat_leader_stale_and_prune(admin, make_client, mo
         await instances.leave(db)
     data = (await admin.get("/api/v1/platform/instances")).json()
     assert instances.instance_id() not in {i["id"] for i in data["instances"]}
-    # needs collectors.view
+    # needs collectors.view: the Monitoring User role does not have it, an environment DBA does
     monitor = await make_client(("monitor", DEMO_PW))
-    assert (await monitor.get("/api/v1/platform/instances")).status_code in (200, 403)
+    assert (await monitor.get("/api/v1/platform/instances")).status_code == 403
+    dba = await make_client(("dba.dev", DEMO_PW))
+    assert (await dba.get("/api/v1/platform/instances")).status_code == 200
+    # About is open to every signed-in user: counts only, never host names or process ids
+    about = (await monitor.get("/api/v1/about")).json()["deployment"]
+    assert set(about) == {"api", "workers", "stale", "has_leader", "versions", "mixed_versions"}
+    assert "api-old" not in str(about) and "worker-dead" not in str(about)
     async with session_scope() as db:
         await db.execute(PlatformInstance.__table__.delete())
 
