@@ -13,7 +13,9 @@ import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { DataTable } from "@/components/ui/data-table";
 import { Field, Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { SkeletonRows } from "@/components/ui/states";
+import { EmptyState, ErrorState, SkeletonRows } from "@/components/ui/states";
+import { useAuth } from "@/lib/auth";
+import { Lock } from "lucide-react";
 import { dateTime, ms, relTime } from "@/lib/format";
 import { PROVIDER_LABEL, useSecretProviders, vaultStatus, type SecretProvider } from "@/features/shared/secret-source";
 
@@ -22,7 +24,9 @@ interface CredRow { server_id: string; server_name: string; engine: string; is_d
 /** Credential sources of this installation (GET /platform/secret-providers). */
 export function SecretProvidersCard() {
   const q = useSecretProviders();
-  if (!q.data) return null;
+  if (q.isLoading) return <Card className="mb-4"><CardHeader title="Secret sources" /><SkeletonRows rows={3} /></Card>;
+  if (!q.data && !q.error) return null; // query disabled (no credentials.manage)
+  if (q.error || !q.data) return <Card className="mb-4"><CardHeader title="Secret sources" /><ErrorState error={q.error} onRetry={() => q.refetch()} /></Card>;
   const d = q.data;
   const v = vaultStatus(d.vault);
   const rows: [SecretProvider, React.ReactNode][] = [
@@ -76,7 +80,7 @@ export function CollectorsPage() {
   return (
     <div>
       <PageHeader title="Collectors" description="Background scheduling and collection. One process holds the scheduler lock; any number of workers claim jobs." crumbs={[{ label: "Platform" }, { label: "Collectors" }]} />
-      {!d ? <SkeletonRows /> : (
+      {s.error && !d ? <Card className="mb-4"><ErrorState error={s.error} onRetry={() => s.refetch()} /></Card> : !d ? <SkeletonRows /> : (
         <>
           <Card className="mb-4 grid grid-cols-2 divide-x divide-border sm:grid-cols-5">
             <Stat label="This process" value={d.process_role} sub={d.worker_running ? (d.is_leader ? "worker, scheduler leader" : "worker") : "API only"} />
@@ -105,7 +109,7 @@ export function CollectorsPage() {
       )}
       <Card>
         <CardHeader title="Recent jobs" />
-        <DataTable data={jobs.data?.items} loading={jobs.isLoading} dense manual={jobs.data ? { page, pageSize: 50, total: jobs.data.total, onPage: setPage } : undefined}
+        <DataTable data={jobs.data?.items} loading={jobs.isLoading} error={jobs.error} onRetry={() => jobs.refetch()} dense manual={jobs.data ? { page, pageSize: 50, total: jobs.data.total, onPage: setPage } : undefined}
           columns={[
             { header: "Created", accessorKey: "created_at", cell: ({ getValue }) => dateTime(getValue() as string) },
             { header: "Server", accessorKey: "server_name", cell: ({ getValue }) => (getValue() as string) ?? <span className="text-muted">global</span> },
@@ -122,9 +126,17 @@ export function CollectorsPage() {
 
 interface SettingsView { editable: Record<string, unknown>; descriptions?: Record<string, string>; readonly: Record<string, unknown> }
 
+/** MFA policy keys shown in their own group when the API returns them (editable or read-only). */
+export const MFA_KEYS = ["mfa_required_for", "mfa_issuer"] as const;
+const MFA_LABEL: Record<string, string> = { mfa_required_for: "MFA required for", mfa_issuer: "MFA issuer (authenticator apps)" };
+const isMfaKey = (k: string) => (MFA_KEYS as readonly string[]).includes(k) || k.startsWith("mfa.") || k.startsWith("auth.mfa");
+
 export function SettingsPage() {
   const qc = useQueryClient();
-  const q = useQuery({ queryKey: ["settings"], queryFn: () => get<SettingsView>("/settings") });
+  const { canPlatform } = useAuth();
+  // PUT /settings requires settings.manage at platform scope; GET answers non-admins with a reduced payload.
+  const allowed = canPlatform("settings.manage");
+  const q = useQuery({ queryKey: ["settings"], queryFn: () => get<SettingsView>("/settings"), enabled: allowed });
   const [vals, setVals] = useState<Record<string, unknown>>({});
   useEffect(() => { if (q.data) setVals(q.data.editable); }, [q.data]);
   const save = useMutation({
@@ -132,19 +144,29 @@ export function SettingsPage() {
     onSuccess: () => { toast.success("Settings saved"); qc.invalidateQueries({ queryKey: ["settings"] }); qc.invalidateQueries({ queryKey: ["settings-public"] }); },
     onError: (e: ApiError) => toast.error(e.message),
   });
-  if (!q.data) return <SkeletonRows />;
+  const header = (actions?: React.ReactNode) => (
+    <PageHeader title="Settings" description="Runtime settings stored in the application database. Deployment settings come from environment variables and are shown read only."
+      crumbs={[{ label: "Platform" }, { label: "Settings" }]} actions={actions} />
+  );
+  if (!allowed) {
+    return <div>{header()}<Card><EmptyState icon={<Lock />} title="You don't have access to platform settings">Viewing and changing settings needs the settings.manage permission at platform scope.</EmptyState></Card></div>;
+  }
+  if (q.isLoading) return <div>{header()}<SkeletonRows /></div>;
+  if (q.error || !q.data) return <div>{header()}<Card><ErrorState error={q.error} onRetry={() => q.refetch()} /></Card></div>;
+  const readonly = Object.entries(q.data.readonly).filter(([k]) => !isMfaKey(k));
+  const mfaReadonly = Object.entries(q.data.readonly).filter(([k]) => isMfaKey(k));
+  const editable = Object.entries(vals);
   return (
     <div>
-      <PageHeader title="Settings" description="Runtime settings stored in the application database. Deployment settings come from environment variables and are shown read only."
-        crumbs={[{ label: "Platform" }, { label: "Settings" }]} actions={<Button variant="primary" onClick={() => save.mutate()} disabled={save.isPending}>Save settings</Button>} />
+      {header(<Button variant="primary" onClick={() => save.mutate()} disabled={save.isPending}>Save settings</Button>)}
       <div className="grid gap-4 xl:grid-cols-2">
         <Card>
           <CardHeader title="Platform behaviour" />
           <CardBody className="space-y-4">
-            {Object.entries(vals).map(([k, v]) => (
+            {editable.map(([k, v]) => (
               <div key={k}>
                 {typeof v === "boolean" ? (
-                  <label className="flex items-start gap-3 text-[13px]"><Switch checked={v} onCheckedChange={(x) => setVals({ ...vals, [k]: x })} label={k} disabled={k === "ai_insights.enabled"} />
+                  <label className="flex items-start gap-3 text-[13px]"><Switch checked={v} onCheckedChange={(x) => setVals({ ...vals, [k]: x })} label={k} />
                     <span><span className="font-mono text-[12px]">{k}</span><span className="block text-[12px] text-muted">{q.data.descriptions?.[k]}</span></span></label>
                 ) : (
                   <Field label={k} hint={q.data.descriptions?.[k]}>
@@ -155,10 +177,18 @@ export function SettingsPage() {
             ))}
           </CardBody>
         </Card>
-        <Card>
-          <CardHeader title="Deployment (environment variables)" />
-          <CardBody><KeyValue items={Object.entries(q.data.readonly).map(([k, v]) => [k, String(v)])} /></CardBody>
-        </Card>
+        <div className="space-y-4">
+          {mfaReadonly.length > 0 && (
+            <Card>
+              <CardHeader title="Multi-factor authentication policy" description="Set with environment variables; read only here." />
+              <CardBody><KeyValue items={mfaReadonly.map(([k, v]) => [MFA_LABEL[k] ?? k, String(v)])} /></CardBody>
+            </Card>
+          )}
+          <Card>
+            <CardHeader title="Deployment (environment variables)" />
+            <CardBody><KeyValue items={readonly.map(([k, v]) => [k, String(v)])} /></CardBody>
+          </Card>
+        </div>
       </div>
     </div>
   );

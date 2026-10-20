@@ -105,7 +105,16 @@ def rule(
 ) -> Callable[[Callable[[EvidenceContext], list[RuleFinding]]], Callable[[EvidenceContext], list[RuleFinding]]]:
     def deco(fn: Callable[[EvidenceContext], list[RuleFinding]]) -> Callable[[EvidenceContext], list[RuleFinding]]:
         RULES.append(
-            Rule(rule_id, engines, kind, category, severity, title, description or (fn.__doc__ or "").strip(), fn)
+            Rule(
+                rule_id,
+                engines,
+                kind,
+                category,
+                severity,
+                title,
+                description or (fn.__doc__ or "").strip() or title,
+                fn,
+            )
         )
         return fn
 

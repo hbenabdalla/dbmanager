@@ -116,3 +116,30 @@ async def test_mfa_endpoints_refuse_api_tokens(admin, make_client) -> None:  # t
     )
     assert res.status_code == 403 and res.json()["error"]["code"] == "interactive_only"
     await admin.delete(f"/api/v1/me/tokens/{tid}")
+
+
+async def test_second_factor_guessing_reaches_the_lockout(admin, make_client) -> None:  # type: ignore[no-untyped-def]
+    """Wrong codes count towards the account lockout even when the password is entered again
+    between them, and a locked account cannot finish sign-in with a valid challenge."""
+    from app.core.config import get_settings
+
+    name = await _user(admin)
+    c = await make_client((name, PW))
+    secret = (await c.post("/api/v1/me/mfa/totp/setup", json={"password": PW})).json()["secret"]
+    assert (await c.post("/api/v1/me/mfa/totp/enable", json={"code": pyotp.TOTP(secret).now()})).status_code == 200
+    attacker = await make_client()
+    limit = get_settings().login_max_failures
+    token = None
+    for i in range(limit):
+        if i % 2 == 0:  # re-enter the (known) password regularly: it must not reset the counter
+            step1 = await attacker.post("/api/v1/auth/login", json={"username": name, "password": PW})
+            assert step1.status_code == 200, step1.text
+            token = step1.json()["mfa_token"]
+        r = await attacker.post("/api/v1/auth/login/mfa", json={"mfa_token": token, "code": "000000"})
+        assert r.status_code == 401
+    # locked: neither the valid code with the open challenge nor a new password step works
+    r = await attacker.post("/api/v1/auth/login/mfa", json={"mfa_token": token, "code": _next_code(secret)})
+    assert r.status_code == 401 and "dbm_session" not in attacker.cookies
+    assert (await attacker.post("/api/v1/auth/login", json={"username": name, "password": PW})).status_code == 401
+    users = (await admin.get("/api/v1/users", params={"q": name})).json()["items"]
+    assert users[0]["locked_until"] is not None

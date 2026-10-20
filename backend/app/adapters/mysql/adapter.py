@@ -76,6 +76,26 @@ _COMMON: CapabilityMap = {
 }
 
 
+#: InnoDB lock views of MariaDB and MySQL 5.7 (MySQL 8.0 moved them to performance_schema)
+INNODB_LOCK_WAITS_SQL = """
+SELECT r.trx_mysql_thread_id AS waiting, b.trx_mysql_thread_id AS blocking,
+       TIMESTAMPDIFF(SECOND, r.trx_wait_started, NOW()) AS wait_s, w.requested_lock_id AS lock_id
+FROM information_schema.INNODB_LOCK_WAITS w
+JOIN information_schema.INNODB_TRX r ON r.trx_id = w.requesting_trx_id
+JOIN information_schema.INNODB_TRX b ON b.trx_id = w.blocking_trx_id
+"""
+INNODB_LOCKS_SQL = """
+SELECT t.trx_mysql_thread_id AS session_id, l.lock_type, l.lock_mode,
+       CASE WHEN w.requested_lock_id IS NULL THEN 'GRANTED' ELSE 'WAITING' END AS lock_status,
+       SUBSTRING_INDEX(REPLACE(l.lock_table, '`', ''), '.', 1) AS object_schema,
+       SUBSTRING_INDEX(REPLACE(l.lock_table, '`', ''), '.', -1) AS object_name, l.lock_index AS index_name
+FROM information_schema.INNODB_LOCKS l
+JOIN information_schema.INNODB_TRX t ON t.trx_id = l.lock_trx_id
+LEFT JOIN information_schema.INNODB_LOCK_WAITS w ON w.requested_lock_id = l.lock_id
+LIMIT 1000
+"""
+
+
 class MySQLFamilyAdapter(MySQLEvidenceMixin, MySQLMonitoringMixin, MySQLInventoryMixin):
     implemented = True
 
@@ -133,6 +153,7 @@ class MySQLFamilyAdapter(MySQLEvidenceMixin, MySQLMonitoringMixin, MySQLInventor
     # ---- explain ------------------------------------------------------------------------------
     def _explain_sync(self, stmt: str, database: str | None, analyze: bool, fmt: str) -> list[dict[str, Any]]:
         conn = self._get_conn(database)
+        restore = self._use_database(conn, database)
         cur = conn.cursor()
         try:
             if analyze:
@@ -145,6 +166,8 @@ class MySQLFamilyAdapter(MySQLEvidenceMixin, MySQLMonitoringMixin, MySQLInventor
                 conn.rollback()  # EXPLAIN ANALYZE side effects (if any) are discarded
             finally:
                 cur.close()
+                if restore is not None:
+                    restore()
 
     def _explain_prefix(self, analyze: bool, version_num: int) -> tuple[str, str]:
         raise NotImplementedError
@@ -225,6 +248,10 @@ class MySQLAdapter(MySQLFamilyAdapter):
             out[C.EXPLAIN_ANALYZE] = cap(NOT_SUPPORTED, "EXPLAIN ANALYZE requires MySQL 8.0.18 or later")
         if v < 80000:
             out[C.ROLES] = cap(NOT_SUPPORTED, "roles require MySQL 8.0")
+            out[C.LOCKS] = cap(
+                PARTIAL,
+                "MySQL 5.7: InnoDB locks involved in waits (INFORMATION_SCHEMA.INNODB_LOCKS); no metadata locks",
+            )
         return out
 
     async def _account_rows(self) -> list[dict[str, Any]] | None:
@@ -267,6 +294,8 @@ class MySQLAdapter(MySQLFamilyAdapter):
         return out
 
     async def _lock_wait_pairs(self) -> list[dict[str, Any]] | None:
+        if await self._version() < 80000:  # 5.7: the InnoDB lock views (performance_schema has none)
+            return await self._try(INNODB_LOCK_WAITS_SQL)
         return await self._try(
             """
             SELECT r.trx_mysql_thread_id AS waiting, b.trx_mysql_thread_id AS blocking,
@@ -279,6 +308,8 @@ class MySQLAdapter(MySQLFamilyAdapter):
         )
 
     async def _lock_rows(self) -> list[dict[str, Any]] | None:
+        if await self._version() < 80000:
+            return await self._try(INNODB_LOCKS_SQL)
         rows = await self._try(
             """
             SELECT t.PROCESSLIST_ID AS session_id, l.LOCK_TYPE AS lock_type, l.LOCK_MODE AS lock_mode, l.LOCK_STATUS AS lock_status,
@@ -475,30 +506,10 @@ class MariaDBAdapter(MySQLFamilyAdapter):
         return out
 
     async def _lock_wait_pairs(self) -> list[dict[str, Any]] | None:
-        return await self._try(
-            """
-            SELECT r.trx_mysql_thread_id AS waiting, b.trx_mysql_thread_id AS blocking,
-                   TIMESTAMPDIFF(SECOND, r.trx_wait_started, NOW()) AS wait_s, w.requested_lock_id AS lock_id
-            FROM information_schema.INNODB_LOCK_WAITS w
-            JOIN information_schema.INNODB_TRX r ON r.trx_id = w.requesting_trx_id
-            JOIN information_schema.INNODB_TRX b ON b.trx_id = w.blocking_trx_id
-            """
-        )
+        return await self._try(INNODB_LOCK_WAITS_SQL)
 
     async def _lock_rows(self) -> list[dict[str, Any]] | None:
-        rows = await self._try(
-            """
-            SELECT t.trx_mysql_thread_id AS session_id, l.lock_type, l.lock_mode,
-                   CASE WHEN w.requested_lock_id IS NULL THEN 'GRANTED' ELSE 'WAITING' END AS lock_status,
-                   SUBSTRING_INDEX(REPLACE(l.lock_table, '`', ''), '.', 1) AS object_schema,
-                   SUBSTRING_INDEX(REPLACE(l.lock_table, '`', ''), '.', -1) AS object_name, l.lock_index AS index_name
-            FROM information_schema.INNODB_LOCKS l
-            JOIN information_schema.INNODB_TRX t ON t.trx_id = l.lock_trx_id
-            LEFT JOIN information_schema.INNODB_LOCK_WAITS w ON w.requested_lock_id = l.lock_id
-            LIMIT 1000
-            """
-        )
-        return rows
+        return await self._try(INNODB_LOCKS_SQL)
 
     async def _deadlock_counter(self, status: dict[str, Any]) -> float | None:
         return num(status.get("innodb_deadlocks"))

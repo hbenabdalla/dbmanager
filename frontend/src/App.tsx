@@ -133,6 +133,7 @@ export function AppRoutes() {
         <Route path="platform/roles" element={<RolesPage />} />
         <Route path="platform/identity" element={<IdentityProvidersPage />} />
         <Route path="platform/ldap" element={<IdentityProvidersPage only="ldap" />} />
+        <Route path="platform/oidc" element={<IdentityProvidersPage only="oidc" />} />
         <Route path="platform/credentials" element={<CredentialsPage />} />
         <Route path="platform/collectors" element={<CollectorsPage />} />
         <Route path="platform/monitoring-storage" element={<MonitoringStoragePage />} />

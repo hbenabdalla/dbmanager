@@ -33,6 +33,8 @@ _PATTERNS: list[tuple[re.Pattern[str], str]] = [
     (re.compile(r"AGE-SECRET-KEY-1[0-9A-Z]{50,}"), MASK),
     # user:password@ in URLs and DSNs
     (re.compile(r"(?i)\b([a-z][a-z0-9+.\-]*://[^:/@\s]+):[^@\s]+@"), r"\1:" + MASK + "@"),
+    # Oracle-style connect strings: user/password@host[:port]/service
+    (re.compile(r"(?<![\w/:])([A-Za-z][\w$#]*)/([^@\s/]+)@(?=[\w.\-\[/])"), r"\1/" + MASK + "@"),
     # key=value / key: value pairs (connection strings, ODBC, CLI, query strings)
     (
         re.compile(

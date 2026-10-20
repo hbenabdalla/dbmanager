@@ -124,6 +124,8 @@ def _alert_out(a: Alert, r: AlertRule, s: Server) -> dict[str, Any]:
         "threshold": a.threshold,
         "is_demo": a.is_demo,
         "suppressed": a.suppressed,
+        #: the maintenance window the alert was raised in (kept after the window ended)
+        "raised_in_window": str(a.suppressed_by) if a.suppressed_by else None,
         "pending_since": a.pending_since,
         "fired_at": a.fired_at,
         "acknowledged_at": a.acknowledged_at,
@@ -307,7 +309,14 @@ async def comment_alert(alert_id: uuid.UUID, body: CommentIn, db: DB, p: Current
     db.add(c)
     await db.flush()
     await audit.record(
-        "alert.comment", actor=p, category="alerting", server=s, object_name=a.title, details={"comment": body.body}
+        "alert.comment",
+        actor=p,
+        category="alerting",
+        server=s,
+        target_type="alert",
+        target_id=str(a.id),
+        object_name=a.title,
+        details={"comment": body.body},
     )
     return _comment_out(c)
 
@@ -328,6 +337,8 @@ async def acknowledge(alert_id: uuid.UUID, body: AckIn, db: DB, p: CurrentPrinci
         actor=p,
         category="alerting",
         server=s,
+        target_type="alert",
+        target_id=str(a.id),
         object_name=a.title,
         details={"comment": body.comment},
     )
@@ -343,7 +354,14 @@ async def resolve(alert_id: uuid.UUID, body: AckIn, db: DB, p: CurrentPrincipal)
     if body.comment:
         a.ack_comment = body.comment
     await audit.record(
-        "alert.resolve", actor=p, category="alerting", server=s, object_name=a.title, details={"comment": body.comment}
+        "alert.resolve",
+        actor=p,
+        category="alerting",
+        server=s,
+        target_type="alert",
+        target_id=str(a.id),
+        object_name=a.title,
+        details={"comment": body.comment},
     )
     return _alert_out(a, r, s)
 
@@ -683,7 +701,8 @@ class ChannelIn(BaseModel):
     preset: Literal["generic", "slack", "teams"] = "generic"
     #: routing filters (see app.services.alerting.channel_accepts)
     routes: RoutesIn = Field(default_factory=lambda: RoutesIn())
-    #: webhook: url, headers{}; email: recipients[], optional smtp_host/smtp_port/smtp_user/from/security
+    #: webhook: url, headers{} (stored encrypted; on update omit url/headers to keep the stored
+    #: values); email: recipients[], optional smtp_host/smtp_port/smtp_user/from/security
     config: dict[str, Any] = Field(default_factory=dict)
     #: write-only: webhook signing_secret / email smtp_password. Omit to keep the stored value,
     #: send an empty string to clear it.
@@ -696,9 +715,6 @@ class ChannelIn(BaseModel):
         bad = [k for k in v if any(s in k.lower() for s in ("password", "secret", "token"))]
         if bad:
             raise ValueError(f"put secrets in signing_secret / smtp_password, not in config ({', '.join(bad)})")
-        headers = v.get("headers") or {}
-        if any(k.lower() == "authorization" for k in headers):
-            raise ValueError("an Authorization header would be stored unencrypted: use signing_secret instead")
         return v
 
 
@@ -718,8 +734,10 @@ def _channel_out(c: NotificationChannel) -> dict[str, Any]:
         "send_for_simulated": c.send_for_simulated,
         "preset": c.preset,
         "routes": c.routes or {},
-        "config": c.config,
+        # webhook URL and headers are secrets: only the host and the header names are shown
+        "config": {k: v for k, v in (c.config or {}).items() if k not in ("url", "headers")},
         # only which secrets are stored, never their values
+        "has_url": "url" in stored,
         "has_signing_secret": "signing_secret" in stored,
         "has_smtp_password": "smtp_password" in stored,
         "created_by": c.created_by,
@@ -727,11 +745,21 @@ def _channel_out(c: NotificationChannel) -> dict[str, Any]:
     }
 
 
-def _validate_channel(body: ChannelIn) -> dict[str, Any]:
+def _validate_channel(body: ChannelIn, existing: dict[str, Any] | None = None) -> tuple[dict[str, Any], dict[str, Any]]:
+    """(public config, secret values). Webhook URL and headers go into the encrypted secret;
+    on update a missing URL / headers keeps the stored ones."""
     cfg = dict(body.config)
+    secret: dict[str, Any] = {}
     if body.kind == "webhook":
-        notify.validate_webhook_url(str(cfg.get("url") or ""))
-        cfg = {"url": cfg["url"], "headers": {str(k): str(v) for k, v in (cfg.get("headers") or {}).items()}}
+        url = str(cfg.get("url") or "").strip() or str((existing or {}).get("url") or "")
+        notify.validate_webhook_url(url)
+        headers = (
+            {str(k): str(v) for k, v in (cfg.get("headers") or {}).items()}
+            if "headers" in cfg
+            else dict((existing or {}).get("headers") or {})
+        )
+        secret = {"url": url, "headers": headers}
+        cfg = {"url_display": notify.url_display(url), "header_names": sorted(headers)}
     else:
         recipients = cfg.get("recipients") or []
         if isinstance(recipients, str):
@@ -745,11 +773,12 @@ def _validate_channel(body: ChannelIn) -> dict[str, Any]:
         }
         if "security" in cfg and cfg["security"] not in notify.SMTP_SECURITY:
             raise ValidationFailed("security must be starttls, tls or none")
-    return cfg
+    return cfg, secret
 
 
-def _secret_values(body: ChannelIn, existing: dict[str, str]) -> dict[str, str]:
-    vals = dict(existing)
+def _secret_values(body: ChannelIn, existing: dict[str, Any], target: dict[str, Any]) -> dict[str, Any]:
+    vals = {k: v for k, v in existing.items() if k not in ("url", "headers")}
+    vals.update(target)
     for key in ("signing_secret", "smtp_password"):
         v = getattr(body, key)
         if v is not None:
@@ -768,7 +797,7 @@ async def list_channels(db: DB, p: CurrentPrincipal) -> list[dict[str, Any]]:
 @router.post("/notification-channels", status_code=201, summary="Create a notification channel")
 async def create_channel(body: ChannelIn, db: DB, p: CurrentPrincipal) -> dict[str, Any]:
     p.authz.require("channels.manage")
-    cfg = _validate_channel(body)
+    cfg, target_secret = _validate_channel(body)
     if (await db.execute(select(NotificationChannel.id).where(NotificationChannel.name == body.name))).first():
         raise Conflict("a channel with this name already exists")
     cid = uuid.uuid4()
@@ -782,7 +811,7 @@ async def create_channel(body: ChannelIn, db: DB, p: CurrentPrincipal) -> dict[s
         preset=body.preset if body.kind == "webhook" else "generic",
         routes=body.routes.stored(),
         config=cfg,
-        secret=notify.seal_secret(cid, _secret_values(body, {})),
+        secret=notify.seal_secret(cid, _secret_values(body, {}, target_secret)),
         created_by=p.username,
     )
     db.add(c)
@@ -805,7 +834,12 @@ async def update_channel(channel_id: uuid.UUID, body: ChannelIn, db: DB, p: Curr
         raise NotFound("Notification channel not found")
     if body.kind != c.kind:
         raise ValidationFailed("the channel kind cannot be changed; create a new channel")
-    cfg = _validate_channel(body)
+    existing = notify.open_secret(c)
+    stored_target = None
+    if c.kind == "webhook":
+        url, headers = notify.webhook_target(c)
+        stored_target = {"url": url, "headers": headers}
+    cfg, target_secret = _validate_channel(body, stored_target)
     c.name, c.enabled, c.min_severity, c.send_for_simulated, c.config = (
         body.name,
         body.enabled,
@@ -815,7 +849,7 @@ async def update_channel(channel_id: uuid.UUID, body: ChannelIn, db: DB, p: Curr
     )
     c.preset = body.preset if body.kind == "webhook" else "generic"
     c.routes = body.routes.stored()
-    c.secret = notify.seal_secret(c.id, _secret_values(body, notify.open_secret(c)))
+    c.secret = notify.seal_secret(c.id, _secret_values(body, existing, target_secret))
     await audit.record(
         "notification_channel.update",
         actor=p,
@@ -825,7 +859,9 @@ async def update_channel(channel_id: uuid.UUID, body: ChannelIn, db: DB, p: Curr
             "config": cfg,
             "preset": c.preset,
             "routes": c.routes,
-            "secrets_changed": [k for k in ("signing_secret", "smtp_password") if getattr(body, k) is not None],
+            "secrets_changed": [k for k in ("signing_secret", "smtp_password") if getattr(body, k) is not None]
+            + (["url"] if body.kind == "webhook" and body.config.get("url") else [])
+            + (["headers"] if body.kind == "webhook" and "headers" in body.config else []),
         },
     )
     return _channel_out(c)

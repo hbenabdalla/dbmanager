@@ -59,8 +59,11 @@ describe("backup permissions and validation (pure)", () => {
   it("gates row actions by permission and state", () => {
     const none = () => false;
     const all = () => true;
-    expect(rowActions(BK(), none, none)).toEqual({ verify: false, restore: false, remove: false, download: false });
-    expect(rowActions(BK(), all, all)).toEqual({ verify: true, restore: true, remove: true, download: true });
+    expect(rowActions(BK(), none, none)).toEqual({ verify: false, restore: false, remove: false, download: false, pin: false });
+    expect(rowActions(BK(), all, all)).toEqual({ verify: true, restore: true, remove: true, download: true, pin: true });
+    // pinning needs backup.policy.manage at platform scope (POST /backups/{id}/pin)
+    expect(rowActions(BK(), all, none).pin).toBe(false);
+    expect(rowActions(BK({ status: "DELETED" }), all, all).pin).toBe(false);
     // database restore needs restore.execute + restore.database; platform restore needs platform scope
     const db = BK({ kind: "database", server_id: "s1", server_name: "PG", engine: "postgresql", database: "shop" });
     const dbOps = (p: string) => ["restore.execute", "restore.database", "backup.verify"].includes(p);

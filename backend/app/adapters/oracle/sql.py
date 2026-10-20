@@ -113,6 +113,18 @@ FROM dba_constraints c
 WHERE c.owner = :owner AND c.table_name = :name AND c.constraint_type IN ('P', 'U', 'R', 'C')
   AND c.constraint_name NOT LIKE 'BIN$%'
 """
+SCHEMA_CONSTRAINTS = """
+SELECT c.constraint_name, c.table_name, c.constraint_type, c.status, c.validated,
+       (SELECT LISTAGG(cc.column_name, ', ') WITHIN GROUP (ORDER BY cc.position)
+          FROM {v}_cons_columns cc WHERE cc.owner = c.owner AND cc.constraint_name = c.constraint_name
+           {con_cc_c}) AS columns
+FROM {v}_constraints c
+WHERE c.owner = :owner AND c.constraint_type IN ('P', 'U', 'R', 'C')
+  AND c.constraint_name NOT LIKE 'BIN$%' {con_c}
+  -- system-named CHECKs are the NOT NULL columns, shown with the columns already
+  AND (c.constraint_type <> 'C' OR c.generated = 'USER NAME')
+ORDER BY c.table_name, c.constraint_name
+"""
 TRIGGERS_OF = """
 SELECT trigger_name, trigger_type, triggering_event, status
 FROM dba_triggers WHERE table_owner = :owner AND table_name = :name
@@ -130,6 +142,15 @@ SELECT username, account_status, lock_date, expiry_date, default_tablespace, tem
        created, authentication_type, oracle_maintained, common, last_login, password_versions
 FROM dba_users
 ORDER BY username
+"""
+#: from CDB$ROOT: the local users of every open PDB (their grants are read on the PDB registration)
+PDB_LOCAL_USERS = """
+SELECT p.name AS pdb, u.username, u.account_status, u.lock_date, u.expiry_date, u.profile, u.created,
+       u.authentication_type, u.last_login
+FROM cdb_users u JOIN v$pdbs p ON p.con_id = u.con_id
+WHERE u.common = 'NO' AND u.oracle_maintained = 'N'
+ORDER BY p.name, u.username
+FETCH FIRST 5000 ROWS ONLY
 """
 ROLE_PRIVS = "SELECT grantee, granted_role, admin_option, default_role FROM dba_role_privs"
 SYS_PRIVS = "SELECT grantee, privilege, admin_option FROM dba_sys_privs"
@@ -306,12 +327,26 @@ FROM dba_tablespace_usage_metrics m
 JOIN dba_tablespaces t ON t.tablespace_name = m.tablespace_name
 ORDER BY m.used_percent DESC
 """
-TOP_SEGMENTS = """
-SELECT s.owner, s.segment_name, s.segment_type, s.tablespace_name, SUM(s.bytes) AS bytes
-FROM dba_segments s
-WHERE s.owner NOT IN (SELECT username FROM dba_users WHERE oracle_maintained = 'Y')
-GROUP BY s.owner, s.segment_name, s.segment_type, s.tablespace_name
-ORDER BY 5 DESC
+#: the largest tables with their LOB and index segments attributed to them
+TOP_TABLES = """
+WITH seg AS (
+  SELECT s.owner, s.segment_name AS table_name, 'T' AS kind, s.bytes
+  FROM dba_segments s WHERE s.segment_type IN ('TABLE', 'TABLE PARTITION', 'TABLE SUBPARTITION')
+  UNION ALL
+  SELECT l.owner, l.table_name, 'T', s.bytes
+  FROM dba_lobs l JOIN dba_segments s ON s.owner = l.owner AND s.segment_name IN (l.segment_name, l.index_name)
+  UNION ALL
+  SELECT i.table_owner, i.table_name, 'I', s.bytes
+  FROM dba_indexes i JOIN dba_segments s ON s.owner = i.owner AND s.segment_name = i.index_name
+  WHERE s.segment_type IN ('INDEX', 'INDEX PARTITION', 'INDEX SUBPARTITION')
+)
+SELECT seg.owner AS schema_name, seg.table_name AS name, MAX(t.num_rows) AS row_estimate,
+       SUM(CASE WHEN seg.kind = 'T' THEN seg.bytes ELSE 0 END) AS table_bytes,
+       SUM(CASE WHEN seg.kind = 'I' THEN seg.bytes ELSE 0 END) AS index_bytes, SUM(seg.bytes) AS total_bytes
+FROM seg LEFT JOIN dba_tables t ON t.owner = seg.owner AND t.table_name = seg.table_name
+WHERE seg.owner NOT IN (SELECT username FROM dba_users WHERE oracle_maintained = 'Y')
+GROUP BY seg.owner, seg.table_name
+ORDER BY 6 DESC
 FETCH FIRST 20 ROWS ONLY
 """
 TEMP_USAGE = """

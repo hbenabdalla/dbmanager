@@ -46,22 +46,30 @@ export function MonitoringOverviewPage() {
     <div>
       <PageHeader title="Monitoring overview" description="Latest collected values for every monitored server. Select a row for its full dashboard."
         crumbs={[{ label: "Monitoring" }, { label: "Overview" }]} />
-      <Card><DataTable columns={columns} data={rows} loading={servers.isLoading} error={servers.error} dense onRowClick={(s) => navigate(`/servers/${s.id}?tab=performance`)}
+      <Card><DataTable columns={columns} data={rows} loading={servers.isLoading} error={servers.error} onRetry={() => servers.refetch()} dense onRowClick={(s) => navigate(`/servers/${s.id}?tab=performance`)}
         initialSort={[{ id: "health_status", desc: false }]} pageSize={100} /></Card>
     </div>
   );
 }
 
-const METRICS: [string, string, string][] = [
-  ["connections.total", "Connections", "count"], ["connections.utilization", "Connection utilization", "%"], ["transactions.per_sec", "Transactions per second", "1/s"],
-  ["query.mean_latency_ms", "Mean statement latency", "ms"], ["cache.hit_ratio", "Cache hit ratio", "%"], ["io.blocks_read_per_sec", "Physical reads per second", "1/s"],
-  ["sessions.blocked", "Blocked sessions", "count"], ["replication.lag_seconds", "Replication lag", "s"], ["cpu.percent", "CPU", "%"], ["storage.database_bytes", "Database size", "B"],
-];
+/** One entry of GET /metrics/catalog. */
+export interface CatalogMetric { key: string; name: string; type: string; unit: string; interval: string; labels: string[]; engines: string; label: string; description: string }
+const BASE_LABELS = new Set(["server_id", "engine", "data_source"]);
+export const DEFAULT_METRIC = "connections.total";
+
+/** Metrics that compare as one line per server: no extra labels (per wait type, per query…) and not raw counters. */
+export function comparableMetrics(catalog: CatalogMetric[]): CatalogMetric[] {
+  return catalog
+    .filter((m) => m.type !== "counter" && m.labels.every((l) => BASE_LABELS.has(l)))
+    .sort((a, b) => (a.label || a.key).localeCompare(b.label || b.key));
+}
 
 export function PerformanceComparePage() {
   const servers = useAllServers();
   const list = (servers.data?.items ?? []).filter((s) => s.implementation !== "planned");
-  const [metric, setMetric] = useState(METRICS[0][0]);
+  const catalog = useQuery({ queryKey: ["metric-catalog"], queryFn: () => get<CatalogMetric[]>("/metrics/catalog"), staleTime: 3_600_000 });
+  const metrics = useMemo(() => comparableMetrics(catalog.data ?? []), [catalog.data]);
+  const [metric, setMetric] = useState(DEFAULT_METRIC);
   const [range, setRange] = useState<RangeValue>({ range: "24h" });
   const [picked, setPicked] = useState<string[]>([]);
   const chosen = useMemo(() => (picked.length ? picked : list.slice(0, 4).map((s) => s.id)), [picked, list]);
@@ -75,7 +83,8 @@ export function PerformanceComparePage() {
     refetchInterval: refetchFor(refreshMs, range.range),
     placeholderData: (p) => p,
   });
-  const meta = METRICS.find((m) => m[0] === metric)!;
+  const def = metrics.find((m) => m.key === metric);
+  const meta = { label: def?.label || metric, unit: def?.unit };
   const series = chosen.map((id) => ({
     key: id,
     label: list.find((s) => s.id === id)?.name ?? id,
@@ -86,13 +95,17 @@ export function PerformanceComparePage() {
     <div>
       <PageHeader title="Performance" description="Compare one metric across up to six servers." crumbs={[{ label: "Monitoring" }, { label: "Performance" }]} />
       <div className="mb-4 flex flex-wrap items-center gap-3">
-        <Select aria-label="Metric" className="w-64" value={metric} onChange={(e) => setMetric(e.target.value)}>{METRICS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</Select>
+        <Select aria-label="Metric" className="w-64" value={metric} onChange={(e) => setMetric(e.target.value)}>
+          {!def && <option value={metric}>{metric}</option>}
+          {metrics.map((m) => <option key={m.key} value={m.key} title={m.description}>{m.label || m.key}</option>)}
+        </Select>
+        {catalog.error && <span className="text-[12.5px] text-crit" role="status">The metric catalog couldn't be loaded. <button className="font-medium text-accent hover:underline" onClick={() => catalog.refetch()}>Try again</button></span>}
         <TimeRangePicker value={range} onChange={setRange} />
         <AutoRefreshPicker />
       </div>
       <div className="grid gap-4 xl:grid-cols-[1fr_280px]">
-        <Card><CardHeader title={meta[1]} /><CardBody>
-          {q.error ? <ErrorState error={q.error} onRetry={() => q.refetch()} /> : <MetricChart height={360} area={false} unit={meta[2]} series={series} />}
+        <Card><CardHeader title={meta.label} /><CardBody>
+          {q.error ? <ErrorState error={q.error} onRetry={() => q.refetch()} /> : <MetricChart height={360} area={false} unit={meta.unit} series={series} />}
         </CardBody></Card>
         <Card>
           <CardHeader title="Servers" description="Select up to six" />
@@ -131,7 +144,7 @@ export function ReplicationPage() {
     <div>
       <PageHeader title="Replication" description="Replication roles and lag across clustered servers." crumbs={[{ label: "Monitoring" }, { label: "Replication" }]} />
       <Card className="mb-4">
-        <DataTable data={rows} loading={servers.isLoading} dense onRowClick={(s) => navigate(`/servers/${s.id}?tab=replication`)}
+        <DataTable data={rows} loading={servers.isLoading} error={servers.error} onRetry={() => servers.refetch()} dense onRowClick={(s) => navigate(`/servers/${s.id}?tab=replication`)}
           empty={<EmptyState title="No replicated servers">Servers appear here when they belong to a cluster or report replication lag.</EmptyState>}
           columns={[
             { header: "Server", accessorKey: "name", cell: ({ row: { original: s } }) => <span className="flex items-center gap-2"><DatabaseEngineIcon engine={s.engine} /><span className="font-medium">{s.name}</span>{s.is_demo && <SimulatedBadge />}</span> },

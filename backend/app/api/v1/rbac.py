@@ -38,6 +38,9 @@ async def permissions(p: CurrentPrincipal) -> list[PermissionOut]:
 
 @router.get("/roles", response_model=list[RoleOut])
 async def list_roles(db: DB, p: CurrentPrincipal) -> list[RoleOut]:
+    # the role catalog (with each role's permissions) is administration data
+    if not (p.authz.has("roles.manage") or p.authz.has("users.manage") or p.authz.has_anywhere("rbac.manage")):
+        p.authz.require("roles.manage")
     rows = (await db.execute(select(Role).order_by(Role.is_system.desc(), Role.name))).scalars().all()
     return [RoleOut.model_validate(r) for r in rows]
 

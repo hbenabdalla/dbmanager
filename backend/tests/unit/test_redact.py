@@ -39,3 +39,14 @@ def test_structures_keep_presence_flags() -> None:
         "nested": [{"Authorization": "***"}, "pwd=***"],
         "count": 3,
     }
+
+
+def test_oracle_connect_strings_are_masked() -> None:
+    from app.core import redact
+
+    assert (
+        redact.text("sqlplus scott/tiger@db.example.com:1521/ORCLPDB1")
+        == "sqlplus scott/***@db.example.com:1521/ORCLPDB1"
+    )
+    assert "Oracle-Pass1" not in (redact.text("connect system/Oracle-Pass1@//host/svc") or "")
+    assert redact.text("see https://x.example.com/a/b@c") == "see https://x.example.com/a/b@c"

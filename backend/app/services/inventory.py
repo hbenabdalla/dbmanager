@@ -46,9 +46,10 @@ def implemented_engines() -> set[str]:
 
 
 def management_mode(server: Server) -> str:
-    """'monitoring' servers never get change actions; servers registered before this setting
-    existed keep the previous behaviour ('administration')."""
-    return str((server.options or {}).get("management_mode") or "administration")
+    """'monitoring' servers never get change actions. A missing value means *Monitoring only*
+    (the documented default); migration 0013 wrote 'administration' into servers registered
+    before the setting existed, so upgraded installations keep their behaviour."""
+    return str((server.options or {}).get("management_mode") or "monitoring")
 
 
 def connection_options(server: Server) -> dict[str, Any]:

@@ -274,3 +274,28 @@ async def test_flavor_mismatch_is_reported() -> None:
         caps[Capability.CONNECTION].note or ""
     )
     await a.close()
+
+
+def test_mysql_57_reads_locks_from_the_innodb_views() -> None:
+    """performance_schema.data_locks exists from MySQL 8.0 only: 5.7 uses INNODB_LOCKS."""
+    import asyncio
+
+    from app.adapters.base import ConnectionSpec
+    from app.adapters.mysql.adapter import INNODB_LOCK_WAITS_SQL, INNODB_LOCKS_SQL, MySQLAdapter
+
+    a = MySQLAdapter(ConnectionSpec(host="my.example.com", port=3306, username="u", password="p"))
+    seen: list[str] = []
+
+    async def version() -> int:
+        return 50744
+
+    async def try_(sql, *args, **kw):  # type: ignore[no-untyped-def]
+        seen.append(sql)
+        return []
+
+    a._version = version  # type: ignore[method-assign]  # noqa: SLF001
+    a._try = try_  # type: ignore[method-assign]  # noqa: SLF001
+    assert asyncio.run(a.get_locks()) == []
+    assert INNODB_LOCKS_SQL in seen and INNODB_LOCK_WAITS_SQL in seen
+    assert not any("data_locks" in q for q in seen)
+    assert a._version_caps(50744)["locks"].level.value == "PARTIAL"  # noqa: SLF001

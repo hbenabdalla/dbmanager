@@ -10,7 +10,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.adapters.base import AdapterError
-from app.advisors.engine import EvaluatedFinding, EvidenceContext, MetricWindow, evaluate
+from app.advisors.engine import RULES, EvaluatedFinding, EvidenceContext, MetricWindow, evaluate
 from app.models import Recommendation, SecurityFinding, Server
 from app.services import app_settings, perf_intel, secrets
 from app.services import metrics as metrics_svc
@@ -33,7 +33,11 @@ async def metric_windows(
     time-series database (one aggregate query per statistic for all metrics)."""
     wins = await metrics_svc.windows(str(server_id), hours=hours)
     return {
-        k: MetricWindow(avg=w.avg, min=w.min, max=w.max, last=w.max, count=w.count, p95=w.p95) for k, w in wins.items()
+        # ``last`` is the latest sample, not the peak: rules such as GEN-PERF-010 report "is now"
+        k: MetricWindow(
+            avg=w.avg, min=w.min, max=w.max, last=w.last if w.last is not None else w.avg, count=w.count, p95=w.p95
+        )
+        for k, w in wins.items()
     }
 
 
@@ -147,8 +151,16 @@ async def build_context(db: AsyncSession, server: Server) -> EvidenceContext:
 
 
 async def _persist(
-    db: AsyncSession, server: Server, kind: Literal["performance", "security"], findings: list[EvaluatedFinding]
+    db: AsyncSession,
+    server: Server,
+    kind: Literal["performance", "security"],
+    findings: list[EvaluatedFinding],
+    *,
+    not_evaluated: set[str] | frozenset[str] = frozenset(),
 ) -> dict[str, int]:
+    """Upsert findings; open findings that were not produced again are auto-resolved — except
+    those of rules that could not be evaluated this time (``not_evaluated`` rule ids): missing
+    evidence is not the same as evidence that the problem is gone."""
     model = Recommendation if kind == "performance" else SecurityFinding
     now = datetime.now(UTC)
     existing = {
@@ -194,7 +206,7 @@ async def _persist(
     resolved = 0
     hours = int(await app_settings.get(db, "performance.validation_window_hours"))
     for fp, row in existing.items():
-        if fp not in seen and row.status in ("open", "acknowledged"):
+        if fp not in seen and row.status in ("open", "acknowledged") and row.rule_id not in not_evaluated:
             row.status, row.resolved_at, row.status_reason = "resolved", now, "evidence no longer present"
             if kind == "performance":
                 row.validation = await perf_intel.start_validation(row, now, hours)
@@ -205,13 +217,19 @@ async def _persist(
 async def run_performance(db: AsyncSession, server: Server) -> dict[str, Any]:
     ctx = await build_context(db, server)
     adapter = await adapter_for(db, server)
+    not_evaluated: set[str] = set()
     try:
         ctx.tuning = await adapter.get_tuning_context()
-    except AdapterError:
+    except AdapterError as exc:
+        log.info("tuning context of %s unavailable: %s", server.name, exc)
         ctx.tuning = {}
+        # engine-specific rules read the tuning context: keep their open findings as they are
+        not_evaluated = {
+            r.rule_id for r in RULES if r.kind == "performance" and r.applies_to(server.engine) and "*" not in r.engines
+        }
     finally:
         await adapter.close()
-    return await _persist(db, server, "performance", evaluate(ctx, "performance"))
+    return await _persist(db, server, "performance", evaluate(ctx, "performance"), not_evaluated=not_evaluated)
 
 
 async def run_security(db: AsyncSession, server: Server) -> dict[str, Any]:

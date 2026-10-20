@@ -323,6 +323,8 @@ class StorageInfo(BaseModel):
     total_bytes: int | None = None
     databases: list[dict[str, Any]] = Field(default_factory=list)
     tablespaces: list[dict[str, Any]] = Field(default_factory=list)
+    #: largest tables, each ``{schema, name, row_estimate, table_bytes, index_bytes, total_bytes}`` plus
+    #: engine-specific keys; a size the engine cannot attribute is ``None``
     top_tables: list[dict[str, Any]] = Field(default_factory=list)
     top_indexes: list[dict[str, Any]] = Field(default_factory=list)
     temp: dict[str, Any] = Field(default_factory=dict)

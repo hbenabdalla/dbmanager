@@ -73,12 +73,35 @@ DB = Annotated[AsyncSession, Depends(get_db)]
 
 
 def client_ip(request: Request) -> str | None:
+    """The client address, honouring ``X-Forwarded-For`` only as far as trusted proxies go.
+
+    The header is read **from the right**: each proxy appends the address it received the
+    request from, so the rightmost entries were written by our own proxies and the leftmost by
+    whoever sent the request — a client can put anything there. Walking from the peer
+    backwards, every trusted hop is skipped and the first untrusted address is the client. A
+    spoofed leftmost value therefore never replaces the real one (token CIDR allow-lists,
+    per-IP rate limits and the audit source address all rely on this)."""
     peer = request.client.host if request.client else None
     trusted = get_settings().trusted_proxies
     xff = request.headers.get("x-forwarded-for")
-    if peer and xff and _is_trusted(peer, trusted):
-        return xff.split(",")[0].strip()[:64]
-    return peer
+    if not peer or not xff or not _is_trusted(peer, trusted):
+        return peer
+    hops = [h.strip() for h in xff.split(",") if h.strip()]
+    for hop in reversed(hops):
+        if not _valid_ip(hop):
+            return peer  # malformed chain: fall back to the address we can vouch for
+        if not _is_trusted(hop, trusted):
+            return hop[:64]
+    # every hop is a trusted proxy: the leftmost is the closest we know to the client
+    return hops[0][:64] if hops else peer
+
+
+def _valid_ip(value: str) -> bool:
+    try:
+        ipaddress.ip_address(value)
+    except ValueError:
+        return False
+    return True
 
 
 def _is_trusted(peer: str, trusted: list[str]) -> bool:

@@ -205,8 +205,8 @@ LIMIT 20
 """
 
 TOP_TABLES = """
-SELECT TABLE_SCHEMA AS db, TABLE_NAME AS name, ENGINE AS engine, TABLE_ROWS AS row_estimate,
-       DATA_LENGTH AS data_bytes, INDEX_LENGTH AS index_bytes, DATA_LENGTH + INDEX_LENGTH AS total_bytes, DATA_FREE AS free_bytes
+SELECT TABLE_SCHEMA AS `schema`, TABLE_NAME AS name, ENGINE AS engine, TABLE_ROWS AS row_estimate,
+       DATA_LENGTH AS table_bytes, INDEX_LENGTH AS index_bytes, DATA_LENGTH + INDEX_LENGTH AS total_bytes, DATA_FREE AS free_bytes
 FROM information_schema.TABLES
 WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_SCHEMA NOT IN ('mysql', 'performance_schema', 'sys', 'information_schema')
 ORDER BY DATA_LENGTH + INDEX_LENGTH DESC

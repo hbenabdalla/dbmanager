@@ -115,14 +115,16 @@ must pass. Use real screenshots only (`docs/assets/screenshots/`).
 
 * **Require a pull request before merging**, with at least one approval; dismiss stale approvals.
 * **Require status checks to pass**, branch up to date, with these required checks:
-  `Backend lint`, `Backend tests`, `Frontend build`, `Documentation build` and
-  `Secret scan`. These workflows run on every pull request (no path filters), so a
+  `Backend lint`, `Backend tests`, `Frontend build`, `Documentation build`, `Secret scan` and
+  `Compose and restore drill`. These workflows run on every pull request (no path filters), so a
   required check never stays pending.
 * **Require linear history**; do not allow force pushes or deletions.
 
-`Docker images` (image build, Compose start-up and the restore drill) runs on pull requests that
-touch the backend, frontend, scripts or `docker-compose.yml`, and on every push to `main`; it is
-not a required check because it is path-filtered. The real-engine suite
+`Docker images` builds both images, starts the Compose stack and runs the restore drill
+(`scripts/restore-drill.sh`: backup → wipe → restore → sign in, marker data, a registered server
+whose credential still decrypts, schema revision) on every pull request and every push to `main`.
+Its `Compose and restore drill` job is required: from 0.11 to 0.13.0 the drill failed unnoticed
+because the workflow was path-filtered and not required. The real-engine suite
 (`Real-engine integration`) is started manually.
 
 Database schema changes need an Alembic migration (`alembic revision -m "…"`) that upgrades an

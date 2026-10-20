@@ -143,10 +143,24 @@ async def login_mfa(body: MfaLoginRequest, request: Request, response: Response,
     user = await db.get(User, uuid.UUID(data["uid"]))
     if user is None or not user.is_active:
         raise NotAuthenticated("Invalid credentials")
+    from datetime import UTC, datetime
+
+    if user.locked_until and user.locked_until > datetime.now(UTC):
+        # the lockout covers the second factor too: guessing codes with a valid challenge stops here
+        await audit.record(
+            "auth.login",
+            username=user.username,
+            auth_source=data.get("src"),
+            source_ip=ip,
+            category="auth",
+            result="failure",
+            failure_reason="account locked",
+        )
+        raise NotAuthenticated("Invalid authentication code")
     try:
         factor = mfa.verify_second_factor(user, body.code)
     except NotAuthenticated:
-        from datetime import UTC, datetime, timedelta
+        from datetime import timedelta
 
         s = get_settings()
         user.failed_logins += 1
@@ -164,6 +178,7 @@ async def login_mfa(body: MfaLoginRequest, request: Request, response: Response,
         )
         raise
     user.failed_logins = 0
+    user.locked_until = None
     return await _start_session(db, request, response, user, data.get("src") or "local", ip, factor)
 
 

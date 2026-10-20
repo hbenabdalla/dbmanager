@@ -54,6 +54,10 @@ const TABS: TabDef[] = [
   { key: "settings", label: "Settings", render: (s) => <SettingsTab server={s} /> },
 ];
 
+/** Any of these opens the Settings tab: it holds registration, credentials, collection,
+ * diagnostics download (collectors.view) and the security scan (security.manage). */
+export const SETTINGS_PERMS = ["server.modify", "credentials.manage", "server.delete", "collectors.manage", "collectors.view", "security.manage"];
+
 export function ServerPage() {
   const { id } = useParams();
   const [params, setParams] = useSearchParams();
@@ -74,7 +78,11 @@ export function ServerPage() {
   };
 
   const state = (t: TabDef): { enabled: boolean; reason?: string } => {
-    if (t.key === "settings") return { enabled: ["server.modify", "credentials.manage", "server.delete", "collectors.manage"].some((p) => serverCan(s, p)) };
+    if (t.key === "settings") {
+      return SETTINGS_PERMS.some((p) => serverCan(s, p))
+        ? { enabled: true }
+        : { enabled: false, reason: `Your role doesn't include any of ${SETTINGS_PERMS.join(", ")} for this server` };
+    }
     if (t.platformPerm && !canPlatform(t.platformPerm)) return { enabled: false, reason: `Requires ${t.platformPerm}` };
     if (t.perm && !serverCan(s, t.perm) && !can(t.perm)) return { enabled: false, reason: `Your role doesn't include ${t.perm} for this server` };
     if (planned && t.key !== "overview" && t.key !== "audit") return { enabled: false, reason: `No ${s.engine_label} adapter is available` };

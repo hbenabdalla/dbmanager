@@ -88,6 +88,10 @@ def _kind(t: str) -> str:
     return KIND_OF.get(t, t.lower())
 
 
+#: databases read by list_roles on a server-level registration (largest fleets: register per database)
+ROLE_DATABASES_MAX = 100
+
+
 class SQLServerInventoryMixin(SQLServerBase):
     async def list_databases(self) -> list[DatabaseInfo]:
         qs = "d.is_query_store_on," if await self._version() >= 13 else ""
@@ -193,6 +197,21 @@ class SQLServerInventoryMixin(SQLServerBase):
                                 "included": r["included_columns"],
                             }
                         ),
+                    )
+                )
+        if object_type in (None, "constraint"):
+            for r in await self._query(Q.SCHEMA_CONSTRAINTS, [schema, schema, schema], database=database):
+                out.append(
+                    ObjectInfo(
+                        name=text(r["name"]) or "",
+                        schema_name=schema,
+                        type="constraint",
+                        parent=text(r["table_name"]),
+                        extra={
+                            "constraint_type": text(r["constraint_type"]),
+                            "disabled": bool(r["is_disabled"]),
+                            "trusted": not bool(r["is_not_trusted"]),
+                        },
                     )
                 )
         return out
@@ -312,8 +331,11 @@ class SQLServerInventoryMixin(SQLServerBase):
                     admin_reasons=[FIXED_SERVER_ADMIN[name]] if FIXED_SERVER_ADMIN.get(name) else [],
                 )
             )
-        db = self.spec.database
-        if db:
+        if self.spec.database and self.spec.database.lower() != "master":
+            dbs = [self.spec.database]
+        else:  # a server-level registration: the roles of every database this login can open
+            dbs = [text(r["name"]) or "" for r in await self._try(Q.ACCESSIBLE_DATABASES, [ROLE_DATABASES_MAX]) or []]
+        for db in dbs:
             members: dict[str, list[str]] = {}
             for m in await self._try(Q.DB_ROLE_MEMBERS, database=db) or []:
                 members.setdefault(text(m["role_name"]) or "", []).append(text(m["member_name"]) or "")

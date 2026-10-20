@@ -373,21 +373,79 @@ def _check_secrets_shape(body: RunSecrets) -> None:
             raise ValidationFailed(str(exc)) from exc
 
 
+# ---- scoped visibility -------------------------------------------------------------------------------
+# Platform-scope backup.view sees everything. A grant scoped to environments or servers sees only
+# database backups, jobs, policies and coverage of the servers it covers — never platform backups,
+# platform jobs or platform policies.
+async def _visible_server_ids(db: DB, p: CurrentPrincipal, permission: str = "backup.view") -> set[uuid.UUID] | None:
+    """None = every server (platform grant); otherwise the ids the principal may act on."""
+    if p.authz.has(permission):
+        return None
+    flt = p.authz.server_filter(permission)
+    q = select(Server.id)
+    if flt is not None:
+        q = q.where(flt)
+    return set((await db.execute(q)).scalars())
+
+
+async def _job_server_ids(db: DB, j: BackupJob) -> set[uuid.UUID] | None:
+    """Servers a job acts on; None for platform jobs (platform backup/restore, retention)."""
+    params = j.params or {}
+    if j.kind == "database_backup":
+        scope = params.get("scope")
+        if scope is None and j.policy_id:
+            pol = await db.get(BackupPolicy, j.policy_id)
+            scope = pol.scope if pol else None
+        return {x.id for x in await service.scope_servers(db, scope or {})}
+    if j.kind in ("verify", "database_restore"):
+        ids: set[uuid.UUID] = set()
+        if params.get("backup_id"):
+            b = await db.get(Backup, uuid.UUID(str(params["backup_id"])))
+            if b is None or b.kind != "database":
+                return None
+            if b.server_id:
+                ids.add(b.server_id)
+        if params.get("server_id"):
+            ids.add(uuid.UUID(str(params["server_id"])))
+        return ids
+    return None
+
+
+async def _job_visible(db: DB, j: BackupJob, visible: set[uuid.UUID] | None) -> bool:
+    if visible is None:
+        return True
+    ids = await _job_server_ids(db, j)
+    return ids is not None and bool(ids) and ids <= visible
+
+
+async def _policy_visible(db: DB, pol: BackupPolicy, visible: set[uuid.UUID] | None) -> bool:
+    if visible is None:
+        return True
+    if pol.kind != "database":
+        return False
+    ids = {x.id for x in await service.scope_servers(db, pol.scope or {})}
+    return bool(ids) and ids <= visible
+
+
 # ---- storage targets ---------------------------------------------------------------------------------
 @router.get("/backup/targets", summary="Backup storage targets with their usage")
 async def list_targets(db: DB, p: CurrentPrincipal) -> list[dict[str, Any]]:
     p.authz.require_anywhere("backup.view")
-    used = {
+    used: dict[uuid.UUID, tuple[int, int]] = {
         tid: (int(n), int(size or 0))
         for tid, n, size in (
             await db.execute(
                 select(Backup.target_id, func.count(), func.sum(Backup.size_bytes))
-                .where(Backup.status != "DELETED", Backup.location_kind == "target")
+                .where(Backup.status != "DELETED", Backup.location_kind == "target", Backup.target_id.is_not(None))
                 .group_by(Backup.target_id)
             )
         ).all()
+        if tid is not None
     }
     rows = list((await db.execute(select(BackupTarget).order_by(BackupTarget.name))).scalars())
+    if not p.authz.has("backup.view"):
+        # scoped users choose a target for their database backups: name and kind only
+        return [{"id": str(t.id), "name": t.name, "kind": t.kind, "enabled": t.enabled} for t in rows]
     return [_target_out(t, used) for t in rows]
 
 
@@ -482,6 +540,16 @@ async def check_target(target_id: uuid.UUID, db: DB, p: CurrentPrincipal) -> dic
     except storage.StorageError as exc:
         info, ok, error = {}, False, str(exc)
     t.last_check_at, t.last_check_ok, t.last_check_error = datetime.now(UTC), ok, error
+    await audit.record(
+        "backup.target.check",
+        actor=p,
+        category="backup",
+        result="success" if ok else "failure",
+        failure_reason=error,
+        target_type="backup_target",
+        target_id=str(t.id),
+        object_name=t.name,
+    )
     return {"ok": ok, "error": error, "info": info}
 
 
@@ -513,7 +581,8 @@ async def list_policies(db: DB, p: CurrentPrincipal) -> list[dict[str, Any]]:
         ).all()
     )
     rows = list((await db.execute(select(BackupPolicy).order_by(BackupPolicy.name))).scalars())
-    return [_policy_out(x, last.get(x.id)) for x in rows]
+    visible = await _visible_server_ids(db, p)
+    return [_policy_out(x, last.get(x.id)) for x in rows if await _policy_visible(db, x, visible)]
 
 
 async def _apply_policy(db: DB, pol: BackupPolicy, body: PolicyIn) -> None:
@@ -619,7 +688,7 @@ async def run_policy(
 async def retention_preview(policy_id: uuid.UUID, db: DB, p: CurrentPrincipal) -> dict[str, Any]:
     p.authz.require_anywhere("backup.view")
     pol = await db.get(BackupPolicy, policy_id)
-    if pol is None:
+    if pol is None or not await _policy_visible(db, pol, await _visible_server_ids(db, p)):
         raise NotFound("Policy not found")
     rows = list(
         (
@@ -896,6 +965,16 @@ async def restore_preview(backup_id: uuid.UUID, body: RestoreIn, db: DB, p: Curr
     b = await _get_backup(db, p, backup_id)
     s = await _restore_permissions(db, p, b, body)
     _check_secrets_shape(body)
+    # the preview decrypts the archive and runs a trial in a rolled-back transaction: audited
+    await audit.record(
+        "restore.preview",
+        actor=p,
+        category="backup",
+        target_type="backup",
+        target_id=str(b.id),
+        server=s,
+        details={"kind": b.kind, "components": body.components, "target_database": body.target_database},
+    )
     if b.kind == "platform":
         keys = {"passphrase": body.passphrase, "identity": body.identity or service._identity_from_settings()}
         if (b.encryption or {}).get("mode") == "passphrase" and not keys["passphrase"] and b.policy_id:
@@ -995,6 +1074,14 @@ async def restore(backup_id: uuid.UUID, body: RestoreIn, db: DB, p: CurrentPrinc
             platform.check_components(components)
         except platform.PlatformBackupError as exc:
             raise ValidationFailed(str(exc)) from exc
+        from app.services import app_settings
+
+        if not body.pre_restore_backup and not await app_settings.get(db, "backup.allow_restore_without_safety_backup"):
+            raise ValidationFailed(
+                "a platform restore always takes a safety backup first; a Platform Administrator can allow "
+                "skipping it with the setting backup.allow_restore_without_safety_backup",
+                code="safety_backup_required",
+            )
         params: dict[str, Any] = {
             "backup_id": str(b.id),
             "components": components,
@@ -1043,18 +1130,21 @@ async def list_jobs(
     db: DB, p: CurrentPrincipal, active: bool = False, limit: int = Query(50, ge=1, le=500)
 ) -> list[dict[str, Any]]:
     p.authz.require_anywhere("backup.view")
+    visible = await _visible_server_ids(db, p)
     q = select(BackupJob)
     if active:
         q = q.where(BackupJob.status.in_(JOB_ACTIVE))
-    rows = list((await db.execute(q.order_by(BackupJob.created_at.desc()).limit(limit))).scalars())
-    return [_job_out(j) for j in rows]
+    if visible is not None:
+        q = q.where(BackupJob.kind.in_(("database_backup", "verify", "database_restore")))
+    rows = list((await db.execute(q.order_by(BackupJob.created_at.desc()).limit(limit * 4))).scalars())
+    return [_job_out(j) for j in rows if await _job_visible(db, j, visible)][:limit]
 
 
 @router.get("/backup/jobs/{job_id}", summary="One job with per-asset progress")
 async def get_job(job_id: uuid.UUID, db: DB, p: CurrentPrincipal) -> dict[str, Any]:
     p.authz.require_anywhere("backup.view")
     j = await db.get(BackupJob, job_id)
-    if j is None:
+    if j is None or not await _job_visible(db, j, await _visible_server_ids(db, p)):
         raise NotFound("Job not found")
     return _job_out(j)
 
@@ -1063,8 +1153,19 @@ async def get_job(job_id: uuid.UUID, db: DB, p: CurrentPrincipal) -> dict[str, A
 async def cancel_job(job_id: uuid.UUID, db: DB, p: CurrentPrincipal) -> dict[str, Any]:
     p.authz.require_anywhere("backup.create")
     j = await db.get(BackupJob, job_id)
-    if j is None:
+    if j is None or not await _job_visible(db, j, await _visible_server_ids(db, p)):
         raise NotFound("Job not found")
+    # cancelling needs the permission that starting the job needed, on every server it touches
+    needed = {"platform_restore": "restore.platform", "database_restore": "restore.database"}.get(
+        j.kind, "backup.create"
+    )
+    ids = await _job_server_ids(db, j)
+    if ids is None:
+        p.authz.require(needed)
+    else:
+        for srv in [await db.get(Server, i) for i in ids]:
+            if srv is not None:
+                p.authz.require(needed, server_ref(srv))
     if j.kind == "platform_restore" and j.status == "RUNNING":
         raise Conflict("a running platform restore cannot be cancelled (it commits in one transaction)")
     if j.status == "QUEUED":
@@ -1083,19 +1184,26 @@ async def overview(db: DB, p: CurrentPrincipal) -> dict[str, Any]:
     p.authz.require_anywhere("backup.view")
     now = datetime.now(UTC)
     since = now - timedelta(days=30)
+    visible = await _visible_server_ids(db, p)
+    platform_view = visible is None
+
+    def scoped(q):  # type: ignore[no-untyped-def]
+        # scoped grants: database backups of the servers the principal covers only
+        return q if platform_view else q.where(Backup.kind == "database", Backup.server_id.in_(visible or set()))
+
     by_status = dict(
         (
             await db.execute(
-                select(Backup.status, func.count()).where(Backup.created_at >= since).group_by(Backup.status)
+                scoped(select(Backup.status, func.count()).where(Backup.created_at >= since)).group_by(Backup.status)
             )
         ).all()
     )
     last_24h = dict(
         (
             await db.execute(
-                select(Backup.status, func.count())
-                .where(Backup.created_at >= now - timedelta(hours=24))
-                .group_by(Backup.status)
+                scoped(
+                    select(Backup.status, func.count()).where(Backup.created_at >= now - timedelta(hours=24))
+                ).group_by(Backup.status)
             )
         ).all()
     )
@@ -1107,8 +1215,11 @@ async def overview(db: DB, p: CurrentPrincipal) -> dict[str, Any]:
     failures = list(
         (
             await db.execute(
-                select(Backup)
-                .where(Backup.status.in_(("FAILED", "CORRUPTED")), Backup.created_at >= now - timedelta(days=7))
+                scoped(
+                    select(Backup).where(
+                        Backup.status.in_(("FAILED", "CORRUPTED")), Backup.created_at >= now - timedelta(days=7)
+                    )
+                )
                 .order_by(Backup.created_at.desc())
                 .limit(10)
             )
@@ -1116,12 +1227,23 @@ async def overview(db: DB, p: CurrentPrincipal) -> dict[str, Any]:
     )
     stored = (
         await db.execute(
-            select(func.coalesce(func.sum(Backup.size_bytes), 0)).where(
-                Backup.status == "SUCCESS", Backup.location_kind == "target"
+            scoped(
+                select(func.coalesce(func.sum(Backup.size_bytes), 0)).where(
+                    Backup.status == "SUCCESS", Backup.location_kind == "target"
+                )
             )
         )
     ).scalar_one()
-    policies = list((await db.execute(select(BackupPolicy).order_by(BackupPolicy.next_run_at))).scalars())
+    policies = [
+        x
+        for x in (await db.execute(select(BackupPolicy).order_by(BackupPolicy.next_run_at))).scalars()
+        if await _policy_visible(db, x, visible)
+    ]
+    jobs = [
+        j
+        for j in (await db.execute(select(BackupJob).where(BackupJob.status.in_(JOB_ACTIVE)))).scalars()
+        if await _job_visible(db, j, visible)
+    ]
     flt = p.authz.server_filter("server.view")
     sq = select(Server).where(Server.is_demo.is_(False))
     if flt is not None:
@@ -1151,13 +1273,11 @@ async def overview(db: DB, p: CurrentPrincipal) -> dict[str, Any]:
         "last_24_hours": last_24h,
         "without_recent_backup": unprotected[:50],
         "last_30_days": by_status,
-        "last_platform_backup_at": last_platform,
-        "platform_protection": await service.platform_protection(db),
+        "last_platform_backup_at": last_platform if platform_view else None,
+        "platform_protection": await service.platform_protection(db) if platform_view else None,
         "recent_failures": [_backup_out(b, names) for b in failures],
         "stored_bytes": int(stored),
-        "running_jobs": [
-            _job_out(j) for j in (await db.execute(select(BackupJob).where(BackupJob.status.in_(JOB_ACTIVE)))).scalars()
-        ],
+        "running_jobs": [_job_out(j) for j in jobs],
         "next_runs": [
             {"policy_id": str(x.id), "name": x.name, "next_run_at": x.next_run_at, "last_status": x.last_status}
             for x in policies

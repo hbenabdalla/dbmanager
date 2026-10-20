@@ -86,6 +86,19 @@ def _out(d: SiemDestination, lag: int | None = None) -> dict[str, Any]:
     }
 
 
+def _audit_config(cfg: dict[str, Any]) -> dict[str, Any]:
+    """Destination settings for the audit trail: no CA bundle, and the webhook URL reduced to its
+    host (a URL may carry a token in its path or query string)."""
+    from app.services import notify
+
+    out = {k: v for k, v in cfg.items() if k not in ("ca_pem", "url", "headers")}
+    if cfg.get("url"):
+        out["url"] = notify.url_display(str(cfg["url"]))
+    if cfg.get("headers"):
+        out["header_names"] = sorted(cfg["headers"])
+    return out
+
+
 def _stored_config(body: DestinationIn) -> dict[str, Any]:
     keys = ("host", "port", "transport", "facility", "app_name", "sd_id", "ca_pem", "hostname", "timeout")
     if body.kind == "syslog":
@@ -135,7 +148,7 @@ async def create_destination(body: DestinationIn, db: DB, p: CurrentPrincipal) -
         object_name=d.name,
         details={
             "kind": d.kind,
-            "config": {k: v for k, v in d.config.items() if k != "ca_pem"},
+            "config": _audit_config(d.config),
             "start_from": body.start_from,
         },
     )

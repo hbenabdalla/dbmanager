@@ -228,20 +228,43 @@ async def _row_ids(tables: list[str]) -> dict[str, list[str]]:
         await conn.close()
 
 
-@pytest.mark.parametrize("start", ["first", "previous"])
+#: schema head of every published release (tags v0.12.0, v0.13.0): upgrades are tested from each
+#: of them, not from "the revision before head" (a release may add several migrations)
+RELEASES = {"0.12.0": "0010", "0.13.0": "0011"}
+LATEST_RELEASE = "0.13.0"
+
+
+@pytest.mark.parametrize("start", ["first", *RELEASES])
 def test_existing_installation_upgrades_to_head_with_its_data(start: str) -> None:
     """An installation at an older revision, with data in it, upgrades to the latest schema and
-    keeps every row (``previous`` = the revision before head, i.e. the last release state)."""
+    keeps every row (``first`` = the initial schema; otherwise the schema of that release)."""
     revs = revisions()
-    rev = revs[0] if start == "first" else revs[-2]
+    rev = revs[0] if start == "first" else RELEASES[start]
+    assert rev in revs
     alembic("downgrade", "base")
     alembic("upgrade", rev)
     seeded = asyncio.run(_seed_generic(SEEDED))
     present = [t for t in SEEDED if t in seeded]
     assert "servers" in present and "users" in present
-    if start == "previous":  # the last release has every one of these tables
+    if start == LATEST_RELEASE:  # the last release has every one of these tables
         assert present == SEEDED
     before = asyncio.run(_row_ids(present))
     alembic("upgrade", "head")
     assert revs[-1] in alembic("current")
     assert asyncio.run(_row_ids(present)) == before
+    # 0013: servers registered without a management mode keep their previous behaviour
+    modes = asyncio.run(_management_modes())
+    assert modes and all(m == "administration" for m in modes), modes
+
+
+async def _management_modes() -> list[str | None]:
+    import asyncpg
+
+    u = make_url(_scratch_url())
+    conn = await asyncpg.connect(
+        host=u.host, port=u.port or 5432, user=u.username, password=u.password, database=SCRATCH
+    )
+    try:
+        return [r[0] for r in await conn.fetch("SELECT options->>'management_mode' FROM servers")]
+    finally:
+        await conn.close()

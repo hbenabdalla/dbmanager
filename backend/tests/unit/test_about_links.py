@@ -56,3 +56,15 @@ async def test_public_version_endpoint_exposes_only_product_and_version() -> Non
     from app import __version__
 
     assert await about.version() == {"product": "DBManager", "version": __version__}
+
+
+def test_github_and_roadmap_links_can_be_hidden(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    from app.api.v1 import about
+    from app.core.config import get_settings
+
+    monkeypatch.setattr(get_settings(), "github_url", "off")
+    monkeypatch.setattr(get_settings(), "roadmap_url", "")
+    assert about.links()["github"] is None and about.links()["roadmap"] is None
+    monkeypatch.setattr(get_settings(), "github_url", "https://git.example.com/dbm")
+    monkeypatch.setattr(get_settings(), "roadmap_url", "none")
+    assert about.links()["github"] == "https://git.example.com/dbm" and about.links()["roadmap"] is None

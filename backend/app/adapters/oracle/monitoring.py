@@ -377,7 +377,10 @@ class OracleMonitoringMixin(OracleBase):
                 }
                 for t in ts or []
             ],
-            top_tables=[jsonable(dict(r)) for r in await self._try(Q.TOP_SEGMENTS) or []],
+            top_tables=[
+                jsonable({"schema": r["schema_name"], **{k: v for k, v in dict(r).items() if k != "schema_name"}})
+                for r in await self._try(Q.TOP_TABLES) or []
+            ],
             temp={
                 "in_use_bytes": jsonable(temp["bytes"]) if temp else None,
                 "redo_log_bytes": sum(int(num(r["bytes"], 0) or 0) * int(r["members"] or 1) for r in redo) or None,

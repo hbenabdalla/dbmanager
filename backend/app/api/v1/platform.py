@@ -144,6 +144,8 @@ async def get_settings_view(db: DB, p: CurrentPrincipal) -> dict[str, Any]:
         "session_idle_timeout_minutes": s.session_idle_timeout_minutes,
         "login_max_failures": s.login_max_failures,
         "login_lockout_minutes": s.login_lockout_minutes,
+        "mfa_required_for": s.mfa_required_for,
+        "mfa_issuer": s.mfa_issuer,
         "collector_concurrency": s.collector_concurrency,
         "metrics_retention_days (legacy PostgreSQL tables)": s.metrics_retention_days,
         "timeseries_backend": s.timeseries_backend if s.timeseries_enabled else "disabled",

@@ -53,7 +53,8 @@ export interface Overview {
   last_24_hours?: Record<string, number>;
   without_recent_backup?: { server_id: string; name: string; engine: string; status: "at_risk" | "not_protected"; last_backup_at: string | null }[];
   last_30_days: Record<string, number>; last_platform_backup_at: string | null;
-  platform_protection: { protected: boolean; last_backup_at: string | null };
+  /** null for grants scoped to environments or servers (platform backups are not theirs to see) */
+  platform_protection: { protected: boolean; last_backup_at: string | null } | null;
   recent_failures: Backup[]; stored_bytes: number; running_jobs: Job[];
   next_runs: { policy_id: string; name: string; next_run_at: string; last_status: string | null }[];
   coverage: { protected: number; at_risk: number; not_protected: number }; servers: number;
@@ -68,7 +69,7 @@ export interface Capabilities {
 }
 
 export interface Protection {
-  status: "protected" | "at_risk" | "not_protected"; last_backup_at: string | null;
+  status: "protected" | "at_risk" | "not_protected"; last_backup_at: string | null; freshness_limit_hours?: number | null;
   policies: { id: string; name: string; retention: Retention; frequency: string }[];
   capabilities: EngineCaps; registration: { protected: boolean; last_backup_at: string | null }; recent: Backup[];
 }

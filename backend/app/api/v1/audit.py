@@ -13,6 +13,7 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy import Select, func, or_, select
 
 from app.api.deps import DB, CurrentPrincipal, rate_limit
+from app.core.csvsafe import csv_safe
 from app.models import AuditEvent
 from app.schemas.common import Page, PageParams, paginate
 from app.services import audit as audit_svc
@@ -122,6 +123,10 @@ async def list_events(
     return Page(items=[event_out(e) for e in items], total=total, page=params.page, page_size=params.page_size)
 
 
+#: rows in one CSV export; ``X-DBM-Export-Truncated: true`` says more events matched
+EXPORT_MAX_ROWS = 200_000
+
+
 @router.get("/export.csv", dependencies=[rate_limit("expensive")])
 async def export(
     db: DB,
@@ -136,13 +141,23 @@ async def export(
     q: str | None = None,
 ) -> StreamingResponse:
     p.authz.require("audit.export")
-    stmt = _filtered(username, action, result, category, server, start, end, q).limit(200_000)
-    rows = (await db.execute(stmt)).scalars().all()
+    stmt = (
+        _filtered(username, action, result, category, server, start, end, q)
+        .with_only_columns(*(getattr(AuditEvent, c) for c in EXPORT_COLUMNS))
+        .limit(EXPORT_MAX_ROWS + 1)
+    )
+    rows = (await db.execute(stmt)).all()  # plain tuples: far lighter than ORM objects
+    truncated = len(rows) > EXPORT_MAX_ROWS
+    rows = rows[:EXPORT_MAX_ROWS]
     await audit_svc.record(
         "audit.export",
         actor=p,
         category="audit",
-        details={"rows": len(rows), "filters": {"username": username, "action": action, "server": server, "q": q}},
+        details={
+            "rows": len(rows),
+            "truncated": truncated,
+            "filters": {"username": username, "action": action, "server": server, "q": q},
+        },
     )
 
     async def gen() -> AsyncIterator[str]:
@@ -150,7 +165,8 @@ async def export(
         w = csv.writer(buf)
         w.writerow(EXPORT_COLUMNS)
         for i, e in enumerate(rows):
-            w.writerow([getattr(e, c) if getattr(e, c) is not None else "" for c in EXPORT_COLUMNS])
+            # usernames of failed sign-ins and other values are user input: neutralise formulas
+            w.writerow([csv_safe(v) for v in e])
             if i % 1000 == 0:
                 yield buf.getvalue()
                 buf.seek(0)
@@ -158,5 +174,11 @@ async def export(
         yield buf.getvalue()
 
     return StreamingResponse(
-        gen(), media_type="text/csv", headers={"Content-Disposition": 'attachment; filename="audit-log.csv"'}
+        gen(),
+        media_type="text/csv",
+        headers={
+            "Content-Disposition": 'attachment; filename="audit-log.csv"',
+            # more events match than one file holds: narrow the filters (e.g. by date) and export again
+            "X-DBM-Export-Truncated": "true" if truncated else "false",
+        },
     )

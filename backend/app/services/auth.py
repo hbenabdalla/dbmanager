@@ -176,8 +176,11 @@ async def authenticate(db: AsyncSession, username: str, password: str, source_ip
             raise NotAuthenticated(GENERIC_LOGIN_ERROR)
 
     if user.auth_source == "local" and user.is_active and verify_password(password, user.password_hash):
-        user.failed_logins = 0
-        user.locked_until = None
+        if not user.totp_enabled:
+            # with MFA the counter is reset only after the second factor succeeded
+            # (api/v1/auth.login_mfa): wrong codes accumulate across password re-entries
+            user.failed_logins = 0
+            user.locked_until = None
         if user.password_hash and needs_rehash(user.password_hash):
             user.password_hash = hash_password(password)
         LOGIN_ATTEMPTS.labels("local", "success").inc()

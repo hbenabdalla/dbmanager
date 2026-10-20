@@ -181,6 +181,9 @@ async def test_window_suppresses_then_releases_and_renotify_stops_on_ack(admin, 
     await _metric(real_server["id"], 99, after)
     st = await _evaluate(after)
     assert st["released"] == 1 and [e for _, e, _ in sent] == ["firing"]
+    later = (await admin.get(f"/api/v1/alerts/{alert['id']}")).json()
+    # no longer suppressed, but it stays visible that it was raised during the window
+    assert later["suppressed"] is False and later["raised_in_window"] == window["id"]
     # re-notification every 10 minutes while unacknowledged
     await _metric(real_server["id"], 99, after + timedelta(minutes=10))
     assert (await _evaluate(after + timedelta(minutes=10)))["renotified"] == 1
@@ -188,18 +191,50 @@ async def test_window_suppresses_then_releases_and_renotify_stops_on_ack(admin, 
     # acknowledging stops re-notification (and is audited)
     r = await admin.post(f"/api/v1/alerts/{alert['id']}/acknowledge", json={"comment": "investigating"})
     assert r.status_code == 200
-    await _metric(real_server["id"], 99, after + timedelta(minutes=30))
+    events = (await admin.get("/api/v1/audit", params={"action": "alert.acknowledge", "page_size": 5})).json()["items"]
+    assert events and events[0]["target_id"] == alert["id"]
     assert (await _evaluate(after + timedelta(minutes=30)))["renotified"] == 0
     assert len(sent) == 2
 
     # comments on the alert
     r = await admin.post(f"/api/v1/alerts/{alert['id']}/comments", json={"body": "failover scheduled"})
     assert r.status_code == 201
+    events = (await admin.get("/api/v1/audit", params={"action": "alert.comment", "page_size": 5})).json()["items"]
+    assert events and events[0]["target_id"] == alert["id"]
     detail = (await admin.get(f"/api/v1/alerts/{alert['id']}")).json()
     assert [c["body"] for c in detail["comments"]] == ["failover scheduled"]
     by_server = (await admin.get("/api/v1/alerts/summary", params={"by_server": True})).json()["by_server"]
     assert by_server[real_server["id"]]["active"] == 1 and by_server[real_server["id"]]["unacknowledged"] == 0
     await _cleanup(admin, [rule], [ch], [window])
+
+
+async def test_alert_of_a_server_that_left_the_scope_is_resolved(admin, real_server, sent) -> None:  # type: ignore[no-untyped-def]
+    """An active alert whose server is no longer evaluated by the rule (scope changed,
+    monitoring disabled) is resolved instead of staying active forever."""
+    rule = await _rule(admin, "scope rule", scope_type="server", scope_id=real_server["id"])
+    now = datetime.now(UTC)
+    await _metric(real_server["id"], 99, now)
+    assert (await _evaluate(now))["fired"] == 1
+    alert = (await admin.get("/api/v1/alerts", params={"rule_id": rule["id"]})).json()["items"][0]
+    assert alert["status"] == "firing"
+    # the rule now targets another server: this alert can no longer be evaluated
+    body = {
+        "name": "scope rule",
+        "kind": "metric",
+        "metric": METRIC,
+        "operator": ">=",
+        "threshold": 90,
+        "severity": "high",
+    }
+    r = await admin.put(
+        f"/api/v1/alert-rules/{rule['id']}", json={**body, "scope_type": "tag", "scope_id": "team=nobody-here"}
+    )
+    assert r.status_code == 200, r.text
+    st = await _evaluate(now + timedelta(minutes=1))
+    assert st["resolved"] >= 1
+    done = (await admin.get(f"/api/v1/alerts/{alert['id']}")).json()
+    assert done["status"] == "resolved" and done["resolved_by"] == "scope"
+    await _cleanup(admin, [rule], [])
 
 
 async def test_routing_subscribe_all_and_simulated_policy(admin, real_server, servers, sent) -> None:  # type: ignore[no-untyped-def]

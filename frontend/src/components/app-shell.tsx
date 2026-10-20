@@ -187,9 +187,9 @@ function AddMenu({ can, canPlatform }: { can: (p: string) => boolean; canPlatfor
   const entries = [
     { label: "Database server", icon: ServerIcon, to: "/fleet/servers?register=1", ok: can("server.register") },
     { label: "Bulk onboarding", icon: Layers, to: "/fleet/onboarding/bulk", ok: can("server.register") },
-    { label: "Environment", icon: FolderTree, to: "/fleet/environments?create=1", ok: can("inventory.manage") },
-    { label: "Database user", icon: Database, to: "/admin/users", ok: can("user.manage") },
-    { label: "Platform user", icon: UserPlus, to: "/platform/users?create=1", ok: can("users.manage") },
+    { label: "Environment", icon: FolderTree, to: "/fleet/environments?create=1", ok: canPlatform("inventory.manage") },
+    { label: "Database user", icon: Database, to: "/admin/users?create=1", ok: can("user.manage") },
+    { label: "Platform user", icon: UserPlus, to: "/platform/users?create=1", ok: canPlatform("users.manage") },
     { label: "Identity provider", icon: KeyRound, to: "/platform/identity/wizard", ok: canPlatform("idp.manage") },
   ].filter((e) => e.ok);
   if (!entries.length) return null;

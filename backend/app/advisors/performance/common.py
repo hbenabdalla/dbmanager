@@ -353,7 +353,13 @@ def query_regression(ctx: EvidenceContext) -> list[RuleFinding]:
             continue
         plan = r.get("plan_changed")
         change = r.get("change_pct")
-        sev = "high" if (change or 0) >= 200 or r["recent_mean_ms"] >= 1000 else "medium"
+        # an unknown percentage (baseline mean 0) is judged on the absolute increase instead
+        delta = r.get("delta_ms") or (r["recent_mean_ms"] - (r.get("baseline_mean_ms") or 0))
+        sev = (
+            "high"
+            if (change if change is not None else (200 if delta >= 100 else 0)) >= 200 or r["recent_mean_ms"] >= 1000
+            else "medium"
+        )
         plan_txt = ""
         if plan and r.get("baseline_plan_id") and r.get("recent_plan_id"):
             plan_txt = f" The dominant plan changed from {r['baseline_plan_id']} to {r['recent_plan_id']}."
@@ -431,7 +437,12 @@ def storage_forecast(ctx: EvidenceContext) -> list[RuleFinding]:
                 finding=f"{what} grows by about {fmt_bytes(f['growth_bytes_per_day'])}/day "
                 f"(90% band {fmt_bytes(f['growth_low'])}–{fmt_bytes(f['growth_high'])}/day over "
                 f"{f['history_days']:.0f} days). At this rate it reaches {fmt_bytes(f['capacity_bytes'])} "
-                f"({f['capacity_basis']}) in {days:.0f} days at the earliest"
+                f"({f['capacity_basis']}) "
+                + (
+                    f"in {days:.0f} days at the earliest"
+                    if days > 0
+                    else "now at the earliest (the projection has passed it)"
+                )
                 + (f", {likely:.0f} days most likely." if likely is not None else "."),
                 evidence={
                     "scope": f["scope"],

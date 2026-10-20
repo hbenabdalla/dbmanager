@@ -55,7 +55,14 @@ export function ReplicationTab({ server }: { server: ServerDetail }) {
   );
 }
 
-interface Storage { total_bytes: number | null; databases: { name: string; size_bytes: number | null }[]; tablespaces: { name: string; size_bytes: number | null; used_pct?: number; owner?: string; autoextend?: boolean }[]; top_tables: Record<string, unknown>[]; top_indexes: Record<string, unknown>[]; temp: Record<string, unknown>; notes: string[] }
+const STORAGE_EXTRA: Record<string, string> = {
+  log_used_bytes: "Transaction log used",
+  log_available_bytes: "Transaction log available",
+  in_use_bytes: "Temporary space in use",
+  redo_log_bytes: "Online redo logs",
+};
+
+interface Storage { total_bytes: number | null; databases: { name: string; size_bytes: number | null }[]; tablespaces: { name: string; size_bytes?: number | null; used_bytes?: number | null; used_pct?: number; owner?: string; autoextend?: boolean }[]; top_tables: Record<string, unknown>[]; top_indexes: Record<string, unknown>[]; temp: Record<string, unknown>; notes: string[] }
 
 export function StorageTab({ server }: { server: ServerDetail }) {
   const q = useQuery({ queryKey: ["storage", server.id], queryFn: () => get<Storage>(`/servers/${server.id}/storage`) });
@@ -78,11 +85,12 @@ export function StorageTab({ server }: { server: ServerDetail }) {
         <CardBody className="space-y-2.5">
           {s.tablespaces.map((t) => (
             <div key={t.name}>
-              <div className="mb-1 flex justify-between text-[13px]"><span>{t.name}{t.autoextend === false && <Badge tone="warn" className="ml-2">no autoextend</Badge>}</span><span className="tabular text-text-2">{bytes(t.size_bytes)}{t.used_pct !== undefined ? `, ${t.used_pct}% used` : ""}</span></div>
-              {t.used_pct !== undefined && <Meter value={t.used_pct} />}
+              <div className="mb-1 flex justify-between text-[13px]"><span>{t.name}{t.autoextend === false && <Badge tone="warn" className="ml-2">no autoextend</Badge>}</span><span className="tabular text-text-2">{bytes(t.size_bytes ?? t.used_bytes ?? null)}{t.used_pct != null ? `, ${t.used_pct}% used` : ""}</span></div>
+              {t.used_pct != null && <Meter value={t.used_pct} />}
             </div>
           ))}
-          {s.temp && Object.keys(s.temp).length > 0 && <p className="pt-2 text-[12.5px] text-muted">Temporary files written since stats reset: {bytes(s.temp.temp_bytes as number)}</p>}
+          {s.temp && "temp_bytes" in s.temp && <p className="pt-2 text-[12.5px] text-muted">Temporary files written since stats reset: {bytes(s.temp.temp_bytes as number)}</p>}
+          {s.temp && !("temp_bytes" in s.temp) && Object.entries(s.temp).filter(([k, v]) => k.endsWith("_bytes") && typeof v === "number").map(([k, v]) => <p key={k} className="pt-1 text-[12.5px] text-muted">{STORAGE_EXTRA[k] ?? k.replace(/_bytes$/, "").replace(/_/g, " ")}: {bytes(v as number)}</p>)}
         </CardBody>
       </Card>
       <Card className="xl:col-span-2">

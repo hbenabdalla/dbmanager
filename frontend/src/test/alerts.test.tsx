@@ -152,7 +152,7 @@ describe("alerts", () => {
     await waitFor(() => expect(created).toMatchObject({ name: "Replica behind", kind: "metric", metric: "replication.lag_seconds", threshold: 120, channel_ids: ["c1"], scope_type: "all", scope_id: null }));
   });
 
-  it("never shows a stored channel secret and sends it only when changed", async () => {
+  it("never shows a stored channel secret or webhook URL and sends them only when changed", async () => {
     let saved: Record<string, unknown> | null = null;
     mockFetch((url, init) => {
       if (url.pathname === "/api/v1/auth/me") return { body: ME(["server.view"], ["channels.manage"]) };
@@ -162,7 +162,7 @@ describe("alerts", () => {
       }
       if (url.pathname === "/api/v1/notification-channels") return { body: [{
         id: "c1", name: "on-call", kind: "webhook", enabled: true, min_severity: "high", send_for_simulated: false,
-        config: { url: "https://hooks.example.com/x", headers: {} }, has_signing_secret: true, has_smtp_password: false, created_by: "admin", created_at: new Date().toISOString(),
+        config: { url_display: "https://hooks.example.com/…", header_names: ["X-Team"] }, has_url: true, has_signing_secret: true, has_smtp_password: false, created_by: "admin", created_at: new Date().toISOString(),
       }] };
       return undefined;
     });
@@ -170,11 +170,15 @@ describe("alerts", () => {
     expect(await screen.findByText("stored (encrypted)")).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Edit on-call" }));
     const dialog = await screen.findByRole("dialog");
+    expect(screen.getByText("https://hooks.example.com/…")).toBeInTheDocument();
     expect(within(dialog).getByLabelText(/Signing secret/)).toHaveValue("");
+    expect(within(dialog).getByLabelText("URL")).toHaveValue("");
     await userEvent.click(within(dialog).getByRole("button", { name: "Save" }));
     await waitFor(() => expect(saved).not.toBeNull());
     expect(saved).not.toHaveProperty("signing_secret");
-    expect(saved).toMatchObject({ name: "on-call", kind: "webhook", config: { url: "https://hooks.example.com/x" } });
+    // empty URL and headers keep the stored (encrypted) values
+    expect(saved).toMatchObject({ name: "on-call", kind: "webhook", config: {} });
+    expect((saved as unknown as { config: Record<string, unknown> }).config).not.toHaveProperty("url");
   });
 
   it("shows the About page with versions, links and engine validation", async () => {

@@ -18,6 +18,7 @@ import socket
 import time
 import uuid
 from datetime import UTC, datetime, timedelta
+from typing import Any
 
 from sqlalchemy import and_, func, or_, select, text, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
@@ -330,6 +331,23 @@ class BackgroundRunner:
             t.cancel()
         await asyncio.gather(*self._tasks, return_exceptions=True)
 
+    async def leader_tick(self, lock_conn: Any) -> bool:
+        """Acquire the scheduler leadership, or confirm it is still held, on ``lock_conn``.
+
+        The advisory lock is session-scoped. A leader re-checks it every tick (a re-entrant
+        ``pg_try_advisory_lock`` followed by one unlock keeps the count at 1): if the session was
+        lost, the statement fails and the caller drops leadership; if another instance holds the
+        lock now, ``False`` comes back. Either way no two schedulers run jobs at once."""
+        got = bool((await lock_conn.execute(text("SELECT pg_try_advisory_lock(:k)"), {"k": LEADER_LOCK_ID})).scalar())
+        if got and self.is_leader:
+            await lock_conn.execute(text("SELECT pg_advisory_unlock(:k)"), {"k": LEADER_LOCK_ID})
+        await lock_conn.commit()
+        if self.is_leader and not got:
+            log.warning("scheduler leadership lost")
+        self.is_leader = got
+        SCHEDULER_LEADER.set(1 if got else 0)
+        return got
+
     async def _scheduler_loop(self) -> None:
         s = get_settings()
         engine = get_engine()
@@ -338,13 +356,7 @@ class BackgroundRunner:
             try:
                 if lock_conn is None:
                     lock_conn = await engine.connect()
-                if not self.is_leader:
-                    got = (
-                        await lock_conn.execute(text("SELECT pg_try_advisory_lock(:k)"), {"k": LEADER_LOCK_ID})
-                    ).scalar()
-                    await lock_conn.commit()
-                    self.is_leader = bool(got)
-                    SCHEDULER_LEADER.set(1 if self.is_leader else 0)
+                await self.leader_tick(lock_conn)
                 if self.is_leader:
                     await schedule_due()
                     self.last_tick = datetime.now(UTC)
@@ -353,9 +365,12 @@ class BackgroundRunner:
             except Exception:  # noqa: BLE001
                 log.exception("scheduler tick failed")
                 self.is_leader = False
+                SCHEDULER_LEADER.set(0)
                 if lock_conn is not None:
+                    # invalidate, never return it to the pool: a pooled session would keep the
+                    # session-level advisory lock and block every other instance from leading
                     try:
-                        await lock_conn.close()
+                        await lock_conn.invalidate()
                     except Exception:  # noqa: BLE001, S110 - connection already broken
                         pass
                     lock_conn = None
@@ -364,7 +379,10 @@ class BackgroundRunner:
             except TimeoutError:
                 pass
         if lock_conn is not None:
-            await lock_conn.close()
+            # end the session (releases the leader lock at once for the next instance)
+            await lock_conn.invalidate()
+        self.is_leader = False
+        SCHEDULER_LEADER.set(0)
 
     async def _worker_loop(self) -> None:
         s = get_settings()

@@ -11,6 +11,16 @@
 | Server → Overview → Collection status | per-component state (ok, insufficient privilege, not supported, error) |
 | `app.cli metrics status` | time-series status from the CLI |
 
+### `/metrics` is unauthenticated
+
+`GET /metrics` (and `/healthz`, `/readyz`) need no sign-in, so that Prometheus and container
+orchestrators can scrape them. They are served by the **backend** on port 8000 only: the
+frontend's nginx proxies `/api/` and `/healthz` but not `/metrics` or `/readyz`, so in the
+shipped Compose file they are reachable only from the internal Docker network. The metrics hold
+platform counters (requests, collector runs, job queue, connection pool), never credentials,
+SQL text or database names. If you publish the backend port, restrict `/metrics` at your proxy
+or firewall to the Prometheus host.
+
 ## Diagnostics bundle
 
 For support cases, **Server → Settings → Operations → Download diagnostics** (permission

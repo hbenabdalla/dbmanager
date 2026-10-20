@@ -82,6 +82,7 @@ describe("audit forwarding (SIEM destinations)", () => {
       if (path === "/auth/me") return { body: ME([], ["audit.forward"]) };
       if (path === "/platform/siem-destinations" && method === "GET") return { body: [] };
       if (path === "/platform/siem-destinations" && method === "POST") return { status: 201, body: DEST };
+      if (path === "/platform/siem-destinations/categories") return { body: ["auth", "admin", "security", "backup"] };
       return undefined;
     });
     providers(<AppRoutes />, "/platform/audit-forwarding");
@@ -95,6 +96,10 @@ describe("audit forwarding (SIEM destinations)", () => {
     await userEvent.type(within(d).getByLabelText("CA certificate (PEM)"), "not a cert");
     expect(add).toBeDisabled();
     await userEvent.clear(within(d).getByLabelText("CA certificate (PEM)"));
+    // categories come from GET /platform/siem-destinations/categories; no free-text field any more
+    expect(await within(d).findByLabelText("backup")).toBeInTheDocument();
+    expect(within(d).queryByLabelText(/Other categories/)).not.toBeInTheDocument();
+    expect(calls.some((c) => c.path === "/platform/siem-destinations/categories")).toBe(true);
     await userEvent.click(within(d).getByLabelText("auth"));
     await userEvent.click(within(d).getByLabelText("security"));
     await userEvent.selectOptions(within(d).getByLabelText("Start forwarding from"), "beginning");

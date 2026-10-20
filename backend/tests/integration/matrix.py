@@ -17,6 +17,7 @@ from typing import Any
 
 CAPABILITIES = [
     "connection",
+    "tls",
     "inventory",
     "users",
     "privileges",

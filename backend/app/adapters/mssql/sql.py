@@ -112,6 +112,23 @@ UNION ALL
 SELECT cc.name, 'CHECK_CONSTRAINT', OBJECT_NAME(cc.parent_object_id)
 FROM sys.check_constraints cc WHERE cc.parent_object_id = OBJECT_ID(?)
 """
+SCHEMA_CONSTRAINTS = """
+SELECT kc.name, kc.type_desc AS constraint_type, OBJECT_NAME(kc.parent_object_id) AS table_name,
+       CAST(0 AS bit) AS is_disabled, CAST(0 AS bit) AS is_not_trusted
+FROM sys.key_constraints kc WHERE kc.schema_id = SCHEMA_ID(?)
+UNION ALL
+SELECT fk.name, 'FOREIGN_KEY_CONSTRAINT', OBJECT_NAME(fk.parent_object_id), fk.is_disabled, fk.is_not_trusted
+FROM sys.foreign_keys fk WHERE fk.schema_id = SCHEMA_ID(?)
+UNION ALL
+SELECT cc.name, 'CHECK_CONSTRAINT', OBJECT_NAME(cc.parent_object_id), cc.is_disabled, cc.is_not_trusted
+FROM sys.check_constraints cc WHERE cc.schema_id = SCHEMA_ID(?)
+ORDER BY 3, 1
+"""
+ACCESSIBLE_DATABASES = """
+SELECT TOP (?) name FROM sys.databases
+WHERE state = 0 AND HAS_DBACCESS(name) = 1 AND source_database_id IS NULL
+ORDER BY CASE WHEN database_id <= 4 THEN 1 ELSE 0 END, name
+"""
 TRIGGERS_OF = """
 SELECT t.name, t.is_disabled, t.is_instead_of_trigger, t.create_date
 FROM sys.triggers t WHERE t.parent_id = OBJECT_ID(?)

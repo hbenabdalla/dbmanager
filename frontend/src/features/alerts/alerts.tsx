@@ -397,13 +397,41 @@ function RuleDialog({ rule, onClose }: { rule: AlertRule | null; onClose: () => 
           <Field label="Re-notify every (minutes, 0 = never)" hint="Repeats the firing notification until someone acknowledges or the alert resolves">
             <Input inputMode="numeric" value={f.renotify_minutes} onChange={(e) => set("renotify_minutes", Math.max(0, Number(e.target.value.replace(/\D/g, "")) || 0))} />
           </Field>
-          {f.kind === "metric" && f.aggregation === "zscore" && f.scope_type === "server" && f.scope_id && f.metric && (
-            <BaselinePreview serverId={f.scope_id} metric={f.metric} days={f.baseline_days} threshold={f.threshold} />
+          {f.kind === "metric" && f.aggregation === "zscore" && f.metric && (
+            f.scope_type === "server" ? (f.scope_id && <BaselinePreview serverId={f.scope_id} metric={f.metric} days={f.baseline_days} threshold={f.threshold} />)
+              : <ScopeBaselinePreview servers={serversInScope(servers, f.scope_type, f.scope_id)} metric={f.metric} days={f.baseline_days} threshold={f.threshold} />
           )}
           <p className="rounded-md border border-border bg-surface-2 px-3 py-2 text-[12.5px] text-muted">Summary: {ruleCondition(f)} on {scopeLabel(f.scope_type, f.scope_id, envs, servers).toLowerCase()} → {f.severity}{f.renotify_minutes ? `, re-notify every ${f.renotify_minutes} min` : ""}</p>
         </div>
       )}
     </Dialog>
+  );
+}
+
+/** Servers a rule scope covers, as far as the loaded server list tells. */
+export function serversInScope(servers: Server[], type: ScopeType, id: string | null): Server[] {
+  if (type === "all") return servers;
+  if (type === "environment") return servers.filter((s) => s.environment?.id === id);
+  if (type === "server") return servers.filter((s) => s.id === id);
+  if (!id || !validTag(id)) return [];
+  const [k, v] = id.split("=", 2);
+  return servers.filter((s) => (s.tags ?? []).some((t) => t.key === k && (v === undefined || t.value === v)));
+}
+
+/** z-score rules compare each server with its own history: preview one server of the scope at a time. */
+export function ScopeBaselinePreview({ servers, metric, days, threshold }: { servers: Server[]; metric: string; days: number; threshold: number | null }) {
+  const [picked, setPicked] = useState<string | null>(null);
+  if (servers.length === 0) return <p className="text-[12.5px] text-muted">No server in this scope yet, so there is no baseline to preview.</p>;
+  const id = picked && servers.some((s) => s.id === picked) ? picked : servers[0].id;
+  return (
+    <div className="space-y-2">
+      <Field label="Preview the baseline of" hint={`Each of the ${servers.length} servers in scope is compared with its own baseline`}>
+        <Select aria-label="Server to preview" value={id} onChange={(e) => setPicked(e.target.value)}>
+          {servers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+        </Select>
+      </Field>
+      <BaselinePreview serverId={id} metric={metric} days={days} threshold={threshold} />
+    </div>
   );
 }
 
@@ -432,6 +460,14 @@ export function BaselinePreview({ serverId, metric, days, threshold }: { serverI
   );
 }
 
+/** Counters returned by POST /alerts/evaluate (app.services.alerting.evaluate). */
+export interface EvaluateStats { rules: number; fired: number; resolved: number; pending: number; notified: number; suppressed: number; renotified?: number; released?: number }
+export function evaluateSummary(st: EvaluateStats): string {
+  const parts: [number | undefined, string][] = [[st.fired, "fired"], [st.resolved, "resolved"], [st.pending, "pending"], [st.notified, "notified"], [st.suppressed, "suppressed"], [st.renotified, "re-notified"], [st.released, "released"]];
+  const shown = parts.filter(([n]) => n).map(([n, l]) => `${n} ${l}`);
+  return shown.length ? shown.join(", ") : "No changes";
+}
+
 export function AlertRulesPage() {
   const { canPlatform } = useAuth();
   const qc = useQueryClient();
@@ -442,6 +478,15 @@ export function AlertRulesPage() {
   const remove = useMutation({
     mutationFn: (id: string) => del(`/alert-rules/${id}`),
     onSuccess: () => { toast.success("Rule deleted"); qc.invalidateQueries({ queryKey: ["alert-rules"] }); },
+    onError: (e) => toast.error(errorText(e)),
+  });
+  // POST /alerts/evaluate (alerts.manage, platform scope) runs every enabled rule now
+  const evaluate = useMutation({
+    mutationFn: () => post<EvaluateStats>("/alerts/evaluate"),
+    onSuccess: (st) => {
+      toast.success(`Evaluated ${st.rules} rule${st.rules === 1 ? "" : "s"}`, { description: evaluateSummary(st) });
+      qc.invalidateQueries({ queryKey: ["alerts"] });
+    },
     onError: (e) => toast.error(errorText(e)),
   });
   const columns = useMemo<ColumnDef<AlertRule, unknown>[]>(() => [
@@ -460,9 +505,12 @@ export function AlertRulesPage() {
   ], [envs, servers, manage, remove]);
   return (
     <div>
-      <PageHeader title="Alert rules" description="Threshold, health and collector rules evaluated every minute by the background scheduler."
+      <PageHeader title="Alert rules" description="Threshold, z-score (deviation from the server's own baseline), health and collector rules evaluated every minute by the background scheduler."
         crumbs={[{ label: "Operations" }, { label: "Alerts", to: "/alerts" }, { label: "Rules" }]}
-        actions={manage && <Button variant="primary" size="sm" onClick={() => setEdit("new")}><Plus /> New rule</Button>} />
+        actions={manage && <span className="flex items-center gap-2">
+          <Button size="sm" disabled={evaluate.isPending} onClick={() => evaluate.mutate()}><RefreshCw /> Evaluate now</Button>
+          <Button variant="primary" size="sm" onClick={() => setEdit("new")}><Plus /> New rule</Button>
+        </span>} />
       <Card>
         <DataTable columns={columns} data={rules.data?.items} loading={rules.isLoading} error={rules.error} dense
           empty={<EmptyState icon={<BellRing />} title="No alert rules yet" action={manage ? <Button variant="primary" onClick={() => setEdit("new")}><Plus /> Create the first rule</Button> : undefined}>

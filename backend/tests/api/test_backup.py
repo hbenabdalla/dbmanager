@@ -383,6 +383,29 @@ async def test_postgresql_database_backup_and_restore_into_a_new_database(admin,
                 .values(created_at=datetime.now(UTC) - timedelta(days=2))
             )
         assert (await admin.get(f"/api/v1/servers/{s['id']}/backup-protection")).json()["status"] == "at_risk"
+        # a manual policy without max_age_hours is no protection for a backup older than 8 days
+        r = await admin.put(
+            f"/api/v1/backup/policies/{pol['id']}",
+            json={
+                "name": pol["name"],
+                "kind": "database",
+                "target_id": t["id"],
+                "database_scope": {"server_ids": [s["id"]]},
+                "encryption": {"mode": "none"},
+                "schedule": {"frequency": "manual"},
+                "max_age_hours": 0,
+            },
+        )
+        assert r.status_code == 200, r.text
+        prot = (await admin.get(f"/api/v1/servers/{s['id']}/backup-protection")).json()
+        assert prot["status"] == "protected" and prot["freshness_limit_hours"] == 8 * 24  # 2 days old
+        async with session_scope() as db:
+            await db.execute(
+                update(Backup)
+                .where(Backup.id == uuid.UUID(bid))
+                .values(created_at=datetime.now(UTC) - timedelta(days=30))
+            )
+        assert (await admin.get(f"/api/v1/servers/{s['id']}/backup-protection")).json()["status"] == "at_risk"
         res2 = await _run((await admin.post(f"/api/v1/backup/policies/{pol['id']}/run")).json())
         assert res2["status"] == "SUCCESS"
         assert (await admin.get(f"/api/v1/servers/{s['id']}/backup-protection")).json()["status"] == "protected"

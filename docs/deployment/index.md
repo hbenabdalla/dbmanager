@@ -65,7 +65,8 @@ the host is protected by that proxy.
 | `DBM_LOGIN_MAX_FAILURES`, `DBM_LOGIN_LOCKOUT_MINUTES`, `DBM_LOGIN_RATE_PER_IP_PER_MINUTE` | 5 / 15 / 20 | brute-force protection |
 | `DBM_API_RATE_PER_USER_PER_MINUTE`, `DBM_API_RATE_TARGET_PER_MINUTE`, `DBM_API_RATE_EXPENSIVE_PER_MINUTE` | 600 / 120 / 30 | [rate limits](../administration/rate-limiting.md) per principal; `0` = off |
 | `DBM_RATE_LIMIT_BACKEND`, `DBM_RATE_LIMIT_POOL_SIZE` | `database` / 5 | shared counters in PostgreSQL (or `memory`, per process) |
-| `DBM_TRUSTED_PROXIES` | loopback | CIDRs whose `X-Forwarded-For` is trusted for client IPs |
+| `DBM_TRUSTED_PROXIES` | loopback (Compose: the Compose network) | CIDRs whose `X-Forwarded-For` the backend trusts, read right to left ([reverse proxy](reverse-proxy-tls.md#how-the-client-address-is-determined)) |
+| `DBM_OUTER_PROXY` | `127.0.0.1/32` | frontend nginx only: the reverse proxy allowed to set `X-Forwarded-For` |
 | `DBM_CORS_ORIGINS` | — | only needed when the UI is served from another origin |
 | `DBM_REPORT_MAX_ATTACHMENT_MB` | 10 | largest file a [scheduled report](../user-guide/reports.md#scheduled-reports) e-mails |
 | `DBM_BRANDING_DIR` | — | optional licensed engine logos ([brand assets](../development/brand-assets.md#operator-supplied-licensed-logos)) |

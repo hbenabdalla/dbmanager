@@ -665,3 +665,94 @@ def test_zos_explain_from_plan_table() -> None:
     assert block.children[0].operator.startswith("TABLE SCAN") and block.children[0].estimated_rows == 2_000_000
     assert block.children[1].operator == "NESTED LOOP JOIN / INDEX SCAN" and block.children[1].index == "APP.CUSTIX1"
     assert "FULL_SCAN" in {i.code for i in res.issues} and res.total_cost == 120 and conn.rollbacks >= 1
+
+
+def test_workspace_refuses_another_database_instead_of_ignoring_it() -> None:
+    """Db2 LUW connects to one database: a statement for another one is refused before
+    anything runs (it used to run silently in the connected database)."""
+    from app.adapters.base import AdapterError, ConnectionSpec
+
+    a = Db2Adapter(ConnectionSpec(host="db2.example.com", port=50000, database="SAMPLE", username="u", password="p"))
+    with pytest.raises(AdapterError, match="register 'OTHER'"):
+        asyncio.run(a.execute_sql("SELECT 1 FROM SYSIBM.SYSDUMMY1", "OTHER", read_only=True, max_rows=1, timeout_s=5))
+    with pytest.raises(AdapterError, match="register 'OTHER'"):
+        asyncio.run(a.explain_query("SELECT 1 FROM SYSIBM.SYSDUMMY1", "OTHER"))
+    a._check_database("sample")  # same database, any case: accepted  # noqa: SLF001
+    a._check_database(None)  # noqa: SLF001
+
+
+def test_largest_tables_follow_the_storage_contract() -> None:
+    a, _ = adapter(
+        [
+            *luw_routes(),
+            (
+                "FROM SYSCAT.TABLES t",
+                [
+                    {
+                        "schema_name": "SHOP    ",
+                        "name": "ORDERS",
+                        "row_estimate": 120000,
+                        "stats_time": None,
+                        "table_bytes": 8 * 1024 * 1024,
+                        "index_bytes": 2 * 1024 * 1024,
+                    }
+                ],
+            ),
+            (re.compile(r"."), []),
+        ]
+    )
+    st = asyncio.run(a.get_storage_metrics())
+    assert st.top_tables == [
+        {
+            "schema": "SHOP",
+            "name": "ORDERS",
+            "row_estimate": 120000,
+            "table_bytes": 8 * 1024 * 1024,
+            "index_bytes": 2 * 1024 * 1024,
+            "total_bytes": 10 * 1024 * 1024,
+            "stats_time": None,
+        }
+    ]
+
+
+def test_routine_package_sequence_and_column_grants_are_listed() -> None:
+    def grant(**cols: object) -> dict[str, object]:
+        return {"grantor": "DBA1", "grantee": "APPUSER", "granteetype": "U", "objschema": "SHOP  ", **cols}
+
+    a, _ = adapter(
+        [
+            *luw_routes(),
+            ("FROM SYSCAT.ROUTINEAUTH", [grant(objname="SQL240101_PLACE_ORDER", executeauth="G")]),
+            ("FROM SYSCAT.PACKAGEAUTH", [grant(objname="P1", controlauth="N", bindauth="Y", executeauth="Y")]),
+            ("FROM SYSCAT.SEQUENCEAUTH", [grant(objname="ORDER_SEQ", usageauth="Y", alterauth="N")]),
+            ("FROM SYSCAT.TBSPACEAUTH", [grant(objschema="", objname="USERSPACE1", useauth="Y")]),
+            (
+                "FROM SYSCAT.COLAUTH",
+                [
+                    {
+                        "grantor": "DBA1",
+                        "grantee": "APPUSER",
+                        "granteetype": "U",
+                        "tabschema": "SHOP",
+                        "tabname": "ORDERS",
+                        "colname": "STATUS",
+                        "privtype": "U",
+                        "grantable": "N",
+                    }
+                ],
+            ),
+            (re.compile(r"."), []),
+        ]
+    )
+    got = {(p.object_type, p.object_name, p.privilege, p.grantable) for p in asyncio.run(a.get_privileges("SAMPLE"))}
+    assert {
+        ("routine", "SHOP.SQL240101_PLACE_ORDER", "EXECUTE", True),
+        ("package", "SHOP.P1", "BIND", False),
+        ("package", "SHOP.P1", "EXECUTE", False),
+        ("sequence", "SHOP.ORDER_SEQ", "USAGE", False),
+        ("tablespace", "USERSPACE1", "USE", False),
+        ("column", "SHOP.ORDERS.STATUS", "UPDATE", False),
+    } <= got
+    assert not any(
+        p.privilege == "CONTROL" for p in asyncio.run(a.get_privileges("SAMPLE")) if p.object_type == "package"
+    )

@@ -492,8 +492,10 @@ async def evaluate(db: AsyncSession, now: datetime | None = None) -> dict[str, i
         (a.rule_id, a.server_id): a
         for a in (await db.execute(select(Alert).where(Alert.status.in_(ACTIVE_STATES)))).scalars()
     }
+    visited: set[tuple[uuid.UUID, uuid.UUID]] = set()
     for rule in rules:
         scoped = [s for s in servers if in_scope(rule.scope_type, rule.scope_id, s)]
+        visited.update((rule.id, s.id) for s in scoped)
         ranged = rule.kind == "metric" and rule.aggregation in ("avg", "min", "max") and rule.window_seconds > 0
         window_values: dict[str, Any] | None = await window_aggregates(rule, scoped, now) if ranged else None
         if rule.kind == "metric" and rule.aggregation == "zscore":
@@ -526,7 +528,10 @@ async def evaluate(db: AsyncSession, now: datetime | None = None) -> dict[str, i
                     db.add(alert)
                     active[(rule.id, server.id)] = alert
                 alert.value, alert.message, alert.last_evaluated_at = value, desc, now
-                alert.suppressed, alert.suppressed_by = window is not None, window.id if window else None
+                # suppressed_by keeps the window an alert was raised in after the window ended
+                alert.suppressed = window is not None
+                if window is not None:
+                    alert.suppressed_by = window.id
                 if alert.status == "pending":
                     if (now - alert.pending_since) >= timedelta(seconds=rule.for_seconds):
                         alert.status, alert.fired_at = "firing", now
@@ -563,6 +568,17 @@ async def evaluate(db: AsyncSession, now: datetime | None = None) -> dict[str, i
                 stats["resolved"] += 1
                 if rule.notify_on_resolve and was_notified:
                     stats["notified"] += await _notify(db, rule, alert, server, "resolved", channels, window, now)
+    # alerts of enabled rules for servers that are no longer evaluated (left the rule's scope,
+    # monitoring disabled, deleted): nobody can tell whether the condition still holds
+    enabled = {r.id for r in rules}
+    for (rule_id, server_id), alert in list(active.items()):
+        if rule_id in enabled and (rule_id, server_id) not in visited:
+            if alert.status == "pending":
+                await db.delete(alert)
+                continue
+            alert.status, alert.resolved_at, alert.resolved_by = "resolved", now, "scope"
+            alert.last_evaluated_at = now
+            stats["resolved"] += 1
     await db.flush()
     return stats
 

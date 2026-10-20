@@ -92,10 +92,10 @@ export function IdentityProvidersPage({ only }: { only?: "ldap" | "oidc" }) {
   const list = (q.data ?? []).filter((p) => !only || p.kind === only);
   return (
     <div>
-      <PageHeader title={only === "ldap" ? "LDAP / Active Directory" : "Identity providers"}
-        description={only === "ldap" ? "Directory sign-in with group-to-role mapping." : "Single sign-on with OpenID Connect, and LDAP directories. SAML is planned; OIDC is the recommended federation path."}
-        crumbs={[{ label: "Platform" }, { label: only === "ldap" ? "LDAP" : "Identity providers" }]}
-        actions={<div className="flex gap-2">{only !== "ldap" && <Button variant="primary" onClick={() => setEdit({ kind: "oidc", p: null })}><Plus /> OIDC provider</Button>}<Button variant={only === "ldap" ? "primary" : "secondary"} onClick={() => setEdit({ kind: "ldap", p: null })}><Plus /> LDAP directory</Button></div>} />
+      <PageHeader title={only === "ldap" ? "LDAP / Active Directory" : only === "oidc" ? "OpenID Connect" : "Identity providers"}
+        description={only === "ldap" ? "Directory sign-in with group-to-role mapping." : only === "oidc" ? "Single sign-on with OpenID Connect providers (Keycloak, Microsoft Entra ID, Okta, Auth0) and group-to-role mapping." : "Single sign-on with OpenID Connect, and LDAP directories. SAML is planned; OIDC is the recommended federation path."}
+        crumbs={[{ label: "Platform" }, { label: only === "ldap" ? "LDAP" : only === "oidc" ? "OIDC" : "Identity providers" }]}
+        actions={<div className="flex gap-2">{only !== "ldap" && <Button variant="primary" onClick={() => setEdit({ kind: "oidc", p: null })}><Plus /> OIDC provider</Button>}{only !== "oidc" && <Button variant={only === "ldap" ? "primary" : "secondary"} onClick={() => setEdit({ kind: "ldap", p: null })}><Plus /> LDAP directory</Button>}</div>} />
       {q.isLoading ? <SkeletonRows /> : !list.length ? <Card><EmptyState title="No providers configured">Local accounts keep working. Add a provider to let people sign in with their corporate identity.</EmptyState></Card> : (
         <div className="space-y-4">
           {list.map((p) => (

@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       engines:
-        description: "Space-separated: postgresql mysql mariadb mssql oracle db2 timeseries"
+        description: "Space-separated: postgresql mysql mariadb mssql oracle db2 timeseries identity vault"
         required: true
         default: "postgresql mysql mariadb mssql timeseries"
 

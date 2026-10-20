@@ -398,6 +398,13 @@ async def create_platform_backup(
     try:
         async with session_scope() as db:
             info = await platform.export_tables(db, components, workdir)
+
+        async def checkpoint() -> None:
+            # a cancel request stops the backup between steps (nothing half-stored remains)
+            if job_id and await _cancel_requested(job_id):
+                raise JobCancelled("cancelled by user")
+
+        await checkpoint()
         files: list[dict[str, Any]] = []
         metrics_info: dict[str, Any] = {"included": False}
         if metrics == "export":
@@ -425,6 +432,7 @@ async def create_platform_backup(
         }
         archive = workdir / "archive.tar"
         await asyncio.to_thread(platform.build_archive, workdir, inner, archive)
+        await checkpoint()
         prefix = _prefix("platform", bid, created)
         stored = await _store(prov, archive, prefix, enc)
         await _save_backup(
@@ -472,6 +480,9 @@ async def create_platform_backup(
             BACKUP_LAST_SUCCESS.labels(str(policy_id) if policy_id else "manual").set(time.time())
         else:
             BACKUP_FAILURES.labels("platform").inc()
+    except JobCancelled as exc:
+        await _save_backup(bid, status="FAILED", error=f"cancelled: {exc}", finished_at=_now())
+        raise
     except Exception as exc:
         await _save_backup(bid, status="FAILED", error=_err(exc), finished_at=_now())
         BACKUP_FAILURES.labels("platform").inc()
@@ -823,6 +834,8 @@ async def run(job_id: uuid.UUID) -> BackupJob:
         status, error = "CANCELLED", str(exc)
     except Exception as exc:  # noqa: BLE001 - recorded on the job
         status, error = "FAILED", _err(exc)
+        if isinstance(exc, storage.StorageError):
+            result = {"storage_errors": 1}
         log.warning("backup job failed", extra={"job_id": str(job_id), "kind": job.kind, "error": error})
     finally:
         beat.cancel()
@@ -997,6 +1010,8 @@ async def _run_database_backup(job: BackupJob) -> tuple[str, dict[str, Any]]:
                 a["status"], a["backup_id"], a["error"] = b.status, str(bid), b.error  # type: ignore[union-attr]
         except Exception as exc:  # noqa: BLE001 - per-asset result
             a["status"], a["error"] = "FAILED", _err(exc)
+            if isinstance(exc, storage.StorageError):
+                a["error_class"] = "storage"
         ids.append(a.get("backup_id"))
         progress["done"] += 1
         await _progress(job.id, progress)
@@ -1020,7 +1035,12 @@ async def _run_database_backup(job: BackupJob) -> tuple[str, dict[str, Any]]:
     status = "SUCCESS" if ok == len(assets) else ("PARTIAL_SUCCESS" if ok else "FAILED")
     if job.policy_id and ok:
         await _apply_retention_safely(job.policy_id, job)
-    return status, {"backup_ids": [i for i in ids if i], "succeeded": ok, "total": len(assets)}
+    return status, {
+        "backup_ids": [i for i in ids if i],
+        "succeeded": ok,
+        "total": len(assets),
+        "storage_errors": sum(1 for a in assets if a.get("error_class") == "storage"),
+    }
 
 
 async def _load_backup(backup_id: str | uuid.UUID) -> Backup:
@@ -1478,6 +1498,15 @@ def max_age(policy: BackupPolicy) -> timedelta | None:
     return {"daily": timedelta(hours=26), "weekly": timedelta(days=8), "monthly": timedelta(days=32)}.get(str(freq))
 
 
+#: how recent a backup must be for a manual policy without ``max_age_hours`` to count as protecting
+#: its servers (such a policy raises no overdue notification; it only stops counting as protection)
+UNSCHEDULED_FRESHNESS = timedelta(days=8)
+
+
+def freshness_limit(policy: BackupPolicy) -> timedelta:
+    return max_age(policy) or UNSCHEDULED_FRESHNESS
+
+
 async def schedule(db: AsyncSession, now: datetime | None = None) -> dict[str, int]:
     """Global job ``backup_scheduler``."""
     now = now or _now()
@@ -1542,26 +1571,50 @@ async def schedule(db: AsyncSession, now: datetime | None = None) -> dict[str, i
 
 
 # ---- notifications -------------------------------------------------------------------------------
-async def notify_policy(db: AsyncSession, policy: BackupPolicy | None, title: str, message: str, severity: str) -> int:
-    """Send a backup event to the policy's notification channels (no channels: nothing sent)."""
-    from app.services import alerting
-
-    if policy is None or not policy.channel_ids:
-        return 0
+def _event(policy: BackupPolicy | None, title: str, message: str, severity: str) -> dict[str, Any]:
     base = get_settings().public_base_url.rstrip("/")
-    data = {
-        "id": str(policy.id),
-        "rule": f"backup policy {policy.name}",
+    return {
+        "id": str(policy.id) if policy else "backup",
+        "rule": f"backup policy {policy.name}" if policy else "backup (no policy)",
         "status": "firing",
         "severity": severity,
         "title": title,
         "message": message,
         "server_name": "DBManager backup",
-        "engine": policy.kind,
+        "engine": policy.kind if policy else "backup",
         "environment": None,
         "url": f"{base}/platform/backups",
         "renotify": False,
     }
+
+
+async def notify_policy(db: AsyncSession, policy: BackupPolicy | None, title: str, message: str, severity: str) -> int:
+    """Send a backup event to the policy's notification channels; events of backups that no
+    policy owns go to the channels named in the platform setting ``backup.notification_channels``
+    (no channels: nothing sent)."""
+    from app.services import alerting, app_settings
+
+    if policy is None:
+        names = [n.strip() for n in str(await app_settings.get(db, "backup.notification_channels")).split(",")]
+        names = [n for n in names if n]
+        if not names:
+            return 0
+        channels = list(
+            (
+                await db.execute(
+                    select(NotificationChannel).where(
+                        NotificationChannel.name.in_(names), NotificationChannel.enabled.is_(True)
+                    )
+                )
+            ).scalars()
+        )
+        data = _event(None, title, message, severity)
+        for ch in channels:
+            await alerting.deliver(db, ch, "firing", None, data)
+        return len(channels)
+    if not policy.channel_ids:
+        return 0
+    data = _event(policy, title, message, severity)
     ids = [uuid.UUID(str(c)) for c in policy.channel_ids]
     channels = list(
         (
@@ -1595,9 +1648,13 @@ async def _notify_job(job: BackupJob, status: str, error: str | None, result: di
             if pol is None and job.params.get("backup_id"):
                 b = await db.get(Backup, uuid.UUID(str(job.params["backup_id"])))
                 pol = await db.get(BackupPolicy, b.policy_id) if b and b.policy_id else None
-            if "storage target" in msg or "S3" in msg or "cannot write" in msg:
-                titles[job.kind] = "Backup storage unavailable"
-            await notify_policy(db, pol, titles.get(job.kind, "Backup job failed"), msg[:1500] or status, "high")
+            title = titles.get(job.kind, "Backup job failed")
+            if status == "CANCELLED":
+                title = "Backup job cancelled"
+            elif (result or {}).get("storage_errors"):
+                # classified from the exception type, not from the message text
+                title = "Backup storage unavailable"
+            await notify_policy(db, pol, title, msg[:1500] or status, "medium" if status == "CANCELLED" else "high")
     except Exception:  # noqa: BLE001 - notification problems never fail the job record
         log.exception("backup notification failed")
 
@@ -1633,10 +1690,11 @@ async def protection(db: AsyncSession, servers: list[Server]) -> dict[str, dict[
     for s in servers:
         pols = covering.get(s.id, [])
         ts = last.get(s.id, (None, None))[0]
-        fresh = bool(ts) and any((max_age(p) is None or ts >= now - max_age(p)) for p in pols)  # type: ignore[operator]
+        fresh = bool(ts) and any(ts >= now - freshness_limit(p) for p in pols)  # type: ignore[operator]
         out[str(s.id)] = {
             "status": "protected" if pols and fresh else ("at_risk" if pols else "not_protected"),
             "last_backup_at": ts,
+            "freshness_limit_hours": max((freshness_limit(p).total_seconds() / 3600 for p in pols), default=None),
             "policies": [
                 {
                     "id": str(p.id),

@@ -193,3 +193,29 @@ describe("real / simulated distinction", () => {
     expect(await screen.findByLabelText("PG-PROD-01: Healthy (simulated)")).toBeInTheDocument();
   });
 });
+
+describe("simulation removal preview errors", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("shows an error with retry instead of an endless skeleton when the cleanup preview fails", async () => {
+    let fail = true;
+    mockFetch((url) => {
+      if (url.pathname === "/api/v1/auth/me") return { body: ME(["server.view"], SIM_PERMS) };
+      if (url.pathname === "/api/v1/fleet/sources") return { body: { real: 2, simulated: 18, total: 20, simulation_active: true } };
+      if (url.pathname === "/api/v1/simulation/status") return { body: STATUS(true) };
+      if (url.pathname === "/api/v1/simulation/cleanup-preview") {
+        return fail
+          ? { status: 500, body: { error: { code: "internal", message: "preview exploded" } } }
+          : { body: { counts: { servers: 18, databases: 65, metrics: 446000, queries: 2600, security_findings: 54, recommendations: 118, real_servers: 2 }, groupings: {}, legacy_demo_accounts: [] } };
+      }
+      return base(url);
+    });
+    renderApp("/platform/simulation");
+    await userEvent.click(await screen.findByRole("button", { name: /Remove simulated data/ }));
+    const dialog = await screen.findByRole("dialog");
+    expect(await within(dialog).findByText("preview exploded")).toBeInTheDocument();
+    fail = false;
+    await userEvent.click(within(dialog).getByRole("button", { name: "Try again" }));
+    expect(await within(dialog).findByText("446,000")).toBeInTheDocument();
+  });
+});

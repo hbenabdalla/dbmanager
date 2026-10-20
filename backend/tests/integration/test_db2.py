@@ -314,6 +314,7 @@ async def test_configuration_replication_storage() -> None:
         assert rep.role in ("standalone", "primary")  # HADR off in the test container
         st = await a.get_storage_metrics()
         assert st.total_bytes and st.tablespaces  # MON_GET_TABLESPACE
+        assert all({"schema", "name", "table_bytes", "index_bytes", "total_bytes"} <= set(t) for t in st.top_tables)
         series = size_series("db2", await a.list_databases(), st.tablespaces)
         assert "SYSCATSPACE" in series["db_tablespace_used_bytes"]
 

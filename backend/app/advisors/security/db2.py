@@ -34,7 +34,7 @@ def db2_public(ctx: EvidenceContext) -> list[RuleFinding]:
     engines=("db2",),
     kind="security",
     category="privileges",
-    severity="medium",
+    severity="high",
     title="DBADM held by application/batch users",
 )
 def db2_dbadm(ctx: EvidenceContext) -> list[RuleFinding]:
@@ -86,6 +86,8 @@ def db2_audit(ctx: EvidenceContext) -> list[RuleFinding]:
     title="Unencrypted authentication / no TLS port",
 )
 def db2_auth(ctx: EvidenceContext) -> list[RuleFinding]:
+    if ctx.security.get("dbm_cfg_readable") is False or ctx.security.get("authentication") is None:
+        return []  # the configuration could not be read: no evidence either way
     if ctx.security.get("ssl_svcename") or ctx.security.get("authentication") in (
         "SERVER_ENCRYPT",
         "SERVER_ENCRYPT_AES",

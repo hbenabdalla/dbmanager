@@ -1,8 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
 import { Plus, Search } from "lucide-react";
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { ApiError, get, post } from "@/api/client";
 import { useAllServers, useClusters, useEnvironments } from "@/api/hooks";
@@ -17,7 +17,7 @@ import { DataTable } from "@/components/ui/data-table";
 import { Dialog } from "@/components/ui/dialog";
 import { Field, Input, Select } from "@/components/ui/input";
 import { PlacementActions } from "./placement";
-import { EmptyState, SkeletonRows } from "@/components/ui/states";
+import { EmptyState, ErrorState, SkeletonRows } from "@/components/ui/states";
 import { useAuth } from "@/lib/auth";
 import { HEALTH_LABEL } from "@/lib/engines";
 import { bytes, relTime } from "@/lib/format";
@@ -30,6 +30,29 @@ function groupBy<T>(items: T[], key: (t: T) => string | undefined) {
     m.set(k, [...(m.get(k) ?? []), i]);
   }
   return m;
+}
+
+/** Open the create dialog for "?create=1" deep links (the "+ Add" menu), then drop the flag. */
+function useCreateParam(allowed: boolean): [boolean, (o: boolean) => void] {
+  const [params, setParams] = useSearchParams();
+  const [open, setOpen] = useState(false);
+  const flagged = params.get("create") === "1";
+  useEffect(() => {
+    if (flagged && allowed) setOpen(true);
+  }, [flagged, allowed]);
+  const change = (o: boolean) => {
+    setOpen(o);
+    if (!o && flagged) {
+      const next = new URLSearchParams(params);
+      next.delete("create");
+      setParams(next, { replace: true });
+    }
+  };
+  return [open, change];
+}
+
+function PlacementLink({ tab }: { tab: "clusters" | "environments" }) {
+  return <Button variant="ghost" size="sm" asChild><Link to={`/fleet/placement?tab=${tab}`}>Edit or delete in Placement</Link></Button>;
 }
 
 function CreateDialog({ kind, open, onOpenChange }: { kind: "clusters" | "environments"; open: boolean; onOpenChange: (o: boolean) => void }) {
@@ -68,14 +91,14 @@ export function ClustersPage() {
   const clusters = useClusters();
   const servers = useAllServers();
   const { canPlatform } = useAuth();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useCreateParam(canPlatform("inventory.manage"));
   const members = groupBy(servers.data?.items ?? [], (s) => s.cluster?.id);
   return (
     <div>
       <PageHeader title="Clusters" description="Primary/replica sets, RAC, availability groups and HADR pairs."
         crumbs={[{ label: "Fleet" }, { label: "Clusters" }]}
-        actions={canPlatform("inventory.manage") && <Button variant="primary" onClick={() => setOpen(true)}><Plus /> New cluster</Button>} />
-      {clusters.isLoading ? <SkeletonRows /> : !clusters.data?.length ? <Card><EmptyState title="No clusters defined" /></Card> : (
+        actions={canPlatform("inventory.manage") && <span className="flex items-center gap-2"><PlacementLink tab="clusters" /><Button variant="primary" onClick={() => setOpen(true)}><Plus /> New cluster</Button></span>} />
+      {clusters.isLoading ? <SkeletonRows /> : clusters.error ? <Card><ErrorState error={clusters.error} onRetry={() => clusters.refetch()} /></Card> : !clusters.data?.length ? <Card><EmptyState title="No clusters defined" /></Card> : (
         <div className="grid gap-4 lg:grid-cols-2">
           {clusters.data.map((c) => {
             const list = members.get(c.id) ?? [];
@@ -111,14 +134,14 @@ export function EnvironmentsPage() {
   const envs = useEnvironments();
   const servers = useAllServers();
   const { canPlatform } = useAuth();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useCreateParam(canPlatform("inventory.manage"));
   const byEnv = groupBy(servers.data?.items ?? [], (s) => s.environment?.id);
   return (
     <div>
       <PageHeader title="Environments" description="Lifecycle tiers. Production servers get stricter confirmation rules."
         crumbs={[{ label: "Fleet" }, { label: "Environments" }]}
-        actions={canPlatform("inventory.manage") && <Button variant="primary" onClick={() => setOpen(true)}><Plus /> New environment</Button>} />
-      {envs.isLoading ? <SkeletonRows /> : (
+        actions={canPlatform("inventory.manage") && <span className="flex items-center gap-2"><PlacementLink tab="environments" /><Button variant="primary" onClick={() => setOpen(true)}><Plus /> New environment</Button></span>} />
+      {envs.isLoading ? <SkeletonRows /> : envs.error ? <Card><ErrorState error={envs.error} onRetry={() => envs.refetch()} /></Card> : (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {envs.data?.map((e) => {
             const list = byEnv.get(e.id) ?? [];

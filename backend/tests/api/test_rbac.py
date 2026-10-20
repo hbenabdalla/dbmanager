@@ -206,3 +206,9 @@ async def test_masked_query_text_without_view_text(make_client, servers) -> None
     sess = (await c.get(f"/api/v1/servers/{dev}/sessions")).json()
     assert sess  # DBA has query.view_text -> literals visible
     assert any("'ACME-2041'" in (s["query"] or "") for s in sess)
+
+
+async def test_role_catalog_is_administration_data(admin, make_client) -> None:  # type: ignore[no-untyped-def]
+    monitor = await make_client(("monitor", DEMO_PW))
+    assert (await monitor.get("/api/v1/roles")).status_code == 403
+    assert (await admin.get("/api/v1/roles")).status_code == 200

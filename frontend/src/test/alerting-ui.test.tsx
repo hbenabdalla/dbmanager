@@ -26,7 +26,7 @@ const ALERT = {
 const CHANNEL = {
   id: "c1", name: "on-call", kind: "webhook", enabled: true, min_severity: "high", send_for_simulated: false, preset: "slack",
   routes: { subscribe_all: true, environment_ids: ["e1"], tags: [], engines: [] },
-  config: { url: "https://hooks.slack.com/services/x", headers: {} }, has_signing_secret: false, has_smtp_password: false, created_by: "admin", created_at: "2026-10-18T09:00:00Z",
+  config: { url_display: "https://hooks.slack.com/…", header_names: [] }, has_url: true, has_signing_secret: false, has_smtp_password: false, created_by: "admin", created_at: "2026-10-18T09:00:00Z",
 };
 const WINDOW = {
   id: "w1", name: "Nightly patching", reason: null, scope_type: "server", scope_id: "s1", starts_at: "2026-10-19T22:00:00Z", ends_at: "2026-10-20T00:00:00Z",

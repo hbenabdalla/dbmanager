@@ -128,6 +128,9 @@ class SyncDBAPIAdapter(BaseDatabaseAdapter):
 
     #: open one connection per database name (False: a single connection, database selected in SQL)
     connection_per_database: ClassVar[bool] = False
+    #: one database per connection and no way to switch (Db2 LUW): a workspace statement or
+    #: EXPLAIN for another database is refused instead of silently running in the connected one
+    single_database: ClassVar[bool] = False
     #: placeholders the driver uses ("%s" PyMySQL, "?" pyodbc/ibm_db, ":1" oracledb)
     paramstyle: ClassVar[str] = "?"
     #: pass an empty parameter tuple when there are none (PyMySQL then still turns "%%" into "%")
@@ -214,6 +217,19 @@ class SyncDBAPIAdapter(BaseDatabaseAdapter):
             conn = self._open(database if self.connection_per_database else self.spec.database)
             self._conns[key] = conn
         return conn
+
+    def _use_database(self, conn: Any, database: str | None) -> Callable[[], None] | None:
+        """Make ``database`` the current database of a shared connection for one workspace
+        statement or EXPLAIN; returns a callable restoring the previous one. Engines that open
+        a connection per database (SQL Server) or have a single database need nothing."""
+        return None
+
+    def _check_database(self, database: str | None) -> None:
+        if self.single_database and database and database.strip().lower() != (self.spec.database or "").strip().lower():
+            raise AdapterError(
+                f"this {self.engine} connection is to database {self.spec.database!r}: "
+                f"register {database!r} as its own server to run statements there"
+            )
 
     async def connect(self) -> None:
         await self._run(self._get_conn, None)
@@ -303,6 +319,7 @@ class SyncDBAPIAdapter(BaseDatabaseAdapter):
         self, sql: str, database: str | None, read_only: bool, max_rows: int, timeout_s: float
     ) -> ExecutionResult:
         conn = self._get_conn(database)
+        restore = self._use_database(conn, database)
         self._set_call_timeout(conn, timeout_s)
         start = time.perf_counter()
         result = ExecutionResult()
@@ -337,6 +354,8 @@ class SyncDBAPIAdapter(BaseDatabaseAdapter):
                 except Exception:  # noqa: BLE001, S110
                     pass
                 self._set_call_timeout(conn, self.spec.statement_timeout)
+                if restore is not None:
+                    restore()
         result.duration_ms = round((time.perf_counter() - start) * 1000, 2)
         return result
 
@@ -346,6 +365,7 @@ class SyncDBAPIAdapter(BaseDatabaseAdapter):
         stmt = sql.strip().rstrip(";").strip()
         if not stmt:
             raise AdapterError("empty statement")
+        self._check_database(database)
         return await self._run(self._execute_sync, stmt, database, read_only, max_rows, timeout_s, timeout=timeout_s)
 
     # ------------------------------------------------------------------------------------

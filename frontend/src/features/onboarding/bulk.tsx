@@ -15,6 +15,8 @@ import { Switch } from "@/components/ui/switch";
 import { EmptyState } from "@/components/ui/states";
 import { useAuth } from "@/lib/auth";
 import { cn } from "@/lib/utils";
+import { DatabaseEngineIcon } from "@/components/engine-icon";
+import { ENGINES, normalizeEngine } from "@/lib/engines";
 
 export const BULK_COLUMNS = [
   "name", "engine", "host", "port", "environment", "site", "cluster", "application", "default_database", "tls_mode",
@@ -86,6 +88,16 @@ export function csvToRecords(text: string): Record<string, string>[] {
 }
 
 const blank = (): Row => Object.fromEntries(BULK_COLUMNS.map((c) => [c, c === "management_mode" ? "monitoring_only" : ""]));
+
+/** One editable cell of the onboarding grid. */
+function GridInput({ i, c, value, error, warning, onChange }: { i: number; c: string; value: string; error?: string; warning?: string; onChange: (v: string) => void }) {
+  return (
+    <input aria-label={`Row ${i + 1} ${c}`} aria-invalid={error ? true : undefined} title={error ?? warning}
+      value={value} onChange={(e) => onChange(e.target.value)}
+      className={cn("h-7 w-full min-w-[90px] rounded border bg-surface px-1.5 text-[12.5px] focus:outline-none focus:ring-2 focus:ring-[var(--ring)]",
+        error ? "border-crit" : warning ? "border-warn" : "border-border")} />
+  );
+}
 
 export function BulkOnboardingPage() {
   const { can } = useAuth();
@@ -209,12 +221,16 @@ export function BulkOnboardingPage() {
                               </td>
                               {columns.map((c) => {
                                 const { error, warning } = issueFor(i, c);
+                                const engine = c === "engine" ? normalizeEngine(r[c]) : "";
                                 return (
                                   <td key={c} className="px-1 py-1">
-                                    <input aria-label={`Row ${i + 1} ${c}`} aria-invalid={error ? true : undefined} title={error ?? warning}
-                                      value={r[c] ?? ""} onChange={(e) => edit(i, c, e.target.value)}
-                                      className={cn("h-7 w-full min-w-[90px] rounded border bg-surface px-1.5 text-[12.5px] focus:outline-none focus:ring-2 focus:ring-[var(--ring)]",
-                                        error ? "border-crit" : warning ? "border-warn" : "border-border")} />
+                                    {c === "engine" ? (
+                                      // same element tree whether or not the icon shows, so typing never loses focus
+                                      <span className="flex items-center gap-1">
+                                        {ENGINES[engine] && <span data-testid={`row-${i + 1}-engine-icon`} className="inline-flex shrink-0"><DatabaseEngineIcon engine={engine} size="xs" decorative /></span>}
+                                        <GridInput i={i} c={c} value={r[c] ?? ""} error={error} warning={warning} onChange={(v) => edit(i, c, v)} />
+                                      </span>
+                                    ) : <GridInput i={i} c={c} value={r[c] ?? ""} error={error} warning={warning} onChange={(v) => edit(i, c, v)} />}
                                     {error && <span className="mt-0.5 block text-2xs text-crit">{error}</span>}
                                     {!error && warning && <span className="mt-0.5 block text-2xs text-warn">{warning}</span>}
                                   </td>

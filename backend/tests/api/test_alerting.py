@@ -62,6 +62,30 @@ async def test_alerting_lifecycle(admin, make_client, servers, monkeypatch) -> N
     channel = r.json()
     listed = await admin.get("/api/v1/notification-channels")
     assert SECRET not in listed.text
+    # the webhook URL is a credential (Slack/Teams): stored encrypted, shown only as its host,
+    # never written to the audit trail
+    assert "/dbm" not in listed.text and channel["has_url"] is True
+    assert channel["config"]["url_display"] == "https://hooks.example.com/…"
+    events = (await admin.get("/api/v1/audit", params={"action": "notification_channel.create", "page_size": 5})).text
+    assert "hooks.example.com/dbm" not in events
+    from app.db.session import session_scope
+    from app.models import NotificationChannel
+
+    async with session_scope() as db:
+        stored = await db.get(NotificationChannel, channel["id"])
+        assert "url" not in stored.config and "hooks.example.com/dbm" not in str(stored.secret)
+        assert notify.webhook_target(stored)[0] == "https://hooks.example.com/dbm"
+    # an update without URL keeps it; a new URL replaces it
+    keep = await admin.put(
+        f"/api/v1/notification-channels/{channel['id']}",
+        json={"name": "it-webhook", "kind": "webhook", "config": {}, "send_for_simulated": True},
+    )
+    assert keep.status_code == 200 and keep.json()["has_url"] is True and keep.json()["has_signing_secret"] is True
+    async with session_scope() as db:
+        assert (
+            notify.webhook_target(await db.get(NotificationChannel, channel["id"]))[0]
+            == "https://hooks.example.com/dbm"
+        )
     bad = await admin.post(
         "/api/v1/notification-channels",
         json={"name": "bad", "kind": "webhook", "config": {"url": "https://x.example.com", "token": "abc"}},

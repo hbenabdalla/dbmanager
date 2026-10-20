@@ -22,6 +22,7 @@ from app.adapters.base import (
     AdapterError,
     Capability,
     CapabilityMap,
+    ExecutionResult,
     cap,
 )
 from app.adapters.dbapi import jsonable, text
@@ -40,6 +41,31 @@ FETCH_CHUNK = 1000
 MAX_FETCHED = 1_000_000
 
 
+#: objects of the Oracle Diagnostics Pack (AWR, ASH, ADDM, metrics history) and Tuning Pack
+#: (SQL Tuning / Access Advisor, SQL Monitoring); matched as whole identifiers
+_DIAGNOSTICS = re.compile(
+    r"(?<![\w$#])(?:"
+    r"(?:DBA|CDB)_HIST_\w+|G?V\$ACTIVE_SESSION_HISTORY|DBA_ADDM_\w+|CDB_ADDM_\w+|DBMS_WORKLOAD_REPOSITORY"
+    r"|DBMS_ADDM|DBMS_ADVISOR|DBMS_XPLAN\s*\.\s*DISPLAY_AWR|G?V\$(?:SYS|CON)?METRIC\w*|AWR_(?:ROOT|PDB|CDB)_\w+"
+    r")(?![\w$#])",
+    re.IGNORECASE,
+)
+_TUNING = re.compile(
+    r"(?<![\w$#])(?:DBMS_SQLTUNE|DBMS_SQL_MONITOR|G?V\$SQL_MONITOR\w*|G?V\$SQL_PLAN_MONITOR|DBA_SQLTUNE_\w+"
+    r"|DBA_ADVISOR_SQL\w*)(?![\w$#])",
+    re.IGNORECASE,
+)
+
+
+def licensed_pack_needed(sql: str) -> str | None:
+    """'diagnostics_pack' / 'tuning_pack' when a statement references objects of that pack."""
+    if _TUNING.search(sql):
+        return "tuning_pack"
+    if _DIAGNOSTICS.search(sql):
+        return "diagnostics_pack"
+    return None
+
+
 class OracleAdapter(OracleEvidenceMixin, OracleMonitoringMixin, OracleInventoryMixin):
     implementation_phase = 5
     implemented = True
@@ -54,14 +80,16 @@ class OracleAdapter(OracleEvidenceMixin, OracleMonitoringMixin, OracleInventoryM
             "label": "Oracle Diagnostics Pack",
             "default": False,
             "covers": "AWR (DBA_HIST_*), ASH (V$ACTIVE_SESSION_HISTORY), ADDM",
-            "used_by_db_manager": "Not used in this release, even when marked as licensed",
+            "used_by_db_manager": "Never queried by DBManager; the SQL workspace refuses statements on these "
+            "objects unless the server is marked as licensed",
         },
         {
             "key": "tuning_pack",
             "label": "Oracle Tuning Pack",
             "default": False,
             "covers": "SQL Tuning Advisor (DBMS_SQLTUNE), SQL Access Advisor, SQL Monitoring",
-            "used_by_db_manager": "Not used in this release, even when marked as licensed",
+            "used_by_db_manager": "Never queried by DBManager; the SQL workspace refuses statements on these "
+            "objects unless the server is marked as licensed",
         },
     ]
     static_capabilities: ClassVar[CapabilityMap] = {
@@ -208,6 +236,29 @@ class OracleAdapter(OracleEvidenceMixin, OracleMonitoringMixin, OracleInventoryM
                     cur.execute(f"ALTER SESSION SET STATISTICS_LEVEL = {level.upper()}")
         finally:
             cur.close()
+
+    async def execute_sql(
+        self, sql: str, database: str | None, *, read_only: bool, max_rows: int, timeout_s: float
+    ) -> ExecutionResult:
+        """Statements run in the connected container: another PDB is refused, not ignored.
+        Statements touching Diagnostics/Tuning Pack objects are refused unless the server is
+        marked as licensed for that pack (using them records feature usage in the database)."""
+        pack = licensed_pack_needed(sql)
+        if pack and pack not in (self.spec.licensed_features or []):
+            label = "Diagnostics Pack" if pack == "diagnostics_pack" else "Tuning Pack"
+            raise AdapterError(
+                f"this statement uses Oracle {label} features (AWR, ASH, ADDM, SQL Monitoring or the SQL "
+                f"tuning advisors), which need a separate licence: mark the server as licensed for the "
+                f"{label} under Server → Settings to run it"
+            )
+        if database:
+            info = await self._server()
+            if database not in (info["con_name"], text(info.get("db_name"))):
+                raise AdapterError(
+                    f"statements run in the connected container {info['con_name']}: register {database} "
+                    "(its service name) as its own server"
+                )
+        return await super().execute_sql(sql, None, read_only=read_only, max_rows=max_rows, timeout_s=timeout_s)
 
     async def explain_query(self, sql: str, database: str | None = None, analyze: bool = False) -> ExplainResult:
         stmt = sql.strip().rstrip(";").strip()

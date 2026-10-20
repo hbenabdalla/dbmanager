@@ -214,9 +214,6 @@ class Settings(BaseSettings):
     #: an external tool run longer than this is cancelled
     backup_tool_timeout_seconds: int = Field(default=6 * 3600, ge=60)
 
-    # --- AI insights (architected, disabled) ---------------------------------------------
-    ai_insights_enabled: bool = False
-
     @field_validator(
         "cors_origins",
         "trusted_proxies",

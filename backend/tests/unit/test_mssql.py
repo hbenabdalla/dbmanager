@@ -417,3 +417,59 @@ def test_every_read_path_survives_an_empty_instance() -> None:
 
     asyncio.run(run())
     assert conn.log
+
+
+def test_constraints_are_listed_for_a_schema() -> None:
+    import asyncio
+
+    a, conn = _adapter(
+        [
+            ("SERVERPROPERTY('ProductVersion')", [_server_row()]),
+            ("FROM sys.databases d", [_db_row("master", 1), _db_row("shop", 5)]),
+            (
+                "FROM sys.key_constraints kc WHERE kc.schema_id",
+                [
+                    {
+                        "name": "PK_orders",
+                        "constraint_type": "PRIMARY_KEY_CONSTRAINT",
+                        "table_name": "orders",
+                        "is_disabled": False,
+                        "is_not_trusted": False,
+                    },
+                    {
+                        "name": "FK_orders_customer",
+                        "constraint_type": "FOREIGN_KEY_CONSTRAINT",
+                        "table_name": "orders",
+                        "is_disabled": False,
+                        "is_not_trusted": True,
+                    },
+                ],
+            ),
+        ]
+    )
+    out = asyncio.run(a.list_objects("shop", "dbo", "constraint"))
+    assert [(o.name, o.parent) for o in out] == [("PK_orders", "orders"), ("FK_orders_customer", "orders")]
+    assert out[1].extra == {"constraint_type": "FOREIGN_KEY_CONSTRAINT", "disabled": False, "trusted": False}
+    assert any("SCHEMA_ID(?)" in s for s, _ in conn.log)
+
+
+def test_roles_of_every_accessible_database_on_a_server_registration() -> None:
+    import asyncio
+
+    def role(name: str, fixed: bool = False) -> dict[str, object]:
+        return {"name": name, "type": "R", "is_fixed_role": fixed}
+
+    routes = [
+        ("SERVERPROPERTY('ProductVersion')", [_server_row()]),
+        ("FROM sys.server_principals WHERE type = 'R'", [{"name": "sysadmin", "is_fixed_role": True}]),
+        ("HAS_DBACCESS(name)", [{"name": "shop"}, {"name": "hr"}, {"name": "master"}]),
+        ("FROM sys.database_role_members", []),
+    ]
+    a, conn = _adapter([*routes, ("FROM sys.database_principals", [role("db_owner", True), role("app_reader")])])
+    names = [r.name for r in asyncio.run(a.list_roles())]
+    assert {"shop:app_reader", "hr:app_reader", "master:db_owner"} <= set(names)
+    # a database registration reads that database only
+    b, conn = _adapter([*routes, ("FROM sys.database_principals", [role("app_reader")])], database="shop")
+    names = [r.name for r in asyncio.run(b.list_roles())]
+    assert [n for n in names if ":" in n] == ["shop:app_reader"]
+    assert not any("HAS_DBACCESS" in s for s, _ in conn.log)

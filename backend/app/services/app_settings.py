@@ -26,7 +26,6 @@ EDITABLE: dict[str, tuple[type, Any, str]] = {
         "Monitoring telemetry retention policy in days (enforced by the time-series database; "
         "a change takes effect after restarting it with DBM_TIMESERIES_RETENTION)",
     ),
-    "ai_insights.enabled": (bool, False, "Optional AI insights layer (not available in this release)"),
     "performance.regression_threshold_pct": (
         int,
         50,
@@ -53,6 +52,17 @@ EDITABLE: dict[str, tuple[type, Any, str]] = {
         int,
         24,
         "Recommendation validation: hours measured before and after a recommendation is resolved",
+    ),
+    "backup.allow_restore_without_safety_backup": (
+        bool,
+        False,
+        "Allow a platform restore without the safety backup of the current configuration taken first",
+    ),
+    "backup.notification_channels": (
+        str,
+        "",
+        "Notification channel names (comma separated) for events of backups that no policy owns: "
+        "manual backups, their verification and restores",
     ),
 }
 
@@ -96,8 +106,6 @@ async def put(db: AsyncSession, values: dict[str, Any], actor: str) -> dict[str,
             raise ValidationFailed(f"{k} must be between {RANGES[k][0]} and {RANGES[k][1]}")
         if k == "monitoring.retention_days" and not 1 <= v <= 3650:
             raise ValidationFailed("retention must be between 1 and 3650 days")
-        if k == "ai_insights.enabled" and v:
-            raise ValidationFailed("The AI insights layer is not available in this release")
         row = await db.get(AppSetting, k)
         if row is None:
             db.add(AppSetting(key=k, value=v, updated_by=actor))

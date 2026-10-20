@@ -18,10 +18,24 @@ flowchart LR
 | `DBM_PUBLIC_BASE_URL` | `https://dbmanager.example.com` — used for OIDC redirect URIs and links in notifications |
 | `DBM_COOKIE_SECURE` | `true` (default): session and CSRF cookies are only sent over HTTPS (browsers also accept them on `http://localhost`) |
 | `DBM_HTTP_BIND` | `127.0.0.1` (default) when the proxy runs on the same host; `0.0.0.0` only when the host is protected by the proxy/firewall |
-| `DBM_TRUSTED_PROXIES` | networks whose `X-Forwarded-For` is trusted for the client IP in audit and rate limiting (Compose default: private ranges and `127.0.0.1`) |
+| `DBM_OUTER_PROXY` | address (one CIDR) of **your** reverse proxy as the frontend nginx sees it. Only this address may set `X-Forwarded-For`. When the proxy runs on the Docker host, that is the Docker network gateway (for example `172.18.0.1/32`; `docker network inspect database-manager_app`). Default `127.0.0.1/32`: no outer proxy is trusted |
+| `DBM_TRUSTED_PROXIES` | addresses whose `X-Forwarded-For` the **backend** trusts — in Compose only the frontend nginx (`172.16.0.0/12` covers the Compose network) |
 
-The frontend's nginx forwards `X-Forwarded-For`, `X-Forwarded-Proto` (it keeps the value set by your
-proxy) and `X-Request-ID`. Configure your proxy to set `X-Forwarded-Proto: https`.
+### How the client address is determined
+
+The client address is used for audit, per-IP rate limits and API-token CIDR allow-lists, so a
+client must not be able to choose it:
+
+1. The frontend nginx accepts `X-Forwarded-For` only from `DBM_OUTER_PROXY` (`set_real_ip_from`,
+   recursive) and otherwise uses the TCP peer address. It then **replaces** the header with that
+   single address before passing the request to the backend — a value a client sends itself is
+   discarded.
+2. The backend reads `X-Forwarded-For` only when the request comes from `DBM_TRUSTED_PROXIES`, and
+   reads it **from the right**, skipping trusted hops; the first untrusted address is the client.
+
+Do not add client networks to `DBM_TRUSTED_PROXIES` or `DBM_OUTER_PROXY`: every trusted address can
+claim to be anybody. The frontend's nginx also forwards `X-Forwarded-Proto` (it keeps the value set
+by your proxy) and `X-Request-ID`. Configure your proxy to set `X-Forwarded-Proto: https`.
 
 ## Example: nginx in front
 

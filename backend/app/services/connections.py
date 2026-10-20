@@ -62,7 +62,7 @@ class MonitoringOnly(AppError):
 
 
 def management_mode(server: Server) -> str:
-    return str((server.options or {}).get("management_mode") or "administration")
+    return str((server.options or {}).get("management_mode") or "monitoring")
 
 
 def require_administration(server: Server) -> None:

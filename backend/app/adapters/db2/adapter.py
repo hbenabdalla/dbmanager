@@ -36,6 +36,7 @@ INSTANCE_ADMIN = {"SYSADM", "SYSCTRL", "SYSMAINT"}
 
 
 class Db2Adapter(Db2EvidenceMixin, Db2MonitoringMixin, Db2InventoryMixin):
+    single_database = True
     implementation_phase = 6
     implemented = True
     support_level = "supported"
@@ -200,6 +201,7 @@ class Db2Adapter(Db2EvidenceMixin, Db2MonitoringMixin, Db2InventoryMixin):
             raise AdapterError(
                 "Db2 does not provide actual row counts without an activity event monitor; use the estimated plan"
             )
+        self._check_database(database)
         stmt = sql.strip().rstrip(";").strip()
         if not PLANNABLE.match(stmt):
             raise AdapterError("only SELECT, WITH, VALUES, INSERT, UPDATE, DELETE and MERGE can be explained")

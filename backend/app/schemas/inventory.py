@@ -274,7 +274,7 @@ class ServerOut(BaseModel):
     open_recommendations: int | None = None
     open_findings: int | None = None
     implementation: str  # implemented|planned|simulated
-    management_mode: str = "administration"
+    management_mode: str = "monitoring"
     connection_options: dict[str, Any] = Field(default_factory=dict)
     created_at: datetime
 

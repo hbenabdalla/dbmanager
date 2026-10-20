@@ -46,6 +46,8 @@ class FakeVault(BaseHTTPRequestHandler):
         FakeVault.calls.append(("POST", self.path, dict(self.headers)))
         if self.path == "/v1/auth/approle/login" and body == {"role_id": "dbm-role", "secret_id": "dbm-secret-id"}:
             return self._reply(200, {"auth": {"client_token": APPROLE_TOKEN, "lease_duration": 3600}})
+        if self.path == "/v1/auth/k8s-prod/login" and body == {"role": "dbmanager", "jwt": "sa-jwt-token"}:
+            return self._reply(200, {"auth": {"client_token": APPROLE_TOKEN, "lease_duration": 60}})
         return self._reply(400, {"errors": ["invalid role or secret id"]})
 
     def log_message(self, *a) -> None:  # type: ignore[no-untyped-def]
@@ -107,6 +109,27 @@ async def test_kv2_read_auth_methods_cache_and_errors(vault, monkeypatch) -> Non
         await v.client.read("kv-dba:oracle/erp#password")
     health = await v.client.health()
     assert health["reachable"] is True and health["sealed"] is False
+
+
+async def test_kubernetes_auth_uses_the_service_account_token(vault, monkeypatch, tmp_path) -> None:  # type: ignore[no-untyped-def]
+    from app.services import vault as v
+
+    jwt = tmp_path / "token"
+    jwt.write_text("sa-jwt-token\n")
+    monkeypatch.setattr(vault, "vault_auth", "kubernetes")
+    monkeypatch.setattr(vault, "vault_kubernetes_role", "dbmanager")
+    monkeypatch.setattr(vault, "vault_kubernetes_jwt_file", str(jwt))
+    monkeypatch.setattr(vault, "vault_auth_mount", "k8s-prod")
+    v.client.clear()
+    assert await v.client.read("kv-dba:oracle/erp#password") == "Erp-Secret-1"
+    logins = [c for c in FakeVault.calls if c[1] == "/v1/auth/k8s-prod/login"]
+    assert len(logins) == 1 and logins[0][2]["X-Vault-Namespace"] == "dba-team"
+    # a rotated (wrong) service-account token is refused, without echoing it
+    jwt.write_text("other-token")
+    v.client.clear()
+    with pytest.raises(v.VaultError, match="kubernetes login failed") as exc:
+        await v.client.read("kv-dba:oracle/erp#password")
+    assert "other-token" not in str(exc.value)
 
 
 async def test_registered_server_connects_with_a_vault_secret(admin, vault) -> None:  # type: ignore[no-untyped-def]

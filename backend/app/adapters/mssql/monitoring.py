@@ -337,7 +337,9 @@ class SQLServerMonitoringMixin(SQLServerBase):
                 jsonable(dict(r))
                 for r in await self._try(
                     """
-                    SELECT TOP (20) s.name AS schema_name, o.name, SUM(ps.used_page_count) * 8192 AS total_bytes,
+                    SELECT TOP (20) s.name AS [schema], o.name, SUM(ps.used_page_count) * 8192 AS total_bytes,
+                           SUM(CASE WHEN ps.index_id IN (0, 1) THEN ps.used_page_count ELSE 0 END) * 8192 AS table_bytes,
+                           SUM(CASE WHEN ps.index_id > 1 THEN ps.used_page_count ELSE 0 END) * 8192 AS index_bytes,
                            SUM(CASE WHEN ps.index_id IN (0, 1) THEN ps.row_count ELSE 0 END) AS row_estimate
                     FROM sys.dm_db_partition_stats ps
                     JOIN sys.objects o ON o.object_id = ps.object_id AND o.type = 'U' AND o.is_ms_shipped = 0

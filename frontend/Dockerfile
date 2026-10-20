@@ -14,6 +14,8 @@ FROM nginxinc/nginx-unprivileged:1.27-alpine AS runtime
 LABEL org.opencontainers.image.title="database-manager-frontend"
 ENV BACKEND_URL=http://backend:8000
 COPY nginx/default.conf.template /etc/nginx/templates/default.conf.template
+# proxy allowed to set X-Forwarded-For for this nginx (none by default: loopback only)
+ENV DBM_OUTER_PROXY=127.0.0.1/32
 COPY --from=build /src/dist /usr/share/nginx/html
 EXPOSE 8080
 HEALTHCHECK --interval=15s --timeout=3s --retries=5 CMD wget -q -O /dev/null http://127.0.0.1:8080/nginx-health || exit 1

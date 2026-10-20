@@ -10,6 +10,7 @@ import { DataTable } from "@/components/ui/data-table";
 import { Input, Select } from "@/components/ui/input";
 import { Tooltip } from "@/components/ui/tooltip";
 import { dateTime, relTime } from "@/lib/format";
+import { AdministrationHint } from "../../shared/admin-link";
 
 function AdminCell({ u }: { u: DbUser }) {
   if (!u.admin_reasons.length) return <span className="text-muted">—</span>;
@@ -40,7 +41,7 @@ export function UsersTab({ server }: { server: ServerDetail }) {
       <div className="flex flex-wrap gap-4 text-[13px]">
         <label className="flex items-center gap-2"><input type="checkbox" checked={onlyAdmin} onChange={(e) => setOnlyAdmin(e.target.checked)} /> Only administrative accounts</label>
         <label className="flex items-center gap-2"><input type="checkbox" checked={hideSystem} onChange={(e) => setHideSystem(e.target.checked)} /> Hide built-in roles</label>
-        <span className="text-muted">Changes to accounts are made through the SQL workspace and require user.manage plus confirmation.</span>
+        <AdministrationHint serverId={server.id} what="Changes to accounts (create, drop, grant, revoke)" action="create_user" />
       </div>
       <Card><CardHeader title="Login accounts" description="Who can connect" /><DataTable columns={columns} data={filter(users.data)} loading={users.isLoading} error={users.error} dense /></Card>
       <Card><CardHeader title="Roles" description="Non-login roles used to group privileges" /><DataTable columns={columns.filter((c) => c.header !== "Last login" && c.header !== "Password expires")} data={filter(roles.data)} loading={roles.isLoading} error={roles.error} dense /></Card>

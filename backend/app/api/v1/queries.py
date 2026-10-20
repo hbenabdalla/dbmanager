@@ -23,7 +23,7 @@ from app.models import QueryFingerprint, QueryPlanSnapshot, Server
 from app.services import app_settings, audit
 from app.services import metrics as metrics_svc
 from app.services.authz import server_ref
-from app.services.connections import adapter_preferring, require_capability, target
+from app.services.connections import adapter_for, adapter_preferring, require_administration, require_capability, target
 
 router = APIRouter(tags=["queries"])
 
@@ -267,6 +267,9 @@ async def explain(server_id: uuid.UUID, body: ExplainRequest, db: DB, p: Current
                 "EXPLAIN ANALYZE of a data-modifying statement requires query.modify",
                 details={"permission": "query.modify"},
             )
+        if not cls.read_only:
+            # executing a change (even rolled back) is a change action: never on Monitoring-only servers
+            require_administration(s)
         if is_prod and not await app_settings.get(db, "workspace.allow_explain_analyze_in_production"):
             raise PermissionDenied("EXPLAIN ANALYZE on production servers is disabled by platform settings")
         expected = s.name if (is_prod or not cls.read_only) else "ANALYZE"
@@ -287,7 +290,11 @@ async def explain(server_id: uuid.UUID, body: ExplainRequest, db: DB, p: Current
     digest = hashlib.sha256(body.sql.encode()).hexdigest()[:16]
     action = "query.explain_analyze" if body.analyze else "query.explain"
     try:
-        async with target(await adapter_preferring(db, s, "admin", "monitoring")) as a:
+        changes = body.analyze and not cls.read_only
+        adapter = (
+            (await adapter_for(db, s, "admin")) if changes else (await adapter_preferring(db, s, "admin", "monitoring"))
+        )
+        async with target(adapter) as a:
             result = await a.explain_query(body.sql, body.database, analyze=body.analyze)
     except Exception as exc:
         await audit.record(

@@ -262,3 +262,40 @@ async def test_email_without_smtp_configuration_fails_clearly(monkeypatch: pytes
     ch = SimpleNamespace(id=uuid.uuid4(), kind="email", config={"recipients": ["a@b.c"]}, secret=None)
     with pytest.raises(notify.DeliveryError, match="SMTP is not configured"):
         await notify.send(ch, "test", None)
+
+
+@pytest.mark.asyncio
+async def test_plaintext_webhook_urls_move_into_the_secret() -> None:
+    """Channels saved by older versions keep url/headers in config: startup moves them into
+    the encrypted secret without losing the signing secret."""
+    import uuid as _uuid
+    from types import SimpleNamespace as NS
+
+    from app.services import notify
+
+    cid = _uuid.uuid4()
+    ch = NS(
+        id=cid,
+        kind="webhook",
+        config={"url": "https://hooks.slack.com/services/T0/B0/xyz", "headers": {"X-Team": "dba"}},
+        secret=notify.seal_secret(cid, {"signing_secret": "s3cr3t"}),
+    )
+
+    class _Res:
+        def scalars(self):  # type: ignore[no-untyped-def]
+            return [ch]
+
+    class _Db:
+        async def execute(self, _stmt):  # type: ignore[no-untyped-def]
+            return _Res()
+
+    assert await notify.migrate_plaintext_webhooks(_Db()) == 1
+    assert "url" not in ch.config and "headers" not in ch.config
+    assert ch.config["url_display"] == "https://hooks.slack.com/…" and ch.config["header_names"] == ["X-Team"]
+    assert notify.open_secret(ch) == {
+        "signing_secret": "s3cr3t",
+        "url": "https://hooks.slack.com/services/T0/B0/xyz",
+        "headers": {"X-Team": "dba"},
+    }
+    assert notify.webhook_target(ch) == ("https://hooks.slack.com/services/T0/B0/xyz", {"X-Team": "dba"})
+    assert await notify.migrate_plaintext_webhooks(_Db()) == 0  # idempotent

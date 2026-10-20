@@ -23,8 +23,9 @@ export interface Routes { subscribe_all?: boolean; environment_ids?: string[]; t
 export interface NotificationChannel {
   id: string; name: string; kind: "webhook" | "email"; enabled: boolean; min_severity: string; send_for_simulated: boolean;
   preset?: Preset; routes?: Routes;
-  config: { url?: string; headers?: Record<string, string>; recipients?: string[]; smtp_host?: string; smtp_port?: number; smtp_user?: string; from?: string; starttls?: boolean; security?: SmtpSecurity };
-  has_signing_secret: boolean; has_smtp_password: boolean; created_by: string | null; created_at: string;
+  /** webhook URL and headers are write-only (stored encrypted): only url_display and header_names come back */
+  config: { url_display?: string; header_names?: string[]; recipients?: string[]; smtp_host?: string; smtp_port?: number; smtp_user?: string; from?: string; starttls?: boolean; security?: SmtpSecurity };
+  has_url?: boolean; has_signing_secret: boolean; has_smtp_password: boolean; created_by: string | null; created_at: string;
 }
 interface Delivery { id: number; alert_id: string | null; event: string; status: string; attempts: number; response_code: number | null; error: string | null; created_at: string; next_attempt_at?: string | null }
 const PRESET_LABEL: Record<Preset, string> = { generic: "DBManager JSON", slack: "Slack", teams: "Microsoft Teams" };
@@ -47,8 +48,7 @@ function toForm(c: NotificationChannel | null): Form {
   const cfg = c?.config ?? {};
   return {
     name: c?.name ?? "", kind: c?.kind ?? "webhook", enabled: c?.enabled ?? true, min_severity: c?.min_severity ?? "info",
-    send_for_simulated: c?.send_for_simulated ?? false, url: cfg.url ?? "",
-    headers: Object.entries(cfg.headers ?? {}).map(([k, v]) => `${k}: ${v}`).join("\n"),
+    send_for_simulated: c?.send_for_simulated ?? false, url: "", headers: "",
     recipients: (cfg.recipients ?? []).join(", "), smtp_host: cfg.smtp_host ?? "", smtp_port: cfg.smtp_port ? String(cfg.smtp_port) : "",
     smtp_user: cfg.smtp_user ?? "", from: cfg.from ?? "",
     security: cfg.security ?? (cfg.starttls === undefined ? "" : cfg.starttls ? "starttls" : "none"), preset: c?.preset ?? "generic",
@@ -59,8 +59,10 @@ function toForm(c: NotificationChannel | null): Form {
 
 function toBody(f: Form) {
   const secretKey = f.kind === "webhook" ? "signing_secret" : "smtp_password";
+  // empty URL / headers on edit = keep the stored (encrypted) values
+  const headers = Object.fromEntries(f.headers.split("\n").map((l) => l.split(/:(.*)/s).map((x) => x.trim())).filter(([k, v]) => k && v).map(([k, v]) => [k, v]));
   const config = f.kind === "webhook"
-    ? { url: f.url.trim(), headers: Object.fromEntries(f.headers.split("\n").map((l) => l.split(/:(.*)/s).map((x) => x.trim())).filter(([k, v]) => k && v).map(([k, v]) => [k, v])) }
+    ? { ...(f.url.trim() ? { url: f.url.trim() } : {}), ...(f.headers.trim() ? { headers } : {}) }
     : {
       recipients: f.recipients.split(",").map((r) => r.trim()).filter(Boolean),
       ...(f.smtp_host ? { smtp_host: f.smtp_host.trim() } : {}), ...(f.smtp_port ? { smtp_port: Number(f.smtp_port) } : {}),
@@ -87,7 +89,8 @@ function ChannelDialog({ channel, onClose }: { channel: NotificationChannel | nu
     onSuccess: () => { toast.success(channel ? "Channel saved" : "Channel created"); qc.invalidateQueries({ queryKey: ["notification-channels"] }); onClose(); },
     onError: (e) => toast.error(err(e)),
   });
-  const valid = f.name.trim() && (f.kind === "webhook" ? /^https?:\/\/.+/.test(f.url.trim()) : f.recipients.includes("@"));
+  const keepUrl = !!channel?.has_url && !f.url.trim();
+  const valid = f.name.trim() && (f.kind === "webhook" ? keepUrl || /^https?:\/\/.+/.test(f.url.trim()) : f.recipients.includes("@"));
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()} width="max-w-2xl" title={channel ? `Edit ${channel.name}` : "New notification channel"}
       footer={<><Button variant="ghost" onClick={onClose}>Cancel</Button><Button variant="primary" disabled={!valid || save.isPending} onClick={() => save.mutate()}>{channel ? "Save" : "Create channel"}</Button></>}>
@@ -104,8 +107,14 @@ function ChannelDialog({ channel, onClose }: { channel: NotificationChannel | nu
               {(Object.keys(PRESET_LABEL) as Preset[]).map((p) => <option key={p} value={p}>{PRESET_LABEL[p]}</option>)}
             </Select>
           </Field>
-          <Field label="URL" className="sm:col-span-2" hint="Private, loopback and link-local addresses are refused unless DBM_WEBHOOK_ALLOW_PRIVATE=true"><Input value={f.url} onChange={(e) => set("url", e.target.value)} placeholder="https://hooks.example.com/dbmanager" /></Field>
-          <Field label="Extra headers (one per line, Name: value)" className="sm:col-span-2" hint="Not encrypted: do not put credentials here">
+          <Field label="URL" className="sm:col-span-2"
+            hint={channel?.has_url
+              ? `Stored encrypted (${channel.config.url_display ?? "set"}). Leave empty to keep it. Private, loopback and link-local addresses are refused unless DBM_WEBHOOK_ALLOW_PRIVATE=true`
+              : "Stored encrypted: a Slack or Teams webhook URL is a credential. Private, loopback and link-local addresses are refused unless DBM_WEBHOOK_ALLOW_PRIVATE=true"}>
+            <Input value={f.url} onChange={(e) => set("url", e.target.value)} placeholder={channel?.has_url ? "•••••••• stored" : "https://hooks.example.com/dbmanager"} autoComplete="off" />
+          </Field>
+          <Field label="Extra headers (one per line, Name: value)" className="sm:col-span-2"
+            hint={channel?.config.header_names?.length ? `Stored encrypted: ${channel.config.header_names.join(", ")}. Leave empty to keep them; enter all headers to replace them.` : "Stored encrypted, never shown again"}>
             <textarea className="min-h-[60px] w-full rounded-md border border-border bg-surface px-2.5 py-1.5 font-mono text-[12.5px]" value={f.headers} onChange={(e) => set("headers", e.target.value)} placeholder="X-Team: dba" />
           </Field>
           <Field label="Signing secret (HMAC-SHA256)" className="sm:col-span-2" hint={stored ? "A secret is stored. Leave empty to keep it." : "Optional. Sent as X-DBM-Signature: sha256=<hex>"}>
@@ -202,7 +211,7 @@ export function NotificationChannelsPage() {
     ) },
     { header: "Target", id: "target", cell: ({ row: { original: c } }) => (
       <div>
-        <span className="break-all font-mono text-[12px]">{c.kind === "webhook" ? c.config.url : (c.config.recipients ?? []).join(", ")}</span>
+        <span className="break-all font-mono text-[12px]">{c.kind === "webhook" ? (c.config.url_display || "URL stored") : (c.config.recipients ?? []).join(", ")}</span>
         {c.kind === "webhook" && c.preset && c.preset !== "generic" && <div className="text-2xs text-muted">{PRESET_LABEL[c.preset]}</div>}
       </div>
     ) },

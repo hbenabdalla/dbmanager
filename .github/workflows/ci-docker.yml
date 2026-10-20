@@ -1,8 +1,9 @@
 name: Docker images
 
 on:
+  # no path filter: the Compose start-up and restore drill is a required check, so it must report
+  # on every pull request (a path-filtered required check would stay pending)
   pull_request:
-    paths: ["backend/**", "frontend/**", "scripts/**", "docker-compose.yml", ".github/workflows/ci-docker.yml"]
   push:
     branches: [main]
     tags: ["v*"]
@@ -34,6 +35,7 @@ jobs:
           cache-to: type=gha,mode=max,scope=${{ matrix.name }}
 
   compose:
+    name: Compose and restore drill
     runs-on: ubuntu-24.04
     needs: build
     steps:

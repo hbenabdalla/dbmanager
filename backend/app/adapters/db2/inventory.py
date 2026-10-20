@@ -86,6 +86,15 @@ ADMIN_AUTHORITIES = {
     "SYSCTRL": "SYSCTRL (instance)",
     "SYSMAINT": "SYSMAINT (instance)",
 }
+#: SYSCAT.*AUTH catalogs read besides TABAUTH/SCHEMAAUTH/DBAUTH/ROLEAUTH: (object type, query, columns)
+OBJECT_AUTHS: tuple[tuple[str, str, tuple[tuple[str, str], ...]], ...] = (
+    ("routine", Q.ROUTINEAUTH, (("executeauth", "EXECUTE"),)),
+    ("package", Q.PACKAGEAUTH, (("controlauth", "CONTROL"), ("bindauth", "BIND"), ("executeauth", "EXECUTE"))),
+    ("sequence", Q.SEQUENCEAUTH, (("usageauth", "USAGE"), ("alterauth", "ALTER"))),
+    ("index", Q.INDEXAUTH, (("controlauth", "CONTROL"),)),
+    ("tablespace", Q.TBSPACEAUTH, (("useauth", "USE"),)),
+    ("module", Q.MODULEAUTH, (("executeauth", "EXECUTE"),)),
+)
 TAB_PRIVS = {
     "controlauth": "CONTROL",
     "alterauth": "ALTER",
@@ -451,6 +460,36 @@ class Db2InventoryMixin(Db2Base):
                             database=database,
                         )
                     )
+        for otype, sql, cols in OBJECT_AUTHS:
+            for r in await self._try(sql.format(limit=int(limit))) or []:
+                for col, p in cols:
+                    if text(r[col]) in ("Y", "G"):
+                        schema = (text(r["objschema"]) or "").strip()
+                        out.append(
+                            Privilege(
+                                grantee=text(r["grantee"]) or "",
+                                object_type=otype,
+                                object_name=f"{schema}.{text(r['objname'])}" if schema else text(r["objname"]) or "",
+                                privilege=p,
+                                grantor=text(r["grantor"]),
+                                grantable=text(r[col]) == "G",
+                                database=database,
+                            )
+                        )
+        for r in await self._try(Q.COLAUTH.format(limit=int(limit))) or []:
+            out.append(
+                Privilege(
+                    grantee=text(r["grantee"]) or "",
+                    object_type="column",
+                    object_name=f"{text(r['tabschema'])}.{text(r['tabname'])}.{text(r['colname'])}",
+                    privilege={"U": "UPDATE", "R": "REFERENCES"}.get(
+                        text(r["privtype"]) or "", text(r["privtype"]) or ""
+                    ),
+                    grantor=text(r["grantor"]),
+                    grantable=text(r["grantable"]) == "G",
+                    database=database,
+                )
+            )
         if grantee:
             out = [p for p in out if p.grantee.upper() == grantee.upper()]
         return out[:limit]

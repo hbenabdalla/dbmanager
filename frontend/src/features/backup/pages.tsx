@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
-import { Archive, CheckCircle2, Download, Eye, HardDrive, Plus, RotateCcw, ShieldCheck, Trash2 } from "lucide-react";
+import { Archive, CheckCircle2, Download, Eye, HardDrive, Pin, PinOff, Plus, RotateCcw, ShieldCheck, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
@@ -17,14 +17,14 @@ import { EmptyState, ErrorState, SkeletonRows } from "@/components/ui/states";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/lib/auth";
 import { bytes, dateTime, relTime } from "@/lib/format";
-import { type Backup, type Capabilities, errMsg, type Job, type Overview } from "./api";
+import { ACTIVE, type Backup, type Capabilities, errMsg, type Job, type Overview } from "./api";
 import { PoliciesTab } from "./policies";
 import { JobProgress, KeyInput, StatusBadge, useJob } from "./shared";
 import { TargetsTab } from "./targets";
 import { DatabaseEngineIcon } from "@/components/engine-icon";
 
 const TABS = [
-  ["overview", "Overview"], ["history", "Backup history"], ["policies", "Backup policies"], ["targets", "Storage targets"], ["engines", "Engine support"],
+  ["overview", "Overview"], ["history", "Backup history"], ["jobs", "Jobs"], ["policies", "Backup policies"], ["targets", "Storage targets"], ["engines", "Engine support"],
 ] as const;
 
 export function BackupRestorePage() {
@@ -40,6 +40,7 @@ export function BackupRestorePage() {
         <TabsList className="mb-4">{TABS.map(([k, l]) => <TabsTrigger key={k} value={k}>{l}</TabsTrigger>)}</TabsList>
         <TabsContent value="overview"><OverviewTab /></TabsContent>
         <TabsContent value="history"><HistoryTab /></TabsContent>
+        <TabsContent value="jobs"><JobsTab /></TabsContent>
         <TabsContent value="policies"><PoliciesTab /></TabsContent>
         <TabsContent value="targets"><TargetsTab /></TabsContent>
         <TabsContent value="engines"><EnginesTab /></TabsContent>
@@ -62,8 +63,10 @@ function OverviewTab() {
         <Stat label="Last 24 hours" value={`${o.last_24_hours?.SUCCESS ?? 0} ok · ${(o.last_24_hours?.FAILED ?? 0) + (o.last_24_hours?.CORRUPTED ?? 0)} failed`} />
         <Stat label="Successful (30 days)" value={ok} tone={ok ? "ok" : undefined} />
         <Stat label="Failed or corrupted (30 days)" value={bad} tone={bad ? "crit" : undefined} />
-        <Stat label="Last platform backup" value={o.last_platform_backup_at ? relTime(o.last_platform_backup_at) : "never"}
-          tone={o.last_platform_backup_at ? undefined : "warn"} sub={o.platform_protection.protected ? "includes server registrations" : "server registrations not protected"} />
+        {o.platform_protection ? (
+          <Stat label="Last platform backup" value={o.last_platform_backup_at ? relTime(o.last_platform_backup_at) : "never"}
+            tone={o.last_platform_backup_at ? undefined : "warn"} sub={o.platform_protection.protected ? "includes server registrations" : "server registrations not protected"} />
+        ) : <Stat label="Platform backups" value="—" sub="visible with platform-wide backup access" />}
         <Stat label="Stored" value={bytes(o.stored_bytes)} />
       </div>
       <Card>
@@ -134,6 +137,8 @@ export function rowActions(b: Backup, can: (p: string) => boolean, canPlatform: 
     restore: restorable && (platform ? canPlatform("restore.execute") && canPlatform("restore.platform") : can("restore.execute") && can("restore.database")),
     remove: canPlatform("backup.delete") && b.status !== "DELETED",
     download: b.status === "SUCCESS" && b.location_kind === "target" && (platform ? canPlatform("restore.platform") : can("restore.database")),
+    // POST /backups/{id}/pin requires backup.policy.manage at platform scope
+    pin: canPlatform("backup.policy.manage") && b.status !== "DELETED",
   };
 }
 
@@ -157,6 +162,11 @@ function HistoryTab() {
     onSuccess: (r) => { toast.success(r.message); setRemoving(null); qc.invalidateQueries({ queryKey: ["backups"] }); },
     onError: (e) => toast.error(errMsg(e)),
   });
+  const pin = useMutation({
+    mutationFn: (b: Backup) => post<Backup>(`/backups/${b.id}/pin`, undefined, { pinned: !b.pinned }),
+    onSuccess: (b) => { toast.success(b.pinned ? "Backup pinned: retention will keep it" : "Backup unpinned: retention applies again"); qc.invalidateQueries({ queryKey: ["backups"] }); },
+    onError: (e) => toast.error(errMsg(e)),
+  });
   const columns: ColumnDef<Backup, unknown>[] = [
     { header: "Created", accessorKey: "created_at", cell: ({ getValue }) => <span title={dateTime(getValue() as string)}>{relTime(getValue() as string)}</span> },
     { header: "Type", accessorKey: "kind", cell: ({ row: { original: b } }) => <span className="text-[12.5px]">{b.kind === "platform" ? "Platform" : <span className="inline-flex items-center gap-1.5"><DatabaseEngineIcon engine={b.engine} size="xs" /> {b.method}</span>}</span> },
@@ -175,6 +185,7 @@ function HistoryTab() {
           {a.verify && <Button size="sm" variant="ghost" aria-label={`Verify ${b.id.slice(0, 8)}`} onClick={() => setVerifying(b)}><CheckCircle2 /></Button>}
           {a.restore && <Button size="sm" variant="ghost" aria-label={`Restore ${b.id.slice(0, 8)}`} onClick={() => nav(`/platform/backups/${b.id}/restore`)}><RotateCcw /></Button>}
           {a.download && <Button size="sm" variant="ghost" aria-label={`Download ${b.id.slice(0, 8)}`} onClick={() => download(`/backups/${b.id}/download`, `dbm-${b.id.slice(0, 8)}-${(b.location ?? "backup").split("/").pop()}`).catch((e) => toast.error(errMsg(e)))}><Download /></Button>}
+          {a.pin && <Button size="sm" variant="ghost" aria-label={`${b.pinned ? "Unpin" : "Pin"} ${b.id.slice(0, 8)}`} title={b.pinned ? "Unpin (retention applies again)" : "Pin (keep regardless of retention)"} disabled={pin.isPending} onClick={() => pin.mutate(b)}>{b.pinned ? <PinOff /> : <Pin />}</Button>}
           {a.remove && <Button size="sm" variant="ghost" aria-label={`Delete ${b.id.slice(0, 8)}`} onClick={() => setRemoving(b)}><Trash2 /></Button>}
         </div>
       );
@@ -261,6 +272,57 @@ export function VerifyDialog({ backup, onClose }: { backup: Backup; onClose: () 
         )}
       </div>
     </Dialog>
+  );
+}
+
+// ---- jobs ----------------------------------------------------------------------------------------
+const KIND_LABEL: Record<string, string> = {
+  platform_backup: "Platform backup", database_backup: "Database backup", verify: "Verification",
+  platform_restore: "Platform restore", database_restore: "Database restore",
+};
+function progressText(j: Job): string {
+  const p = j.progress ?? {};
+  const parts = [p.step?.replaceAll("_", " "), p.total ? `${p.done ?? 0} of ${p.total}` : undefined].filter(Boolean);
+  return parts.join(" · ") || "—";
+}
+
+export function JobsTab() {
+  const qc = useQueryClient();
+  const { can } = useAuth();
+  const [activeOnly, setActiveOnly] = useState(false);
+  const q = useQuery({
+    queryKey: ["backup-jobs", activeOnly],
+    queryFn: () => get<Job[]>("/backup/jobs", { active: activeOnly || undefined, limit: 100 }),
+    refetchInterval: 10_000,
+  });
+  const cancel = useMutation({
+    mutationFn: (j: Job) => post<Job>(`/backup/jobs/${j.id}/cancel`),
+    onSuccess: (j) => { toast.success(j.status === "CANCELLED" ? "Job cancelled" : "Cancellation requested"); qc.invalidateQueries({ queryKey: ["backup-jobs"] }); },
+    onError: (e) => toast.error(errMsg(e)),
+  });
+  const columns: ColumnDef<Job, unknown>[] = [
+    { header: "Created", accessorKey: "created_at", cell: ({ getValue }) => <span title={dateTime(getValue() as string)}>{relTime(getValue() as string)}</span> },
+    { header: "Kind", accessorKey: "kind", cell: ({ getValue }) => KIND_LABEL[getValue() as string] ?? (getValue() as string) },
+    { header: "Status", accessorKey: "status", cell: ({ row: { original: j } }) => <span className="flex flex-wrap gap-1"><StatusBadge status={j.status} />{j.cancel_requested && ACTIVE.includes(j.status) && <Badge tone="outline">cancelling</Badge>}</span> },
+    { header: "Requested by", accessorKey: "requested_by", cell: ({ row: { original: j } }) => j.requested_by ?? <span className="text-muted">{j.trigger}</span> },
+    { header: "Started", accessorKey: "started_at", cell: ({ getValue }) => getValue() ? dateTime(getValue() as string) : "—" },
+    { header: "Finished", accessorKey: "finished_at", cell: ({ getValue }) => getValue() ? dateTime(getValue() as string) : "—" },
+    { header: "Progress", id: "progress", cell: ({ row: { original: j } }) => <span className="text-[12.5px] text-text-2">{progressText(j)}</span> },
+    { header: "Error", accessorKey: "error", cell: ({ getValue }) => getValue() ? <span className="text-[12px] text-crit">{getValue() as string}</span> : "" },
+    { header: "", id: "a", enableSorting: false, cell: ({ row: { original: j } }) => {
+      const cancellable = ACTIVE.includes(j.status) && !j.cancel_requested && can("backup.create") && !(j.kind === "platform_restore" && j.status === "RUNNING");
+      return cancellable ? <div className="flex justify-end"><Button size="sm" aria-label={`Cancel job ${j.id.slice(0, 8)}`} disabled={cancel.isPending} onClick={() => cancel.mutate(j)}>Cancel</Button></div> : null;
+    } },
+  ];
+  return (
+    <Card>
+      <div className="flex flex-wrap items-center gap-3 border-b border-border p-3 text-[13px]">
+        <label className="flex items-center gap-2"><input type="checkbox" checked={activeOnly} onChange={(e) => setActiveOnly(e.target.checked)} /> Only queued or running</label>
+        <span className="ml-auto text-[12.5px] text-muted">Backup, verification and restore jobs, newest first</span>
+      </div>
+      <DataTable columns={columns} data={q.data} loading={q.isLoading} error={q.error} onRetry={() => q.refetch()} dense
+        empty={<EmptyState icon={<Archive />} title={activeOnly ? "Nothing is running" : "No jobs yet"}>Jobs appear when a backup, verification or restore is started.</EmptyState>} />
+    </Card>
   );
 }
 

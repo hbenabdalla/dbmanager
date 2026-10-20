@@ -95,6 +95,34 @@ class MySQLFamilyBase(SyncDBAPIAdapter):
     # ------------------------------------------------------------------------------------
     # connection
     # ------------------------------------------------------------------------------------
+    def _use_database(self, conn: Any, database: str | None) -> Any:
+        """MySQL/MariaDB keep one connection per server: a workspace statement or EXPLAIN for
+        another database switches the connection's default database (``COM_INIT_DB``, i.e.
+        ``USE``) and switches back afterwards, so unqualified names resolve where the user
+        chose — never silently in the registered default database."""
+        target = (database or "").strip()
+        if not target or target == (self.spec.database or ""):
+            return None
+        conn.select_db(target)
+        default = self.spec.database
+
+        def restore() -> None:
+            try:
+                if default:
+                    conn.select_db(default)
+                    return
+            except Exception:  # noqa: BLE001, S110 - fall through: drop the connection
+                pass
+            # no default database to return to (MySQL cannot "unselect"): drop the connection,
+            # the next call opens a fresh one without a current database
+            self._conns.pop("", None)
+            try:
+                conn.close()
+            except Exception:  # noqa: BLE001, S110
+                pass
+
+        return restore
+
     def _open(self, database: str | None) -> Any:
         pymysql = drivers.load("pymysql")
         mode = (self.spec.tls_mode or "prefer").lower()
@@ -115,10 +143,23 @@ class MySQLFamilyBase(SyncDBAPIAdapter):
             kwargs["ssl_disabled"] = True
         else:
             ctx = tls.ssl_context(mode, self.spec.tls_ca_pem)
-            if ctx is not None:
-                kwargs["ssl"] = ctx
+            if ctx is None:  # prefer without a CA: opportunistic TLS, as the mysql client does
+                ctx = ssl.create_default_context()
+                ctx.check_hostname = False
+                ctx.verify_mode = ssl.CERT_NONE
+            kwargs["ssl"] = ctx
         conn = pymysql.connect(**kwargs)
         try:
+            if tls.requires_tls(mode):
+                # PyMySQL silently stays in plain text when the server offers no TLS: check it
+                with conn.cursor() as cur:
+                    cur.execute("SHOW SESSION STATUS LIKE 'Ssl_cipher'")
+                    row = cur.fetchone()
+                if not row or not row[1]:
+                    raise AdapterTLSError(
+                        f"tls_mode={mode} but the server did not negotiate TLS (enable TLS on the server, "
+                        "or choose prefer/disable)"
+                    )
             with conn.cursor() as cur:
                 cur.execute("SET SESSION time_zone = '+00:00'")
                 cur.execute("SET SESSION lock_wait_timeout = 10")

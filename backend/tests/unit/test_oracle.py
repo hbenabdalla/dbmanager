@@ -154,7 +154,21 @@ def adapter(routes: list, **spec: object) -> tuple[OracleAdapter, FakeConnection
 def test_every_query_parses_as_oracle_sql() -> None:
     local = {
         "v": "dba",
-        **{k: "" for k in ("con_u", "con_o", "con_s", "con_s_o", "con_tr_o", "con_t_o", "con_c_i", "con_i")},
+        **{
+            k: ""
+            for k in (
+                "con_u",
+                "con_o",
+                "con_s",
+                "con_s_o",
+                "con_tr_o",
+                "con_t_o",
+                "con_c_i",
+                "con_i",
+                "con_c",
+                "con_cc_c",
+            )
+        },
     }
     extra = {"types": "'TABLE'", "table_filter": "", "names": "'a'"}
     for name, sql in vars(Q).items():
@@ -361,9 +375,12 @@ def test_cdb_root_reads_a_pdb_through_cdb_views() -> None:
             ),
             ("FROM cdb_objects o", lambda params: [] if params.get("con_id") == 3 else AssertionError("con_id")),
             ("FROM cdb_indexes i", []),
+            ("FROM cdb_constraints c", []),
         ]
     )
     asyncio.run(a.list_objects("ORCLPDB1", "SHOP"))
+    cons_sql = next(s for s, _ in conn.log if "FROM cdb_constraints c" in s)
+    assert "c.con_id = :con_id" in cons_sql and "cc.con_id = c.con_id" in cons_sql
     sql, params = next((s, p) for s, p in conn.log if "FROM cdb_objects o" in s)
     assert params == {"con_id": 3, "owner": "SHOP"} and "o.con_id = :con_id" in sql
     with pytest.raises(AdapterNotSupported):
@@ -454,3 +471,109 @@ def test_admin_password_is_bound_never_in_sql() -> None:
     assert g.statements == ['GRANT SELECT ON "SHOP"."ORDERS" TO "APP_RO"']
     with pytest.raises(A.AdminValidationError):
         a.build_admin("grant", {"object_type": "system", "grantee": "u", "privileges": ["ALTER SYSTEM"]})
+
+
+@pytest.mark.parametrize(
+    ("sql", "pack"),
+    [
+        ("select * from dba_hist_snapshot", "diagnostics_pack"),
+        ("SELECT sample_time FROM V$ACTIVE_SESSION_HISTORY", "diagnostics_pack"),
+        ("select * from table(dbms_xplan.display_awr('abc'))", "diagnostics_pack"),
+        ("select * from awr_pdb_snapshot", "diagnostics_pack"),
+        ("select * from gv$sql_monitor", "tuning_pack"),
+        ("begin dbms_sqltune.execute_tuning_task('t'); end;", "tuning_pack"),
+        ("select * from v$session", None),
+        ("select * from v$sqlstats", None),
+        ("select awr_note, hist_dba from my_table", None),
+    ],
+)
+def test_workspace_pack_guard_detects_licensed_objects(sql: str, pack: str | None) -> None:
+    from app.adapters.oracle.adapter import licensed_pack_needed
+
+    assert licensed_pack_needed(sql) == pack
+
+
+def test_workspace_refuses_pack_objects_unless_licensed() -> None:
+    import asyncio
+
+    from app.adapters.base import AdapterError, ConnectionSpec
+    from app.adapters.oracle.adapter import OracleAdapter
+
+    a = OracleAdapter(
+        ConnectionSpec(host="ora.example.com", port=1521, database="ORCLPDB1", username="u", password="p")
+    )
+    with pytest.raises(AdapterError, match="Diagnostics Pack"):
+        asyncio.run(a.execute_sql("select * from dba_hist_snapshot", None, read_only=True, max_rows=1, timeout_s=5))
+    with pytest.raises(AdapterError, match="Tuning Pack"):
+        asyncio.run(a.execute_sql("select * from v$sql_monitor", None, read_only=True, max_rows=1, timeout_s=5))
+
+
+def test_constraints_are_listed_for_a_schema() -> None:
+    a, conn = adapter(
+        [
+            *base_routes(),
+            (
+                "FROM dba_constraints c",
+                [
+                    {
+                        "constraint_name": "ORDERS_PK",
+                        "table_name": "ORDERS",
+                        "constraint_type": "P",
+                        "status": "ENABLED",
+                        "validated": "VALIDATED",
+                        "columns": "ID",
+                    },
+                    {
+                        "constraint_name": "ORDERS_CUST_FK",
+                        "table_name": "ORDERS",
+                        "constraint_type": "R",
+                        "status": "DISABLED",
+                        "validated": "NOT VALIDATED",
+                        "columns": "CUSTOMER_ID",
+                    },
+                ],
+            ),
+        ]
+    )
+    out = asyncio.run(a.list_objects("ORCLPDB1", "SHOP", "constraint"))
+    assert [(o.name, o.parent, o.extra["constraint_type"]) for o in out] == [
+        ("ORDERS_PK", "ORDERS", "PRIMARY KEY"),
+        ("ORDERS_CUST_FK", "ORDERS", "FOREIGN KEY"),
+    ]
+    assert out[1].extra["validated"] is False and out[1].extra["status"] == "DISABLED"
+    sql, params = next((s, p) for s, p in conn.log if "FROM dba_constraints c" in s)
+    assert params == {"owner": "SHOP"} and "generated = 'USER NAME'" in sql
+
+
+def test_root_connection_lists_the_local_users_of_its_pdbs() -> None:
+    routes = [
+        ("FROM dba_users", []),
+        ("FROM dba_role_privs", []),
+        ("FROM dba_sys_privs", []),
+        ("FROM v$pwfile_users", []),
+        (
+            "FROM cdb_users u JOIN v$pdbs p",
+            [
+                {
+                    "pdb": "SALESPDB",
+                    "username": "APP_OWNER",
+                    "account_status": "OPEN",
+                    "lock_date": None,
+                    "expiry_date": None,
+                    "profile": "DEFAULT",
+                    "created": None,
+                    "authentication_type": "PASSWORD",
+                    "last_login": None,
+                }
+            ],
+        ),
+    ]
+    a, _ = adapter([*base_routes(con_name="CDB$ROOT", con_id=1), *routes])
+    users = asyncio.run(a.list_users())
+    assert [(u.name, u.can_login, u.attributes["container"]) for u in users] == [
+        ("SALESPDB:APP_OWNER", True, "SALESPDB")
+    ]
+    # connected to a PDB: no CDB_ view is read
+    b, conn = adapter([*base_routes(), *routes])
+    assert asyncio.run(b.list_users()) == []
+    assert not any("cdb_users" in s for s, _ in conn.log)

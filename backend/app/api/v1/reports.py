@@ -208,6 +208,17 @@ async def _load(db: DB, schedule_id: uuid.UUID) -> ReportSchedule:
     return s
 
 
+def _require_manage(p: CurrentPrincipal, s: ReportSchedule) -> None:
+    """Changing, sending or deleting a schedule is for its owner, its creator, or someone who
+    may manage users (a schedule sends data with its owner's access)."""
+    if s.owner_id == p.user.id or (s.created_by and s.created_by == p.username) or p.authz.has("users.manage"):
+        return
+    raise PermissionDenied(
+        "Only the schedule's owner or creator (or a user administrator) can change, send or delete it",
+        details={"permission": "users.manage"},
+    )
+
+
 @router.get("/report-schedules")
 async def list_schedules(db: DB, p: CurrentPrincipal) -> list[dict[str, Any]]:
     p.authz.require("reports.schedule")
@@ -252,6 +263,7 @@ async def create_schedule(body: ScheduleIn, db: DB, p: CurrentPrincipal) -> dict
 async def update_schedule(schedule_id: uuid.UUID, body: ScheduleIn, db: DB, p: CurrentPrincipal) -> dict[str, Any]:
     p.authz.require("reports.schedule")
     s = await _load(db, schedule_id)
+    _require_manage(p, s)
     if (
         body.name != s.name
         and (await db.execute(select(func.count()).where(ReportSchedule.name == body.name))).scalar_one()
@@ -280,6 +292,7 @@ async def update_schedule(schedule_id: uuid.UUID, body: ScheduleIn, db: DB, p: C
 async def delete_schedule(schedule_id: uuid.UUID, db: DB, p: CurrentPrincipal) -> dict[str, Any]:
     p.authz.require("reports.schedule")
     s = await _load(db, schedule_id)
+    _require_manage(p, s)
     await db.delete(s)
     await audit.record(
         "report_schedule.delete",
@@ -297,6 +310,7 @@ async def run_now(schedule_id: uuid.UUID, db: DB, p: CurrentPrincipal) -> dict[s
     """Generate and send the report now (the regular schedule is unchanged)."""
     p.authz.require("reports.schedule")
     s = await _load(db, schedule_id)
+    _require_manage(p, s)
     run = await report_schedules.run_schedule(db, s, trigger="manual", actor=p.username)
     return _run_out(run)
 

@@ -37,7 +37,11 @@ _HIDDEN = {"off", "none", "false", "-"}
 def links() -> dict[str, str | None]:
     s = get_settings()
     github = s.github_url.strip() or None
+    if github and github.lower() in _HIDDEN:
+        github = None
     roadmap = s.roadmap_url.strip() or (f"{github.rstrip('/')}/blob/main/ROADMAP.md" if github else None)
+    if roadmap and roadmap.lower() in _HIDDEN:
+        roadmap = None
     docs: str | None = s.documentation_url.strip() or DOCUMENTATION_URL
     if docs.lower() in _HIDDEN:
         docs = None

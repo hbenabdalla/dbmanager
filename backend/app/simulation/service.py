@@ -399,6 +399,8 @@ async def _persist_plan(
                 collection_interval_s=profile.collection_interval_s,
                 licensed_features=list(p.licensed_features),
                 options={
+                    # the demo shows guarded changes; on simulated servers they are simulated, never run
+                    "management_mode": "administration",
                     "demo_profile": demo_profile(p, plan.seed, regression_since),
                     "simulation": {
                         "run_id": str(run_id),

@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Command } from "cmdk";
-import { BellRing, BookOpen, Info, KeyRound, Layers, type LucideIcon, Moon, Network, Search, Server as ServerIcon, ShieldCheck, Wand2 } from "lucide-react";
+import { Archive, BarChart3, BellRing, BookOpen, Info, KeyRound, Layers, Lock, type LucideIcon, Moon, Network, Search, Server as ServerIcon, ShieldCheck, Wand2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { get } from "@/api/client";
@@ -36,13 +36,16 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
   const pages = NAV.flatMap((s) =>
     !check(s.perm, s.platform) ? [] : s.items ? s.items.filter((i) => check(i.perm, i.platform)).map((i) => ({ label: `${s.label}: ${i.label}`, to: i.to })) : [{ label: s.label, to: s.to! }],
   );
-  const actions: { label: string; icon: LucideIcon; run: () => void; keywords: string }[] = [
+  const actions: { label: string; icon: LucideIcon; run: () => void; keywords: string; ok: boolean }[] = [
     { label: "Add a database server", icon: ServerIcon, run: () => go("/fleet/servers?register=1"), keywords: "register onboard new server database", ok: can("server.register") },
     { label: "Bulk onboard servers (CSV / JSON)", icon: Layers, run: () => go("/fleet/onboarding/bulk"), keywords: "bulk import csv json many", ok: can("server.register") },
     { label: "Open fleet topology", icon: Network, run: () => go("/topology"), keywords: "map graph topology", ok: can("server.view") },
     { label: "Review security posture", icon: ShieldCheck, run: () => go("/security"), keywords: "security findings posture", ok: can("security.view") },
     { label: "Configure an identity provider", icon: KeyRound, run: () => go("/platform/identity/wizard"), keywords: "ldap oidc sso keycloak entra okta", ok: canPlatform("idp.manage") },
     { label: "Run the platform setup wizard", icon: Wand2, run: () => go("/setup"), keywords: "setup onboarding first run checklist", ok: canPlatform("settings.manage") },
+    { label: "Create backup", icon: Archive, run: () => go("/platform/backups/new"), keywords: "backup snapshot dump protect new", ok: can("backup.create") },
+    { label: "Generate report", icon: BarChart3, run: () => go("/reports"), keywords: "report export pdf csv summary generate", ok: can("reports.view") },
+    { label: "Account security", icon: Lock, run: () => go("/account/security"), keywords: "mfa two-factor totp password account security passkey", ok: true },
     { label: "Show active alerts", icon: BellRing, run: () => go("/alerts"), keywords: "alerts alarms firing incidents notifications", ok: can("alerts.view") },
     { label: "Open the documentation", icon: BookOpen, run: () => { onOpenChange(false); window.open(docs!, "_blank", "noopener,noreferrer"); }, keywords: "help docs documentation manual guide", ok: !!docs },
     { label: "About DBManager", icon: Info, run: () => go("/platform/about"), keywords: "about version build license help", ok: true },

@@ -319,17 +319,33 @@ class Db2MonitoringMixin(Db2Base):
                     "autoextend": bool(t["auto_resize"]) or bool(t["auto_storage"]),
                 }
             )
-        total = sum(t["used_bytes"] for t in tablespaces)
+        total = sum(int(t["used_bytes"] or 0) for t in tablespaces)  # type: ignore[call-overload]
+        top = []
+        for r in await self._try(Q.TOP_TABLES) or []:
+            tb, ib = jsonable(r["table_bytes"]), jsonable(r["index_bytes"])
+            top.append(
+                {
+                    "schema": (text(r["schema_name"]) or "").strip(),
+                    "name": text(r["name"]),
+                    "row_estimate": jsonable(r["row_estimate"]),
+                    "table_bytes": tb,
+                    "index_bytes": ib,
+                    "total_bytes": (tb or 0) + (ib or 0) or None,
+                    "stats_time": jsonable(r["stats_time"]),
+                }
+            )
         return StorageInfo(
             total_bytes=total or None,
             databases=[{"name": text((await self._server()).get("db_name")), "size_bytes": total or None}],
             tablespaces=tablespaces,
+            top_tables=top,
             temp={
                 "log_used_bytes": jsonable(log["used"]) if log else None,
                 "log_available_bytes": jsonable(log["available"]) if log else None,
             },
             notes=notes
             + [
-                "SMS and automatic-storage tablespaces grow until the file system is full (used_pct is of allocated space)"
+                "SMS and automatic-storage tablespaces grow until the file system is full (used_pct is of allocated space)",
+                "largest tables are sized from catalog statistics (as of their last RUNSTATS)",
             ],
         )

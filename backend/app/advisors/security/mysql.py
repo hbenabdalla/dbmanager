@@ -102,10 +102,21 @@ def mysql_local_infile(ctx: EvidenceContext) -> list[RuleFinding]:
 #: vendor lifecycle (end of community/premier support) used by MYSQL-SEC-008
 MYSQL_EOL = {(5, 7): "2023-10-31", (8, 0): "2026-04-30"}
 MARIADB_EOL = {
+    (10, 2): "2022-05-23",
+    (10, 3): "2023-05-25",
     (10, 4): "2024-06-18",
     (10, 5): "2025-06-24",
     (10, 6): "2026-07-06",
+    # short-term releases: one year of support each
+    (10, 7): "2023-02-09",
+    (10, 8): "2023-05-20",
+    (10, 9): "2023-08-22",
+    (10, 10): "2023-11-17",
     (10, 11): "2028-02-16",
+    (11, 0): "2024-06-06",
+    (11, 1): "2024-08-21",
+    (11, 2): "2024-11-21",
+    (11, 3): "2024-05-29",
     (11, 4): "2029-05-29",
 }
 
@@ -220,6 +231,8 @@ def mysql_eol(ctx: EvidenceContext) -> list[RuleFinding]:
     eol = table.get(major)
     if eol is None and ctx.engine == "mysql" and major < (5, 7):
         eol = "2020-02-01"
+    if eol is None and ctx.engine == "mariadb" and major < (10, 2):
+        eol = "2020-10-17"  # 10.1 and older
     if eol is None or date.fromisoformat(eol) > datetime.now(UTC).date():
         return []
     return [

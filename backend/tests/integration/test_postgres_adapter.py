@@ -264,6 +264,7 @@ async def test_configuration_replication_storage() -> None:
         assert rep.role in ("standalone", "primary", "replica")
         st = await a.get_storage_metrics()
         assert st.total_bytes and st.top_tables
+        assert all({"schema", "name", "table_bytes", "index_bytes", "total_bytes"} <= set(t) for t in st.top_tables)
         series = size_series("postgresql", await a.list_databases(), st.tablespaces)
         assert series["db_database_size_bytes"] and "pg_default" in series["db_tablespace_used_bytes"]
 

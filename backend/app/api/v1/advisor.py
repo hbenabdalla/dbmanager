@@ -279,6 +279,29 @@ async def rules(p: CurrentPrincipal) -> list[dict[str, Any]]:
     return catalog()
 
 
+@router.get("/advisor/rule-summary", summary="Open findings per rule across the servers you can see")
+async def rule_summary(
+    db: DB, p: CurrentPrincipal, kind: Literal["security", "performance"] = "security", source: SourceQuery = None
+) -> dict[str, dict[str, int]]:
+    """``{rule_id: {"findings": n, "servers": n}}`` over every open or acknowledged finding the
+    caller may see (aggregated in the database: not limited to a page of findings)."""
+    model, perm = (SecurityFinding, "security.view") if kind == "security" else (Recommendation, "performance.view")
+    p.authz.require_anywhere(perm)
+    stmt = (
+        select(model.rule_id, func.count(), func.count(func.distinct(model.server_id)))
+        .join(Server, Server.id == model.server_id)
+        .where(model.status.in_(("open", "acknowledged")))
+        .group_by(model.rule_id)
+    )
+    flt = p.authz.server_filter(perm)
+    if flt is not None:
+        stmt = stmt.where(flt)
+    src_cond = fleet_source.condition(await fleet_source.resolve(db, p, source))
+    if src_cond is not None:
+        stmt = stmt.where(src_cond)
+    return {rule: {"findings": int(n), "servers": int(srv)} for rule, n, srv in (await db.execute(stmt)).all()}
+
+
 @router.post("/servers/{server_id}/security-scan", response_model=Message)
 async def run_scan(server_id: uuid.UUID, db: DB, p: CurrentPrincipal) -> Message:
     s = await load_server(db, p, server_id, "security.manage")

@@ -4,13 +4,15 @@
 #
 #   scripts/restore-drill.sh --i-understand-this-wipes-the-stack
 #
-# 1. signs in as the bootstrap admin and creates a marker user and a marker environment
+# 1. signs in as the bootstrap admin and creates a marker user, a marker environment and a
+#    marker server (the bundled PostgreSQL, dbm_monitor) with an encrypted credential
 # 2. runs scripts/backup.sh --with-metrics
 # 3. wipes the installation (docker compose down -v) and starts an empty one
 # 4. checks that the marker user is gone (the wipe really happened)
 # 5. runs scripts/restore.sh
-# 6. signs in as the marker user, finds the marker environment and compares the schema revision
-#    reported by /api/v1/about with the revision recorded by the backup
+# 6. signs in as the marker user, finds the marker environment and the marker server, tests the
+#    server's connection (its credential must still decrypt with the same master key) and compares
+#    the schema revision reported by /api/v1/about with the revision recorded by the backup
 set -euo pipefail
 cd "$(dirname "$0")/.."
 [ "${1:-}" = "--i-understand-this-wipes-the-stack" ] || {
@@ -23,6 +25,7 @@ JAR="$OUT/cookies"
 MARK_USER="drill.$(date -u +%H%M%S)"
 MARK_PW="Drill-Passw0rd!$(date -u +%s)"
 MARK_ENV="Drill $(date -u +%Y%m%dT%H%M%S)"
+MARK_SERVER="drill-pg-$(date -u +%H%M%S)"
 
 json() { python3 -c "import json,sys; d=json.load(sys.stdin); print($1)"; }
 wait_healthy() {
@@ -43,6 +46,11 @@ wait_healthy
 CSRF=$(login admin "$DBM_BOOTSTRAP_ADMIN_PASSWORD")
 api POST /users "{\"username\":\"$MARK_USER\",\"password\":\"$MARK_PW\",\"must_change_password\":false}" >/dev/null
 api POST /environments "{\"name\":\"$MARK_ENV\",\"tier\":\"test\"}" >/dev/null
+if [ -n "${DBM_SAMPLE_MONITOR_PASSWORD:-}" ]; then
+  # the bundled PostgreSQL as a registered server with a stored (encrypted) credential
+  PW_JSON=$(DRILL_PW="$DBM_SAMPLE_MONITOR_PASSWORD" python3 -c 'import json,os; print(json.dumps(os.environ["DRILL_PW"]))')
+  api POST /servers "{\"name\":\"$MARK_SERVER\",\"engine\":\"postgresql\",\"host\":\"postgres\",\"port\":5432,\"default_database\":\"${POSTGRES_DB:-dbmanager}\",\"tls_mode\":\"disable\",\"monitoring_enabled\":false,\"monitoring_credential\":{\"username\":\"dbm_monitor\",\"password\":$PW_JSON}}" >/dev/null
+fi
 
 echo "== 2. backup"
 scripts/backup.sh --with-metrics "$OUT/backup"
@@ -68,7 +76,12 @@ CSRF=$(login "$MARK_USER" "$MARK_PW")
 CSRF=$(login admin "$DBM_BOOTSTRAP_ADMIN_PASSWORD")
 api GET /environments | python3 -c "import json,sys; envs=[e['name'] for e in json.load(sys.stdin)]; \
   assert '$MARK_ENV' in envs, envs"
+if [ -n "${DBM_SAMPLE_MONITOR_PASSWORD:-}" ]; then
+  SID=$(api GET "/servers?q=$MARK_SERVER&source=all" | json '[s["id"] for s in d["items"] if s["name"]=="'"$MARK_SERVER"'"][0]')
+  api POST "/servers/$SID/test-connection" | python3 -c "import json,sys; r=json.load(sys.stdin); \
+    assert r['ok'], r; print('  server', '$MARK_SERVER', 'connects with its restored credential')"
+fi
 SCHEMA=$(api GET /about | json 'd["version"]["schema"]')
 [ -z "$REV" ] || [ "$SCHEMA" = "$REV" ] || { echo "schema $SCHEMA != backup revision $REV" >&2; exit 1; }
-echo "restore drill passed: user, environment and schema revision ($SCHEMA) restored"
+echo "restore drill passed: user, environment, server credential and schema revision ($SCHEMA) restored"
 rm -rf "$OUT"

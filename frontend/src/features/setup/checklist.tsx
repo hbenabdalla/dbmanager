@@ -61,7 +61,14 @@ export function SetupChecklist({ className, hideWhenDone = true }: { className?:
   const q = useChecklist();
   const { onAction, dialog } = useActions();
   if (q.isLoading) return <Card className={className}><SkeletonRows rows={4} /></Card>;
-  if (!q.data) return null;
+  if (q.error || !q.data) {
+    return (
+      <Card className={className}>
+        <CardHeader title={<span className="flex items-center gap-2"><ListChecks className="size-4" aria-hidden /> Finish setting up</span>} />
+        <ErrorState error={q.error} onRetry={() => q.refetch()} className="py-6" />
+      </Card>
+    );
+  }
   const required = q.data.items.filter((i) => !i.optional);
   if (hideWhenDone && required.every((i) => i.done)) return null;
   const open = q.data.items.filter((i) => !i.done).slice(0, 5);

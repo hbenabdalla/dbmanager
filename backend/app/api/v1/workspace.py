@@ -16,6 +16,7 @@ from sqlalchemy import select
 from app.adapters.base import Capability
 from app.api.deps import DB, CurrentPrincipal, load_server, rate_limit
 from app.core.config import get_settings
+from app.core.csvsafe import csv_safe
 from app.core.errors import ConfirmationRequired, PermissionDenied, ValidationFailed
 from app.domain.masking import redact_secret_clauses
 from app.domain.risk import RiskClass
@@ -198,7 +199,7 @@ async def export_csv(body: ExecuteRequest, db: DB, p: CurrentPrincipal) -> Strea
     w = csv.writer(buf)
     w.writerow([col["name"] for col in result["columns"]])
     for row in result["rows"]:
-        w.writerow(["" if v is None else v for v in row])
+        w.writerow([csv_safe(v) for v in row])
     buf.seek(0)
     return StreamingResponse(
         iter([buf.getvalue()]),

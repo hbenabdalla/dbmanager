@@ -340,6 +340,7 @@ async def test_configuration_replication_storage() -> None:
         assert rep.role == "standalone"
         st = await a.get_storage_metrics()
         assert st.total_bytes and st.top_tables
+        assert all({"schema", "name", "table_bytes", "index_bytes", "total_bytes"} <= set(t) for t in st.top_tables)
         assert DB in size_series("mssql", await a.list_databases(), st.tablespaces)["db_database_size_bytes"]
 
 

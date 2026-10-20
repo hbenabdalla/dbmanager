@@ -225,6 +225,8 @@ class Window:
     max: float
     count: int
     p95: float | None = None
+    #: the most recent sample in the window (None when the backend returned none)
+    last: float | None = None
 
 
 async def windows(
@@ -240,7 +242,7 @@ async def windows(
     end = datetime.now(UTC)
     start = end - timedelta(hours=hours)
     sel = Selector.of(list(names), [str(server_id)])
-    fns: tuple[Rollup, ...] = ("avg", "min", "max", "count", "p95")
+    fns: tuple[Rollup, ...] = ("avg", "min", "max", "count", "p95", "last")
     res = await asyncio.gather(*(repo.aggregate(sel, start, end, fn) for fn in fns))
     tmp: dict[str, dict[str, float]] = {}
     for fn, values in zip(fns, res, strict=True):
@@ -255,6 +257,7 @@ async def windows(
             max=d.get("max", d["avg"]),
             count=int(d.get("count", 0)),
             p95=d.get("p95"),
+            last=d.get("last"),
         )
         for k, d in tmp.items()
         if "avg" in d

@@ -380,6 +380,7 @@ async def test_configuration_replication_storage() -> None:
         assert rep.role in ("standalone", "primary")
         st = await a.get_storage_metrics()
         assert st.total_bytes and st.tablespaces
+        assert all({"schema", "name", "table_bytes", "index_bytes", "total_bytes"} <= set(t) for t in st.top_tables)
         series = size_series("oracle", await a.list_databases(), st.tablespaces)
         assert "SYSTEM" in series["db_tablespace_used_bytes"] and series["db_tablespace_max_bytes"]
 

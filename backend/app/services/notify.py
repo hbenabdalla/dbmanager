@@ -49,17 +49,60 @@ def _aad(channel_id: uuid.UUID | str) -> str:
     return f"notification-channel:{channel_id}"
 
 
-def seal_secret(channel_id: uuid.UUID, values: dict[str, str]) -> dict[str, Any] | None:
+def seal_secret(channel_id: uuid.UUID, values: dict[str, Any]) -> dict[str, Any] | None:
     values = {k: v for k, v in values.items() if v}
     if not values:
         return None
     return get_keyring().encrypt(json.dumps(values), _aad(channel_id)).to_dict()
 
 
-def open_secret(channel: NotificationChannel) -> dict[str, str]:
+def open_secret(channel: NotificationChannel) -> dict[str, Any]:
     if not channel.secret:
         return {}
     return json.loads(get_keyring().decrypt(EncryptedBlob.from_dict(channel.secret), _aad(channel.id)))
+
+
+def webhook_target(channel: NotificationChannel) -> tuple[str, dict[str, str]]:
+    """URL and extra headers of a webhook channel. Both are stored encrypted (a Slack or Teams
+    incoming-webhook URL *is* the credential); values still in ``config`` come from installations
+    before 0.14 and are moved into the secret at startup (``migrate_plaintext_webhooks``)."""
+    secret = open_secret(channel)
+    url = str(secret.get("url") or channel.config.get("url") or "")
+    headers = {**(channel.config.get("headers") or {}), **(secret.get("headers") or {})}
+    return url, {str(k): str(v) for k, v in headers.items()}
+
+
+def url_display(url: str) -> str:
+    """What the UI and the audit trail may show of a webhook URL: scheme and host only."""
+    from urllib.parse import urlsplit
+
+    p = urlsplit(url)
+    return f"{p.scheme}://{p.hostname}/…" if p.scheme and p.hostname else ""
+
+
+async def migrate_plaintext_webhooks(db: Any) -> int:
+    """Move webhook URLs and headers that older versions kept in ``config`` into the encrypted
+    secret (idempotent; called at startup)."""
+    from sqlalchemy import select
+
+    moved = 0
+    for ch in (await db.execute(select(NotificationChannel).where(NotificationChannel.kind == "webhook"))).scalars():
+        cfg = dict(ch.config or {})
+        if "url" not in cfg and "headers" not in cfg:
+            continue
+        secret = open_secret(ch)
+        if cfg.get("url"):
+            secret["url"] = cfg["url"]
+        if cfg.get("headers"):
+            secret["headers"] = {**cfg["headers"], **(secret.get("headers") or {})}
+        ch.secret = seal_secret(ch.id, secret)
+        ch.config = {
+            "url_display": url_display(str(cfg.get("url") or "")),
+            "header_names": sorted(secret.get("headers") or {}),
+            **{k: v for k, v in cfg.items() if k not in ("url", "headers", "url_display", "header_names")},
+        }
+        moved += 1
+    return moved
 
 
 # ---- SSRF guard -------------------------------------------------------------------------------
@@ -207,13 +250,13 @@ def _text(event: str, alert: dict[str, Any] | None) -> str:
 
 # ---- senders ----------------------------------------------------------------------------------
 async def send_webhook(channel: NotificationChannel, body: dict[str, Any]) -> int:
-    url = str(channel.config.get("url") or "")
+    url, extra = webhook_target(channel)
     await check_target(url)
     data = json.dumps(body, default=str).encode()
     headers = {"Content-Type": "application/json", "User-Agent": "dbmanager-notifications"}
-    for k, v in (channel.config.get("headers") or {}).items():
+    for k, v in extra.items():
         if k.lower() not in ("host", "content-length"):
-            headers[str(k)] = str(v)
+            headers[k] = v
     secret = open_secret(channel).get("signing_secret")
     if secret:
         headers[SIGNATURE_HEADER] = sign(secret, data)

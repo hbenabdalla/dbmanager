@@ -39,6 +39,13 @@ async def startup_tasks() -> None:
 
     async with session_scope() as db:
         await bootstrap(db)
+    from app.services import notify
+
+    async with session_scope() as db:
+        # webhook URLs and headers stored in plain text by older versions move into the secret
+        moved = await notify.migrate_plaintext_webhooks(db)
+        if moved:
+            log.info("moved %d webhook URL(s) into encrypted storage", moved)
     if s.demo_mode:
         # No simulated data is ever created at startup any more.
         log.warning(

@@ -80,6 +80,9 @@ ADMIN_ROLES = {
 ADMIN_PRIVILEGES = ("sysdba", "sysoper", "sysasm", "sysbackup", "sysdg", "syskm")
 
 
+CONSTRAINT_TYPES = {"P": "PRIMARY KEY", "U": "UNIQUE", "R": "FOREIGN KEY", "C": "CHECK"}
+
+
 class OracleInventoryMixin(OracleBase):
     # ---- container scope ----------------------------------------------------------------------
     async def _containers(self) -> dict[str, int]:
@@ -95,7 +98,21 @@ class OracleInventoryMixin(OracleBase):
         info = await self._server()
         local = {
             "v": "dba",
-            **{k: "" for k in ("con_u", "con_o", "con_s", "con_s_o", "con_tr_o", "con_t_o", "con_c_i", "con_i")},
+            **{
+                k: ""
+                for k in (
+                    "con_u",
+                    "con_o",
+                    "con_s",
+                    "con_s_o",
+                    "con_tr_o",
+                    "con_t_o",
+                    "con_c_i",
+                    "con_i",
+                    "con_c",
+                    "con_cc_c",
+                )
+            },
         }
         if not database or database in (info["con_name"], text(info.get("db_name"))) or not info["in_root"]:
             if database and info["is_cdb"] and not info["in_root"] and database != info["con_name"]:
@@ -117,6 +134,8 @@ class OracleInventoryMixin(OracleBase):
             "con_t_o": "AND t.con_id = o.con_id",
             "con_c_i": "AND c.con_id = i.con_id",
             "con_i": "AND i.con_id = :con_id",
+            "con_c": "AND c.con_id = :con_id",
+            "con_cc_c": "AND cc.con_id = c.con_id",
         }
         return frag, {"con_id": con_id}
 
@@ -269,6 +288,27 @@ class OracleInventoryMixin(OracleBase):
                         ),
                     )
                 )
+        if object_type in (None, "constraint"):
+            for r in await self._query(Q.SCHEMA_CONSTRAINTS.format(**frag), binds):
+                out.append(
+                    ObjectInfo(
+                        name=text(r["constraint_name"]) or "",
+                        schema_name=schema,
+                        type="constraint",
+                        owner=schema,
+                        parent=text(r["table_name"]),
+                        extra=jsonable(
+                            {
+                                "constraint_type": CONSTRAINT_TYPES.get(
+                                    text(r["constraint_type"]) or "", r["constraint_type"]
+                                ),
+                                "status": r["status"],
+                                "validated": text(r["validated"]) == "VALIDATED",
+                                "columns": r["columns"],
+                            }
+                        ),
+                    )
+                )
         return out
 
     async def get_object_detail(self, database: str, schema: str, name: str, object_type: str) -> ObjectDetail:
@@ -409,6 +449,29 @@ class OracleInventoryMixin(OracleBase):
                     admin_reasons=reasons,
                 )
             )
+        if (await self._server())["in_root"]:
+            for r in await self._try(Q.PDB_LOCAL_USERS) or []:
+                status = text(r["account_status"]) or ""
+                out.append(
+                    DbUser(
+                        name=f"{text(r['pdb'])}:{text(r['username'])}",
+                        can_login=status == "OPEN" or status.startswith("EXPIRED(GRACE)"),
+                        attributes=jsonable(
+                            {
+                                "container": r["pdb"],
+                                "account_status": status,
+                                "lock_date": r["lock_date"],
+                                "profile": r["profile"],
+                                "created": r["created"],
+                                "authentication_type": r["authentication_type"],
+                                "common": False,
+                                "privileges_note": "roles and privileges are read on the PDB's own registration",
+                            }
+                        ),
+                        valid_until=utc(r["expiry_date"]),
+                        last_login_at=utc(r["last_login"]),
+                    )
+                )
         return out
 
     async def list_roles(self) -> list[DbUser]:

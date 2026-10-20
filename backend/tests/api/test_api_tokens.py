@@ -170,6 +170,13 @@ async def test_ip_allow_list(make_client, token_user) -> None:  # type: ignore[n
     ).status_code == 422
     async with httpx.AsyncClient(transport=c._transport, base_url="http://testserver") as api:  # noqa: SLF001
         assert (await api.get("/api/v1/servers", headers=bearer(api, r.json()["token"]))).status_code == 401
+        # the test client's peer is a trusted proxy (127.0.0.1): a client-supplied leftmost
+        # X-Forwarded-For value must not satisfy the allow-list ...
+        spoofed = {**bearer(api, r.json()["token"]), "X-Forwarded-For": "10.1.2.3, 203.0.113.9"}
+        assert (await api.get("/api/v1/servers", headers=spoofed)).status_code == 401
+        # ... while the address appended by the trusted proxy does
+        allowed = {**bearer(api, r.json()["token"]), "X-Forwarded-For": "203.0.113.9, 10.1.2.3"}
+        assert (await api.get("/api/v1/servers", headers=allowed)).status_code == 200
 
 
 async def test_admin_token_management(make_client, admin, token_user) -> None:  # type: ignore[no-untyped-def]

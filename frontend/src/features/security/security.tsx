@@ -213,23 +213,31 @@ interface Rule { rule_id: string; engines: string[]; kind: string; category: str
 export function CompliancePage() {
   const rules = useQuery({ queryKey: ["rules"], queryFn: () => get<Rule[]>("/advisor/rules") });
   const source = useSourceParam();
-  const open = useQuery({ queryKey: ["security", "compliance-open", source], queryFn: () => get<Page<{ rule_id: string }>>("/security/findings", { page_size: 500, source }) });
   const [kind, setKind] = useState("security");
-  const counts = (open.data?.items ?? []).reduce<Record<string, number>>((a, f) => ({ ...a, [f.rule_id]: (a[f.rule_id] ?? 0) + 1 }), {});
+  // counted by the backend over every open finding you can see (not a page of findings)
+  const summary = useQuery({
+    queryKey: ["advisor", "rule-summary", kind, source],
+    queryFn: () => get<Record<string, { findings: number; servers: number }>>("/advisor/rule-summary", { kind, source }),
+  });
+  const counts = summary.data ?? {};
   const list = (rules.data ?? []).filter((r) => r.kind === kind);
   return (
     <div>
-      <PageHeader title="Compliance" description="The deterministic rule catalog that produces findings, with how many servers currently fail each check."
+      <PageHeader title="Compliance" description="The deterministic rule catalog that produces findings and recommendations, with how many servers currently fail each check (open and acknowledged findings)."
         crumbs={[{ label: "Security" }, { label: "Compliance" }]}
         actions={<Select aria-label="Rule set" className="w-52" value={kind} onChange={(e) => setKind(e.target.value)}><option value="security">Security rules</option><option value="performance">Performance rules</option></Select>} />
       <Card>
-        <DataTable data={list} loading={rules.isLoading} dense pageSize={100} columns={[
+        <DataTable data={list} loading={rules.isLoading || summary.isLoading} error={rules.error || summary.error} onRetry={() => { rules.refetch(); summary.refetch(); }} dense pageSize={100} columns={[
           { header: "Rule", accessorKey: "rule_id", cell: ({ getValue }) => <span className="font-mono text-[12px]">{getValue() as string}</span> },
           { header: "Check", accessorKey: "title", cell: ({ row: { original: r } }) => <div><div className="font-medium">{r.title}</div>{r.description && <div className="max-w-[520px] truncate text-[12px] text-muted">{r.description}</div>}</div> },
           { header: "Engines", accessorFn: (r) => r.engines.join(","), cell: ({ row: { original: r } }) => r.engines.includes("*") ? <Badge>all engines</Badge> : <span className="flex gap-1">{r.engines.map((e) => <DatabaseEngineIcon key={e} engine={e} />)}</span> },
           { header: "Category", accessorKey: "category", cell: ({ getValue }) => <span className="capitalize">{getValue() as string}</span> },
           { header: "Default severity", accessorKey: "severity", cell: ({ getValue }) => <SeverityBadge severity={getValue() as string} /> },
-          ...(kind === "security" ? [{ header: "Failing", id: "failing", accessorFn: (r: Rule) => counts[r.rule_id] ?? 0, meta: { align: "right" }, cell: ({ getValue }: { getValue: () => unknown }) => { const n = getValue() as number; return n ? <Badge tone="crit">{n}</Badge> : <Badge tone="ok">pass</Badge>; } } as ColumnDef<Rule, unknown>] : []),
+          { header: "Failing servers", id: "failing", accessorFn: (r: Rule) => counts[r.rule_id]?.servers ?? 0, meta: { align: "right" },
+            cell: ({ row: { original: r } }: { row: { original: Rule } }) => {
+              const c = counts[r.rule_id];
+              return c?.servers ? <span title={`${c.findings} open finding${c.findings === 1 ? "" : "s"}`}><Badge tone={kind === "security" ? "crit" : "warn"}>{c.servers}</Badge></span> : <Badge tone="ok">pass</Badge>;
+            } } as ColumnDef<Rule, unknown>,
         ] as ColumnDef<Rule, unknown>[]} />
       </Card>
       <p className="mt-3 text-[12px] text-muted">Engines covered: {Object.values(ENGINES).map((e) => e.label).join(", ")}.</p>

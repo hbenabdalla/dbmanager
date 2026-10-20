@@ -126,7 +126,8 @@ function GenerateDialog({ open, onOpenChange, profiles, replace, busy, onSubmit 
 
 function RemoveSummary() {
   const q = useQuery({ queryKey: ["simulation-preview"], queryFn: () => get<Preview>("/simulation/cleanup-preview") });
-  if (!q.data) return <SkeletonRows rows={3} className="p-0" />;
+  if (q.isLoading) return <SkeletonRows rows={3} className="p-0" />;
+  if (q.error || !q.data) return <ErrorState error={q.error} onRetry={() => q.refetch()} className="py-6" />;
   const c = q.data.counts;
   const rows: [string, number][] = [
     ["Simulated servers", c.servers], ["Databases", c.databases], ["Metric samples", c.metrics], ["Query statistics", c.queries],

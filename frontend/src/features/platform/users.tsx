@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
 import { Plus, ShieldOff, Trash2, UserPlus, Users as UsersIcon } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { ApiError, del, get, patch, post, put } from "@/api/client";
 import { useAllServers, useClusters, useEnvironments, useSites } from "@/api/hooks";
@@ -322,6 +323,21 @@ export function UsersPage() {
   const [page, setPage] = useState(1);
   const [sel, setSel] = useState<User | null>(null);
   const [creating, setCreating] = useState(false);
+  // "?create=1" (from the "+ Add" menu) opens the create dialog for users.manage holders
+  const [params, setParams] = useSearchParams();
+  const createFlag = params.get("create") === "1";
+  const mayCreate = canPlatform("users.manage");
+  useEffect(() => {
+    if (createFlag && mayCreate) setCreating(true);
+  }, [createFlag, mayCreate]);
+  const changeCreating = (o: boolean) => {
+    setCreating(o);
+    if (!o && createFlag) {
+      const next = new URLSearchParams(params);
+      next.delete("create");
+      setParams(next, { replace: true });
+    }
+  };
   const users = useQuery({ queryKey: ["users", q, page], queryFn: () => get<Page<User>>("/users", { q, page, page_size: 50 }), placeholderData: (p) => p });
   const columns: ColumnDef<User, unknown>[] = [
     { header: "User", accessorKey: "username", cell: ({ row: { original: u } }) => <div><div className="font-medium">{u.display_name ?? u.username}</div><div className="text-[12px] text-muted">{u.username}{u.email ? `, ${u.email}` : ""}</div></div> },
@@ -346,7 +362,7 @@ export function UsersPage() {
         <TabsContent value="groups"><Groups /></TabsContent>
       </Tabs>
       {sel && <UserDialog user={sel} onClose={() => setSel(null)} />}
-      <CreateUser open={creating} onOpenChange={setCreating} />
+      <CreateUser open={creating} onOpenChange={changeCreating} />
     </div>
   );
 }

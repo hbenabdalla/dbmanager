@@ -273,6 +273,7 @@ async def test_configuration_replication_storage_security_tuning(flavor: str) ->
         assert rep.role in ("standalone", "primary", "replica")
         st = await a.get_storage_metrics()
         assert st.top_tables and any(t["name"] == "orders" for t in st.top_tables)
+        assert {"schema", "name", "row_estimate", "table_bytes", "index_bytes", "total_bytes"} <= set(st.top_tables[0])
         sec = await a.get_security_context()
         assert sec["require_secure_transport"] in ("ON", "OFF")
         assert any(r["name"] == "dbm_it_app@%" for r in sec["roles"])
@@ -291,6 +292,111 @@ async def test_workspace_read_only_is_enforced(flavor: str) -> None:
     async with FLAVORS[flavor](root_spec) as a:
         with pytest.raises(Exception, match="(?i)read.only"):
             await a.execute_sql(f"DELETE FROM {DB}.no_pk", None, read_only=True, max_rows=5, timeout_s=10)
+
+
+def _read(path: str) -> str:
+    from pathlib import Path
+
+    return Path(path).read_text()
+
+
+def _other_ca() -> str:
+    """A self-signed CA certificate unrelated to the server's."""
+    from datetime import UTC, datetime, timedelta
+
+    from cryptography import x509
+    from cryptography.hazmat.primitives import hashes, serialization
+    from cryptography.hazmat.primitives.asymmetric import ec
+    from cryptography.x509.oid import NameOID
+
+    key = ec.generate_private_key(ec.SECP256R1())
+    name = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, "other-ca")])
+    now = datetime.now(UTC)
+    cert = (
+        x509.CertificateBuilder()
+        .subject_name(name)
+        .issuer_name(name)
+        .public_key(key.public_key())
+        .serial_number(x509.random_serial_number())
+        .not_valid_before(now - timedelta(minutes=1))
+        .not_valid_after(now + timedelta(days=1))
+        .add_extension(x509.BasicConstraints(ca=True, path_length=None), critical=True)
+        .sign(key, hashes.SHA256())
+    )
+    return cert.public_bytes(serialization.Encoding.PEM).decode()
+
+
+async def _cipher(a) -> str:  # type: ignore[no-untyped-def]
+    res = await a.execute_sql("SHOW SESSION STATUS LIKE 'Ssl_cipher'", None, read_only=True, max_rows=1, timeout_s=10)
+    return str(res.rows[0][1] or "") if res.rows else ""
+
+
+@pytest.mark.capability("tls")
+async def test_tls_modes(flavor: str) -> None:
+    """prefer = opportunistic TLS (encrypted when the server offers it), require refuses a
+    plain-text session, verify-ca / verify-full check the certificate against the CA bundle
+    (DBM_IT_<FLAVOR>_TLS_CA: path of the server's CA, PEM)."""
+    from app.adapters.base import AdapterTLSError
+
+    with admin_conn(flavor) as c, c.cursor() as cur:
+        cur.execute("SHOW VARIABLES LIKE 'have_ssl'")
+        row = cur.fetchone()
+    server_tls = bool(row) and str(row[1]).upper() == "YES"
+    if not server_tls:
+        with pytest.raises(AdapterTLSError):
+            async with FLAVORS[flavor](spec(flavor, tls_mode="require")) as a:
+                await a.execute_sql("SELECT 1", None, read_only=True, max_rows=1, timeout_s=10)
+        async with FLAVORS[flavor](spec(flavor, tls_mode="prefer")) as a:
+            assert await _cipher(a) == ""
+        pytest.skip("the server offers no TLS: only the plain-text behaviour was checked")
+    for mode in ("prefer", "require"):
+        async with FLAVORS[flavor](spec(flavor, tls_mode=mode)) as a:
+            assert await _cipher(a), mode
+    ca_path = env(flavor, "TLS_CA")
+    if not ca_path:
+        pytest.skip(f"DBM_IT_{flavor.upper()}_TLS_CA not set: certificate verification not exercised")
+    ca = _read(ca_path)
+    for mode in ("verify-ca", "verify-full"):
+        async with FLAVORS[flavor](spec(flavor, tls_mode=mode, tls_ca_pem=ca)) as a:
+            assert await _cipher(a), mode
+    import ssl as _ssl
+
+    # a CA that did not sign the server certificate is refused
+    wrong = _other_ca()
+    with pytest.raises((AdapterTLSError, _ssl.SSLError)):
+        async with FLAVORS[flavor](spec(flavor, tls_mode="verify-ca", tls_ca_pem=wrong)) as a:
+            await _cipher(a)
+
+
+async def test_workspace_runs_in_the_selected_database(flavor: str) -> None:
+    """Unqualified names resolve in the database chosen in the workspace / EXPLAIN — not in the
+    registered default database (one shared connection per server)."""
+    other = f"{DB}_other"
+    with admin_conn(flavor) as c, c.cursor() as cur:
+        cur.execute(f"CREATE DATABASE IF NOT EXISTS {other}")
+        cur.execute(f"CREATE TABLE IF NOT EXISTS {other}.only_here (id INT PRIMARY KEY)")
+        cur.execute(f"GRANT SELECT ON {other}.* TO 'dbm_it_monitor'@'%'")
+    try:
+        async with FLAVORS[flavor](spec(flavor, database=DB)) as a:  # registered default database: DB
+            res = await a.execute_sql("SELECT DATABASE() AS d", other, read_only=True, max_rows=5, timeout_s=10)
+            assert res.rows == [[other]]
+            res = await a.execute_sql("SELECT COUNT(*) FROM only_here", other, read_only=True, max_rows=5, timeout_s=10)
+            assert res.rows == [[0]]
+            # back to the default database afterwards (monitoring queries share the connection)
+            res = await a.execute_sql("SELECT DATABASE() AS d", None, read_only=True, max_rows=5, timeout_s=10)
+            assert res.rows == [[DB]]
+            plan = await a.explain_query("SELECT * FROM only_here", other)
+            assert plan.root is not None
+            with pytest.raises(Exception, match="(?i)doesn't exist|unknown"):
+                await a.explain_query("SELECT * FROM only_here", DB)
+        async with FLAVORS[flavor](spec(flavor)) as a:  # no default database
+            res = await a.execute_sql("SELECT COUNT(*) FROM only_here", other, read_only=True, max_rows=5, timeout_s=10)
+            assert res.rows == [[0]]
+            res = await a.execute_sql("SELECT DATABASE() AS d", None, read_only=True, max_rows=5, timeout_s=10)
+            assert res.rows == [[None]]
+    finally:
+        with admin_conn(flavor) as c, c.cursor() as cur:
+            cur.execute(f"DROP DATABASE IF EXISTS {other}")
 
 
 @pytest.mark.capability("administration")

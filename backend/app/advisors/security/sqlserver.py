@@ -51,7 +51,7 @@ def mssql_xp_cmdshell(ctx: EvidenceContext) -> list[RuleFinding]:
     engines=("mssql",),
     kind="security",
     category="privileges",
-    severity="medium",
+    severity="high",
     title="sysadmin membership",
 )
 def mssql_sysadmins(ctx: EvidenceContext) -> list[RuleFinding]:

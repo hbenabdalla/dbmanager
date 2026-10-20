@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { ApiError, del, get, post, put } from "@/api/client";
 import { ConfirmDialog } from "@/components/confirm";
@@ -155,11 +156,14 @@ function PlacementTable({ kind }: { kind: PlacementKind }) {
 }
 
 export function PlacementPage() {
+  const [params, setParams] = useSearchParams();
+  const kinds = Object.keys(PLACEMENT) as PlacementKind[];
+  const tab = kinds.find((k) => k === params.get("tab")) ?? "environments";
   return (
     <div>
       <PageHeader title="Placement" crumbs={[{ label: "Fleet" }, { label: "Placement" }]}
         description="Environments, sites, clusters and applications that servers are assigned to. An item can only be deleted when no server uses it." />
-      <Tabs defaultValue="environments">
+      <Tabs value={tab} onValueChange={(v) => setParams((p) => { const n = new URLSearchParams(p); n.set("tab", v); return n; }, { replace: true })}>
         <TabsList className="mb-4">
           {(Object.keys(PLACEMENT) as PlacementKind[]).map((k) => <TabsTrigger key={k} value={k}>{PLACEMENT[k].title}</TabsTrigger>)}
         </TabsList>

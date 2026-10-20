@@ -20,6 +20,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.csvsafe import csv_safe
 from app.models import AuditEvent, DbAccount, Recommendation, SecurityFinding, Server
 from app.services.authz import Authorizer
 from app.services.inventory import engine_label
@@ -77,22 +78,6 @@ def cell(v: Any) -> str:
     if isinstance(v, float):
         return f"{v:.4g}" if abs(v) < 1e6 else f"{v:.0f}"
     return str(v)
-
-
-#: a text cell starting with one of these is read as a formula by spreadsheet programs
-_FORMULA_START = ("=", "+", "-", "@", "\t", "\r")
-
-
-def csv_safe(v: Any) -> Any:
-    """CSV/formula injection guard: text that a spreadsheet would evaluate (``=HYPERLINK(...)``,
-    ``@SUM(...)``, ``+cmd|...``) is prefixed with an apostrophe. Numbers are left as they are."""
-    if v is None:
-        return ""
-    if isinstance(v, datetime):
-        return v.isoformat()
-    if isinstance(v, str) and v.startswith(_FORMULA_START):
-        return "'" + v
-    return v
 
 
 class CsvRenderer:

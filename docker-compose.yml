@@ -110,7 +110,8 @@ services:
       DBM_BOOTSTRAP_ADMIN_PASSWORD: ${DBM_BOOTSTRAP_ADMIN_PASSWORD:-}
       DBM_PUBLIC_BASE_URL: ${DBM_PUBLIC_BASE_URL:-http://localhost:8080}
       DBM_COOKIE_SECURE: ${DBM_COOKIE_SECURE:-true}
-      DBM_TRUSTED_PROXIES: ${DBM_TRUSTED_PROXIES:-172.16.0.0/12,10.0.0.0/8,192.168.0.0/16,127.0.0.1}
+      # the frontend nginx on the Compose network; it forwards one client address it has verified
+      DBM_TRUSTED_PROXIES: ${DBM_TRUSTED_PROXIES:-172.16.0.0/12,127.0.0.1}
       FORWARDED_ALLOW_IPS: "*"
       DBM_COLLECTOR_CONCURRENCY: ${DBM_COLLECTOR_CONCURRENCY:-16}
       DBM_METRICS_RETENTION_DAYS: ${DBM_METRICS_RETENTION_DAYS:-35}
@@ -197,6 +198,8 @@ services:
         condition: service_healthy
     environment:
       BACKEND_URL: http://backend:8000
+      # address (CIDR) of a reverse proxy in front of DBManager that sets X-Forwarded-For
+      DBM_OUTER_PROXY: ${DBM_OUTER_PROXY:-127.0.0.1/32}
     ports:
       - "${DBM_HTTP_BIND:-127.0.0.1}:${DBM_HTTP_PORT:-8080}:8080"
     networks: [app]

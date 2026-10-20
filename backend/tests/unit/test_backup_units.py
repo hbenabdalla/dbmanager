@@ -297,3 +297,18 @@ async def test_capabilities_never_overclaim() -> None:
         SimpleNamespace(engine="postgresql", deployment="self-managed", host="h", is_demo=True), found
     )
     assert demo["status"] == engines.NOT_SUPPORTED
+
+
+def test_schedule_in_the_skipped_spring_forward_hour_runs_once_that_day() -> None:
+    # 2027-03-28 02:00 → 03:00 in Paris: 02:30 does not exist. The run happens once, at 03:30
+    # local (01:30Z), and the next days return to 02:30 CEST (00:30Z).
+    s = {"frequency": "daily", "time": "02:30", "time_zone": "Europe/Paris"}
+    runs, at = [], datetime(2027, 3, 27, 12, tzinfo=UTC)
+    for _ in range(3):
+        at = service.next_run(s, at)
+        runs.append(at)
+    assert runs == [
+        datetime(2027, 3, 28, 1, 30, tzinfo=UTC),
+        datetime(2027, 3, 29, 0, 30, tzinfo=UTC),
+        datetime(2027, 3, 30, 0, 30, tzinfo=UTC),
+    ]

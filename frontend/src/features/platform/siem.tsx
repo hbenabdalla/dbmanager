@@ -13,7 +13,7 @@ import { DataTable } from "@/components/ui/data-table";
 import { Dialog } from "@/components/ui/dialog";
 import { Field, Input, Select, Textarea } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { EmptyState } from "@/components/ui/states";
+import { EmptyState, ErrorState, SkeletonRows } from "@/components/ui/states";
 import { dateTime, relTime } from "@/lib/format";
 
 export type SiemTransport = "udp" | "tcp" | "tls";
@@ -27,8 +27,9 @@ export interface SiemDestination {
   last_success_at: string | null; last_error: string | null; last_error_at: string | null; created_by: string | null; created_at: string;
 }
 
-/** Categories that audit events are recorded with (app.services.audit callers). */
-export const AUDIT_CATEGORIES = ["auth", "security", "admin", "platform", "alerting", "query", "backup", "collector", "operations", "report"];
+/** Audit categories a destination can filter on, from the backend (app.services.audit.CATEGORIES). */
+export const useSiemCategories = () =>
+  useQuery({ queryKey: ["siem-categories"], queryFn: () => get<string[]>("/platform/siem-destinations/categories"), staleTime: 300_000 });
 /** app.services.siem.FACILITIES */
 export const FACILITIES = ["audit", "auth", "authpriv", "user", "kern", "local0", "local1", "local2", "local3", "local4", "local5", "local6", "local7"];
 const DEFAULT_PORT: Record<SiemTransport, number> = { udp: 514, tcp: 514, tls: 6514 };
@@ -36,7 +37,7 @@ const SECRETISH = /password|secret|token/i;
 const err = (e: unknown) => (e instanceof ApiError ? e.message : String(e));
 
 interface Form {
-  name: string; kind: "syslog" | "webhook"; enabled: boolean; categories: string[]; extra_categories: string;
+  name: string; kind: "syslog" | "webhook"; enabled: boolean; categories: string[];
   host: string; port: string; transport: SiemTransport; facility: string; app_name: string; sd_id: string; ca_pem: string;
   url: string; headers: string;
   /** write-only: "" = keep the stored value unless `clear` is set */
@@ -45,10 +46,9 @@ interface Form {
 
 function toForm(d: SiemDestination | null): Form {
   const c = d?.config ?? {};
-  const cats = d?.categories ?? [];
   return {
     name: d?.name ?? "", kind: d?.kind ?? "syslog", enabled: d?.enabled ?? true,
-    categories: cats.filter((x) => AUDIT_CATEGORIES.includes(x)), extra_categories: cats.filter((x) => !AUDIT_CATEGORIES.includes(x)).join(", "),
+    categories: d?.categories ?? [],
     host: c.host ?? "", port: c.port ? String(c.port) : "", transport: c.transport ?? "udp", facility: c.facility !== undefined ? String(c.facility) : "audit",
     app_name: c.app_name ?? "", sd_id: c.sd_id ?? "", ca_pem: c.ca_pem ?? "",
     url: c.url ?? "", headers: Object.entries(c.headers ?? {}).map(([k, v]) => `${k}: ${v}`).join("\n"),
@@ -76,7 +76,7 @@ export function validateForm(f: Form): string | null {
 }
 
 export function toBody(f: Form, isNew: boolean) {
-  const categories = [...new Set([...f.categories, ...f.extra_categories.split(",").map((x) => x.trim()).filter(Boolean)])];
+  const categories = [...new Set(f.categories)];
   const config = f.kind === "syslog"
     ? {
       host: f.host.trim(), transport: f.transport, ...(f.port ? { port: Number(f.port) } : {}),
@@ -101,6 +101,9 @@ function DestinationDialog({ dest, onClose }: { dest: SiemDestination | null; on
     onSuccess: () => { toast.success(dest ? "Destination saved" : "Destination added"); qc.invalidateQueries({ queryKey: ["siem-destinations"] }); onClose(); },
     onError: (e) => toast.error(err(e)),
   });
+  const cats = useSiemCategories();
+  // keep any stored category visible (and removable) even if the server no longer lists it
+  const known = [...(cats.data ?? []), ...f.categories.filter((c) => !(cats.data ?? []).includes(c))];
   const problem = validateForm(f);
   const toggle = (c: string, on: boolean) => set("categories", on ? [...f.categories, c] : f.categories.filter((x) => x !== c));
   return (
@@ -156,10 +159,11 @@ function DestinationDialog({ dest, onClose }: { dest: SiemDestination | null; on
         <fieldset className="rounded-md border border-border p-3 sm:col-span-2">
           <legend className="px-1 text-[12.5px] font-medium">Event categories</legend>
           <p className="mb-2 text-[12px] text-muted">None selected = every category.</p>
-          <div className="flex flex-wrap gap-x-3 gap-y-1 text-[13px]">
-            {AUDIT_CATEGORIES.map((c) => <label key={c} className="flex items-center gap-1.5"><input type="checkbox" checked={f.categories.includes(c)} onChange={(e) => toggle(c, e.target.checked)} />{c}</label>)}
-          </div>
-          <Field label="Other categories (comma separated)" className="mt-2"><Input value={f.extra_categories} onChange={(e) => set("extra_categories", e.target.value)} /></Field>
+          {cats.isLoading ? <SkeletonRows rows={1} className="p-0" /> : cats.error ? <ErrorState error={cats.error} onRetry={() => cats.refetch()} className="py-4" /> : (
+            <div className="flex flex-wrap gap-x-3 gap-y-1 text-[13px]">
+              {known.map((c) => <label key={c} className="flex items-center gap-1.5"><input type="checkbox" checked={f.categories.includes(c)} onChange={(e) => toggle(c, e.target.checked)} />{c}</label>)}
+            </div>
+          )}
         </fieldset>
         {!dest && (
           <Field label="Start forwarding from">
