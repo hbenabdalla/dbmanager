@@ -13,7 +13,7 @@ and **0.12.0** was the first. The roadmap is organised by milestone and promises
 ## Released and verified
 
 The 0.14.0 roadmap reconciliation re-audited every milestone below and did not take earlier DONE
-statuses on trust. 61 claims were reopened because they were broken, partial, untested, or
+statuses on trust. 62 claims were reopened because they were broken, partial, untested, or
 present on only one side (UI or backend). All of them were fixed and verified again before
 0.14.0.
 

@@ -2,7 +2,10 @@
 
 ## Supported versions
 
-PostgreSQL 13–17 (validated against 16.15). Amazon RDS/Aurora and Azure Flexible Server work with the restricted privileges those services grant.
+PostgreSQL 12–17 (the adapter's declared range; real-engine validated against 16.15). Amazon
+RDS/Aurora, Azure Database for PostgreSQL and Google Cloud SQL are detected automatically and work
+with the restricted privileges those services grant. Version-dependent queries are selected at run
+time (for example the lock query on 14+, checkpoint statistics from `pg_stat_checkpointer` on 17+).
 
 ## Driver
 
@@ -14,7 +17,18 @@ Host, port (5432), database (the database the monitoring role connects to; other
 
 ## TLS
 
-TLS mode maps to `sslmode`: `disable`, `prefer`, `require`, `verify-ca`, `verify-full` (default for new servers). Upload a private CA as PEM for `verify-ca`/`verify-full`.
+The TLS mode is translated for asyncpg (`_ssl_arg` in `adapters/postgres/adapter.py`):
+
+| Mode | Without an uploaded CA | With an uploaded CA |
+|---|---|---|
+| `disable` | plain TCP | plain TCP |
+| `prefer` | asyncpg `prefer`: TLS when the server offers it, otherwise plain; certificate not validated | TLS **required**, certificate chain validated against the CA, host name not checked |
+| `require` | TLS required, certificate not validated | TLS required, chain validated against the CA, host name not checked |
+| `verify-ca` | TLS required, chain validated against the system trust store | chain validated against the CA |
+| `verify-full` | chain validated against the system trust store **and** host name checked | chain validated against the CA and host name checked |
+
+`verify-full` is the default for new servers. Upload a private CA (PEM) with the server's TLS
+settings. Rule `GEN-SEC-001` reports servers registered with `disable` or `prefer`.
 
 ## Privileges
 
@@ -66,6 +80,13 @@ Everything in the matrix is FULL except *query statistics*, which needs the `pg_
 The authoritative per-capability status is in the [support matrix](index.md#implemented-capabilities) and,
 for a registered server, on its **Overview → Capabilities** (runtime discovery refines every cell).
 
+## SQL workspace and storage
+
+* Workspace statements and EXPLAIN run on a connection to the database selected in the workspace
+  (same credential), inside a `READ ONLY` transaction unless a change was confirmed.
+* **Storage → Largest tables** returns, like every engine, `schema`, `name`, `row_estimate`,
+  `table_bytes`, `index_bytes` and `total_bytes` (from `pg_class` / `pg_total_relation_size`).
+
 ## Known limitations
 
 * No host CPU/memory metrics (PostgreSQL does not expose them over SQL).
@@ -112,8 +133,14 @@ privileged accounts) also apply.
 | `PG-PERF-008` | pg_stat_statements not available |
 | `PG-PERF-009` | Stale planner statistics |
 
-Plus the common performance rules `GEN-PERF-001` … `GEN-PERF-010`. Recommendations are advice with
+Plus the 12 engine-independent performance rules `GEN-PERF-001` … `GEN-PERF-012` (connections,
+cache, blocking, deadlocks, replication lag, long transactions, expensive queries, spills, CPU,
+storage, query latency regressions and storage forecasts). Recommendations are advice with
 evidence; DBManager never executes them.
+
+**Rule count:** 22 engine-specific rules (13 security, 9 performance) plus the 14
+engine-independent rules, which apply to every engine. Across all engines DBManager ships 61
+performance and 55 security rules; the full catalog is served by `GET /api/v1/advisor/rules`.
 
 ## Troubleshooting
 

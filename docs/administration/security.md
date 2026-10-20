@@ -10,7 +10,9 @@ Administrator-relevant controls (the full model is in [Security](../security/ind
 | API rate limits (per principal, shared by replicas) | `DBM_API_RATE_PER_USER_PER_MINUTE` (600), `DBM_API_RATE_TARGET_PER_MINUTE` (120), `DBM_API_RATE_EXPENSIVE_PER_MINUTE` (30) — see [rate limiting](rate-limiting.md) |
 | Cookies | `DBM_COOKIE_SECURE` (keep `true` behind HTTPS), `DBM_COOKIE_DOMAIN` |
 | Client IP behind a proxy | `DBM_TRUSTED_PROXIES` |
-| Production safeguards | Platform → Settings: disable writes or EXPLAIN ANALYZE on production servers |
+| Production safeguards | Platform → Configuration → Settings: `workspace.allow_writes_in_production`, `workspace.allow_explain_analyze_in_production` |
+| Platform restore without safety backup | Platform → Configuration → Settings: `backup.allow_restore_without_safety_backup` (off by default) |
+| Management mode | servers are *Monitoring only* unless registered as *Administration enabled*; change actions are refused on monitoring-only servers |
 | Secret encryption key | `DBM_MASTER_KEY` / `DBM_MASTER_KEY_ID`, rotation with `app.cli rotate-master-key` |
 | File-based secrets | `DBM_SECRET_FILE_DIRS` |
 | Who may register servers | `server.register` (it lets the backend open connections to any host — grant narrowly) |

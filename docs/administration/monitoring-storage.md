@@ -1,5 +1,7 @@
 # Monitoring storage
 
+![Monitoring storage](../assets/screenshots/monitoring-storage.png)
+
 **Platform → Configuration → Monitoring storage** (`collectors.view`; changing retention needs
 `settings.manage`) shows the time-series database:
 

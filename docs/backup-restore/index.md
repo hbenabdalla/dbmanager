@@ -30,7 +30,7 @@ exact impact before anything changes.
 | [Platform backup](platform-backup.md) | What is in a platform archive and what is not |
 | [Database backup](database-backup.md) | Managed databases, bulk backups, per-asset progress |
 | [Restore](restore.md) | The restore wizard and its safety rules |
-| [Policies](policies.md) · [Retention](retention.md) | Schedules, retention rules, notifications |
+| [Policies](policies.md) · [Retention](retention.md) | Schedules, protection status, retention rules, notifications (sent to channels; not alerts) |
 | [Storage targets](storage-targets.md) | Directories, NFS, S3-compatible buckets |
 | [Encryption](encryption.md) | age recipients and passphrases, master-key dependency |
 | [Engine support](engine-support.md) | What each engine can do (and cannot) |

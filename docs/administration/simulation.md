@@ -30,7 +30,7 @@ stateDiagram-v2
 
 Only one simulation operation can be active at a time (HTTP 409 `simulation_busy`).
 Generation progress (0–100 % and a phase text) is written to the `simulation_runs` row and
-shown on **Platform → Simulation**. If the backend restarts mid-run, the run is marked
+shown on **Platform → Configuration → Simulation**. If the backend restarts mid-run, the run is marked
 failed and the job is released by the scheduler's stale-job recovery.
 
 ## How simulated data is identified
@@ -175,7 +175,7 @@ Migration `0002` classifies the existing data; it deletes nothing.
   from.
 * `DBM_DEMO_MODE` is ignored from now on (a warning is logged if it is still set).
 
-Then remove the old demo fleet from **Platform → Simulation → Remove simulated data**, or:
+Then remove the old demo fleet from **Platform → Configuration → Simulation → Remove simulated data**, or:
 
 ```bash
 docker compose exec backend python -m app.cli simulation cleanup --dry-run
@@ -184,7 +184,7 @@ docker compose exec backend python -m app.cli simulation cleanup --yes
 
 The old demo mode also created the accounts `monitor`, `dba.dev`, `perf.oracle`, `db2.dba` and
 `auditor`. Nothing marks them as demo accounts, so they are **not** deleted automatically;
-the dry run lists the ones that exist. Review them under **Platform → Users** and disable or
+the dry run lists the ones that exist. Review them under **Platform → Configuration → Users** and disable or
 delete those you do not need. Their permissions that pointed at simulated servers are removed
 with the fleet.
 

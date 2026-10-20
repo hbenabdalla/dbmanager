@@ -48,11 +48,33 @@ latest values of 6 metrics for 1,000 servers in 125 ms.
 | 1,500–5,000 | VictoriaMetrics cluster (vminsert ×2, vmselect ×2, vmstorage ×3) or managed | 4+ workers, consider raising `collection_interval_s` for non-production | HA PostgreSQL |
 | > 5,000 | cluster + `vmagent` in front for buffering/replication; evaluate a cache for current fleet health | sharded worker pools | |
 
-Signals to watch (backend `/metrics` and VictoriaMetrics `/metrics`):
+Signals to watch (backend `/metrics` on port 8000 — unauthenticated, not proxied by nginx — and
+VictoriaMetrics `/metrics`):
 `dbm_metrics_buffer_pending` growing, `dbm_metrics_write_failures_total` increasing,
 `dbm_timeseries_query_latency_seconds` p95 > 1 s, `vm_slow_inserts_total`,
 `vm_cache_entries{type="storage/hour_metric_ids"}` close to the series count (memory),
 active series (`/api/v1/status/tsdb`).
+
+## Several workers: scheduler leadership
+
+Any number of processes can run the workers (`DBM_PROCESS_ROLE=all` or `worker`); they claim jobs
+from `collector_jobs` with `FOR UPDATE SKIP LOCKED`, so adding workers scales collection. Exactly
+one process at a time is the **scheduler leader** and enqueues due jobs (`app/jobs/runner.py`):
+
+* leadership is a session-level PostgreSQL advisory lock held on a **dedicated connection** taken
+  from the pool and kept for as long as the process leads;
+* every `DBM_SCHEDULER_TICK_SECONDS` (15 s) the leader re-checks the lock on that connection; if the
+  session was lost the check fails and the process drops leadership;
+* on any error the connection is **invalidated, never returned to the pool** — a pooled session
+  would keep the advisory lock and stop every other instance from taking over — and a fresh
+  connection is opened at the next tick;
+* on shutdown the connection is closed, which releases the lock at once for the next instance.
+
+Failover therefore takes about one tick after the leader's PostgreSQL session ends. The gauge
+`dbm_scheduler_leader` (1 on the leader) on each process's `/metrics` shows which one leads;
+**Platform → Collectors** shows it in the UI. `/metrics` is served on the backend port 8000 (and on
+`DBM_WORKER_PORT` of a stand-alone worker) and is not proxied by the frontend
+([Diagnostics](../administration/diagnostics.md)).
 
 ## Cardinality
 

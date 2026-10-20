@@ -20,3 +20,8 @@
 | `master key(s) … are not configured` | Configure the old key in `DBM_PREVIOUS_MASTER_KEYS`. |
 | `worker lost (no heartbeat)` | The worker stopped during the job; run it again. |
 | `the trial restore failed: IntegrityError …` | Restoring only some components would break a reference (for example servers whose environments are not restored): add the referenced component. |
+| `422 safety_backup_required` | A platform restore was requested without the pre-restore safety backup. Keep it on, or have a Platform Administrator enable `backup.allow_restore_without_safety_backup` ([Restore](restore.md#platform-restore)). |
+| Notification *Backup storage unavailable* | The storage target could not be written or read (permissions, full disk, unmounted share, S3 credentials or network). **Check** the target under Storage targets. |
+| Job `CANCELLED`, backup `FAILED: cancelled: …` | Someone cancelled the job; it stopped at the next checkpoint without storing a partial backup ([Architecture](architecture.md#asynchronous-jobs)). |
+| No notification for a manual backup | Backups that no policy owns notify only the channels named in `backup.notification_channels`. Backup events never appear on the Alerts page ([Policies → Notifications](policies.md#notifications)). |
+| Scoped user does not see a policy or job | A grant limited to servers sees a policy or job only when every server it acts on is in scope, and never platform backups. |

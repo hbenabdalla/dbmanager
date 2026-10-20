@@ -41,3 +41,15 @@ def test_single_value_from_the_frontend_proxy() -> None:
 def test_malformed_chain_falls_back_to_the_peer() -> None:
     assert deps.client_ip(_req("172.18.0.5", "198.51.100.4, not-an-ip")) == "172.18.0.5"
     assert deps.client_ip(_req("172.18.0.5", "")) == "172.18.0.5"
+
+
+def test_uvicorn_never_rewrites_the_peer_from_forwarded_headers() -> None:
+    """uvicorn's proxy-headers mode takes the leftmost X-Forwarded-For entry (chosen by the client)
+    before the application sees the request; the shipped launch configurations switch it off."""
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[3]
+    cmd = (root / "backend" / "Dockerfile").read_text()
+    assert "--no-proxy-headers" in cmd and "--proxy-headers --" not in cmd
+    for f in ("docker-compose.yml", "deployment/kubernetes/00-config.yaml"):
+        assert "FORWARDED_ALLOW_IPS" not in (root / f).read_text(), f

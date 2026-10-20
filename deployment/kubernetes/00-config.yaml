@@ -10,11 +10,10 @@ data:
   DBM_ENV: production
   DBM_PUBLIC_BASE_URL: https://dbmanager.example.com
   DBM_COOKIE_SECURE: "true"
-  DBM_TRUSTED_PROXIES: "10.0.0.0/8"
+  DBM_TRUSTED_PROXIES: "10.0.0.0/8"        # pod network of the frontend pods (adjust to your cluster)
   DBM_RUN_MIGRATIONS_ON_START: "false"     # run the migrate Job instead
   DBM_COLLECTOR_CONCURRENCY: "32"
   DBM_RATE_LIMIT_BACKEND: database          # counters shared by all API replicas (PostgreSQL)
-  FORWARDED_ALLOW_IPS: "*"
   DBM_TIMESERIES_URL: http://timeseries:8428
   DBM_TIMESERIES_RETENTION: 90d
   DBM_METRIC_BATCH_SIZE: "2000"

@@ -1,5 +1,8 @@
 # Databases, schemas and objects
 
+The pages under **Operations → Administration** (Databases, Schemas, Objects) show one server at a
+time: pick it in the **Server** selector at the top. The same views are tabs on the server page.
+
 * **Databases** (server tab, or Operations → Administration → Databases) — name, size, owner,
   encoding/collation and engine-specific attributes (for example Query Store state on SQL Server).
   Selecting a database opens its schemas.
@@ -12,5 +15,7 @@ Engine differences matter: PostgreSQL DDL is reconstructed from the catalog (PAR
 `DBMS_METADATA`, SQL Server module definitions need `VIEW ANY DEFINITION`. The exact status per
 engine is in the [support matrix](../database-engines/index.md).
 
-Creating databases, schemas or indexes is an administration action — see
-[Users and privileges](users-and-privileges.md#guarded-administration).
+These pages are read-only. Creating or dropping databases, schemas or indexes is done on the
+server's **Administration** tab, which the pages link to: DBManager generates the statements for
+review, executes them with the administration credential after confirmation, and audits them —
+see [Guarded administration](users-and-privileges.md#guarded-administration).

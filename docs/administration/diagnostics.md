@@ -1,14 +1,20 @@
 # Diagnostics
 
+There is no separate diagnostics page in the application; the information is spread over the
+places below.
+
+![Collectors](../assets/screenshots/collectors.png)
+
 | Where | What |
 |---|---|
 | `GET /healthz` | liveness |
 | `GET /readyz` | readiness with per-component status (`application`, `postgresql` with `schema_version`, `timeseries`) |
 | `GET /metrics` | Prometheus metrics of the platform itself |
-| Platform → Collectors | scheduler leader, pending and failed jobs per kind, servers paused by the circuit breaker |
-| Platform → Monitoring storage | time-series database status and ingestion |
-| Platform → Database drivers | driver availability |
-| Server → Overview → Collection status | per-component state (ok, insufficient privilege, not supported, error) |
+| Platform → Configuration → Collectors | scheduler leader, pending and failed jobs per kind, servers paused by the circuit breaker |
+| Platform → Configuration → Monitoring storage | time-series database status and ingestion |
+| Platform → Configuration → Database drivers | driver availability |
+| Platform → Configuration → About | versions and the status of the API, database, time-series store and scheduler |
+| Server page → Overview tab → collection status | per-component state (ok, insufficient privilege, not supported, error) |
 | `app.cli metrics status` | time-series status from the CLI |
 
 ### `/metrics` is unauthenticated
@@ -23,7 +29,7 @@ or firewall to the Prometheus host.
 
 ## Diagnostics bundle
 
-For support cases, **Server → Settings → Operations → Download diagnostics** (permission
+For support cases, the server page's **Settings** tab → **Operations** → **Download diagnostics** (permission
 `collectors.view` on the server) downloads one JSON file, `dbm-diagnostics-<server>.json`
 (API: `GET /api/v1/servers/{id}/diagnostics`). It contains:
 

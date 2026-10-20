@@ -88,8 +88,10 @@ USER 10001
 EXPOSE 8000
 HEALTHCHECK --interval=15s --timeout=5s --start-period=60s --retries=5 \
   CMD python -c "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=4).status == 200 else 1)"
-# --proxy-headers: the frontend nginx (or ingress) forwards client IP/proto; trusted list via FORWARDED_ALLOW_IPS.
-CMD ["sh", "-c", "exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT} --proxy-headers --forwarded-allow-ips \"${FORWARDED_ALLOW_IPS:-127.0.0.1}\" --no-server-header"]
+# --no-proxy-headers: uvicorn must not rewrite the peer address from X-Forwarded-For (it would take the
+# leftmost, client-chosen entry). The application reads the header itself, right to left, past
+# DBM_TRUSTED_PROXIES only (app.api.deps.client_ip). Absolute URLs come from DBM_PUBLIC_BASE_URL.
+CMD ["sh", "-c", "exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT} --no-proxy-headers --no-server-header"]
 
 # ---------- integration-test runner (docker-compose.test.yml, service "it-runner") ----------
 # Same image as runtime plus the test tooling; the tests themselves are mounted at run time.

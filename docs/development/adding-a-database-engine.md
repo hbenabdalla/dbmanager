@@ -84,11 +84,13 @@ Db2 socket never blocks the event loop or the scheduler. Engine hooks:
 
 | Hook | Purpose |
 |---|---|
-| `_open(database)` | connect with timeouts, TLS, application name; session settings (UTC, lock timeout) |
+| `_open(database)` | connect with timeouts, TLS, application name; session settings (UTC, lock timeout). Translate every TLS mode explicitly (`tls.ssl_context`, `tls.requires_tls`, `tls.CAFile`) and, when the driver can silently fall back to plain text, check after connecting that TLS was negotiated (as MySQL does with `Ssl_cipher`) |
 | `_classify(exc)` | driver exception → `AdapterAuthenticationError`, `AdapterTLSError`, `AdapterDatabaseNotFound`, `AdapterConnectionError`, `AdapterPermissionError`, `AdapterTimeout`, `AdapterObjectMissing`, `DriverNotInstalled` |
 | `_begin_read_only(cursor)` | start a read-only transaction where the engine has one |
 | `_set_call_timeout(conn, s)` | per-statement timeout for the SQL workspace |
 | `connection_per_database` | SQL Server opens one connection per database context |
+| `_use_database(conn, database)` | for engines with one shared connection: make the workspace/EXPLAIN database current for one call and return a callable that restores the previous one (MySQL/MariaDB use `COM_INIT_DB`) |
+| `single_database` | `True` when a connection reaches one database only (Db2 LUW): `_check_database` refuses statements for another database instead of running them in the registered one |
 
 Helpers: `_query`, `_one`, `_try` (returns `None` for permission / missing-object / unsupported, so an
 optional facility degrades instead of failing), `_memoized`. Error messages pass through
@@ -114,9 +116,9 @@ stored on the server and drives the server tabs.
 | `get_performance_metrics(slow)` | `MetricSnapshot` | gauges + cumulative counters; expensive parts only when `slow=True`; `unavailable` with reasons |
 | `get_query_statistics` | `QueryStat[]` | engine statement ID / digest as `query_id`; never full SQL as a label |
 | `explain_query(sql, db, analyze)` | `ExplainResult` | `PlanNode` tree + `raw` vendor plan; analyze only on explicit request, rolled back |
-| `get_replication_status / get_configuration / get_storage_metrics` | DTOs | |
+| `get_replication_status / get_configuration / get_storage_metrics` | DTOs | `StorageInfo.top_tables`: each `{schema, name, row_estimate, table_bytes, index_bytes, total_bytes}` plus engine-specific keys; `None` for a size the engine cannot attribute |
 | `get_security_context / get_tuning_context` | dict | evidence for the rule engine; `None` when not visible (rules must not fire on unknowns) |
-| `execute_sql` | `ExecutionResult` | read-only enforced at the database level when possible |
+| `execute_sql` | `ExecutionResult` | read-only enforced at the database level when possible; must run in the selected database or refuse it — never silently in another one |
 | `build_admin(action, params)` / `run_admin(stmt)` | `AdminStatement` / dict | vendor statements from validated parameters; passwords bound or masked in `display` |
 
 ### Metrics

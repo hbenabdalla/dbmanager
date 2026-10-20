@@ -1,6 +1,6 @@
 # Retention
 
-The retention step (and **Platform → Monitoring storage**) sets how many days of metric history are
+The retention step (and **Platform → Configuration → Monitoring storage**) sets how many days of metric history are
 kept (1–3,650 days; `PUT /api/v1/platform/monitoring-storage/retention`, audited).
 
 The policy is stored in the control plane; the time-series database enforces its own start-up

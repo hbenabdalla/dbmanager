@@ -11,7 +11,7 @@
 | Recommendations, findings, audit | PostgreSQL | not time-limited | — |
 
 The **policy** is stored in PostgreSQL (`app_settings.monitoring.retention_days`, audited,
-editable under Platform → Monitoring storage or Platform → Settings). It is **enforced**
+editable under Platform → Configuration → Monitoring storage or Platform → Configuration → Settings). It is **enforced**
 natively by the time-series database, which takes its retention as a start-up flag. The
 status page shows both values; when they differ it says so and how to apply it:
 

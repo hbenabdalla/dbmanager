@@ -1,5 +1,7 @@
 # Database drivers
 
+![Database drivers](../assets/screenshots/database-drivers.png)
+
 **Platform → Configuration → Database drivers** (`GET /api/v1/platform/drivers`) shows, for the
 running backend, each driver's version and status:
 

@@ -166,7 +166,7 @@ export function ScheduleWizard({ reports, schedule, initial, onClose }: {
                       </label>
                     ))}
                   </div>
-                ) : <p className="text-[13px] text-muted">No e-mail channel yet. Create one under Platform → Notification channels; reports are only sent by e-mail.</p>}
+                ) : <p className="text-[13px] text-muted">No e-mail channel yet. Create one under Platform → Configuration → Notification channels; reports are only sent by e-mail.</p>}
               </fieldset>
             )}
             {manageUsers ? (

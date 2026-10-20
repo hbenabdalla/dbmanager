@@ -17,18 +17,44 @@ Schedules use wall-clock time in the policy's time zone, so a daily 02:00 run st
 daylight-saving changes (a time that occurs twice runs once, at the first occurrence). Cron
 expressions are not offered. A policy never runs twice concurrently.
 
+## Protection and freshness
+
+A server counts as **Protected** when an enabled database policy covers it and its newest
+successful backup is younger than the policy's *freshness limit*: the configured "no successful
+backup" age, otherwise derived from the schedule (daily 26 h, weekly 8 days, monthly 32 days). A
+**manual** policy without a configured age uses **8 days** for this status only; it never raises
+an overdue notification. A covered server whose backup is older is *At risk*; a server no policy
+covers is *Not protected* (`GET /api/v1/servers/{id}/backup-protection`, field
+`freshness_limit_hours`).
+
 ## Notifications
 
-When a policy has notification channels, DBManager sends:
+Backup events are sent as **notifications** through notification channels. They are **not
+alerts**: they do not appear on the **Alerts** page, have no acknowledge/resolve lifecycle and are
+not re-notified. The delivery log of each channel records them (**Platform → Configuration → Notification
+channels**), and the backup itself shows its state and error in **Backup & Restore**.
 
-| Event | When |
-|---|---|
-| Backup failed / partially failed | a policy run ends `FAILED` or `PARTIAL_SUCCESS` (or is cancelled) |
-| Backup storage unavailable | a run fails because the target cannot be written or read |
-| Backup verification failed | a verification of one of its backups fails |
-| Restore failed | a restore of one of its backups fails |
-| Retention cleanup failed | stored files of an expired backup could not be deleted |
-| No successful backup within policy | the newest successful backup is older than the policy allows (daily 26 h, weekly 8 days, monthly 32 days, or the configured hours); sent once per period |
+Where an event goes:
 
-Notifications use the existing channels (webhook with generic/Slack/Teams payloads, email) with
-their retry behaviour.
+* events of a backup made by a policy (and of its verifications and restores) go to the
+  **policy's notification channels**;
+* events of backups that **no policy owns** — manual backups, their verification and restores — go
+  to the channels named in the platform setting **`backup.notification_channels`** (channel names,
+  comma separated, under **Platform → Configuration → Settings**). Empty: nothing is sent; the event
+  is only visible in the app.
+
+| Title | Severity | When |
+|---|---|---|
+| Backup failed | high | a platform or database backup job ends `FAILED` |
+| Backup partially failed | high | a database backup job ends `PARTIAL_SUCCESS` (some assets failed) |
+| Backup storage unavailable | high | the job failed because the storage target could not be written or read; classified from the storage error type, not from the message text (it replaces the titles above) |
+| Backup job cancelled | medium | a backup, verification or restore job was cancelled |
+| Backup verification failed | high | a verification job ends with a failed check |
+| Restore failed | high | a platform or database restore ends `FAILED` |
+| Retention cleanup failed | high | stored files of an expired backup could not be deleted |
+| No successful backup within policy | high | the newest successful backup of a policy with a freshness limit is older than allowed; sent once per period |
+
+The message carries the error (redacted) and, for bulk backups, how many assets succeeded. Channels
+use their normal payload presets (generic, Slack, Teams, email) and retry behaviour; the event's
+`rule` field is `backup policy <name>` or `backup (no policy)` and its link opens the Backup &
+Restore page.

@@ -1,6 +1,7 @@
 # Identity providers
 
-Identity providers are configured at **Platform → Identity providers / LDAP** (permission `idp.manage`)
+Identity providers are configured under **Platform → Configuration → Identity providers**,
+**Identity wizard**, **OIDC** and **LDAP** (permission `idp.manage`, platform scope)
 or through `POST /api/v1/identity-providers`. Secrets (LDAP bind password, OIDC client secret) are
 write-only and encrypted.
 
@@ -18,7 +19,7 @@ sequenceDiagram
 
 ## Group mapping
 
-1. Create platform groups (**Platform → Users → Groups**), e.g. `dba-production`.
+1. Create platform groups (**Platform → Configuration → Users → Groups** tab), e.g. `dba-production`.
 2. Give each group role assignments with scopes (e.g. *DBA Administrator* @ environment *Production*).
 3. Map directory groups to platform groups on the provider (full DN or CN for LDAP; group name/id
    from the token for OIDC). Memberships are synchronised at every sign-in; directory-sourced

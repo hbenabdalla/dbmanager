@@ -152,3 +152,26 @@ async def test_engine_support_carries_real_engine_validation(admin) -> None:  # 
     assert support["db2zos"]["validation"]["status"] == "external"
     for engine in ("mssql", "oracle", "db2"):  # until scripts/integration-test has run against them
         assert support[engine]["validation"]["status"] in ("pending", "validated", "failed")
+
+
+async def test_licensed_features_can_be_changed_and_are_validated(admin) -> None:  # type: ignore[no-untyped-def]
+    r = await admin.post(
+        "/api/v1/servers",
+        json={
+            "name": "lic-ora-01",
+            "engine": "oracle",
+            "host": "ora.invalid",
+            "port": 1521,
+            "monitoring_enabled": False,
+        },
+    )
+    assert r.status_code == 201, r.text
+    sid = r.json()["id"]
+    try:
+        r = await admin.patch(f"/api/v1/servers/{sid}", json={"licensed_features": ["diagnostics_pack"]})
+        assert r.status_code == 200, r.text
+        assert (await admin.get(f"/api/v1/servers/{sid}")).json()["licensed_features"] == ["diagnostics_pack"]
+        r = await admin.patch(f"/api/v1/servers/{sid}", json={"licensed_features": ["everything"]})
+        assert r.status_code == 422
+    finally:
+        await admin.delete(f"/api/v1/servers/{sid}", params={"confirm": "lic-ora-01"})

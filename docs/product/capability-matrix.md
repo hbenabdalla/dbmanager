@@ -22,7 +22,7 @@ Paths are relative to the repository root (`backend/app/...`, `frontend/src/...`
 > remediation sprints R1 – R7, and their evidence now names the tests that prove them. Test
 > counts at 0.14.0:
 >
-> - backend: 837 (unit, API and migration);
+> - backend: 839 (unit, API and migration);
 > - frontend: 180;
 > - real-engine runs in this audit: PostgreSQL 16 (13), MariaDB 10.11 (15) and VictoriaMetrics (5);
 > - the other engines: the last Docker run, see the [real-engine validation report](real-engine-validation.md).

@@ -1,5 +1,7 @@
 # About, version and product links
 
+![About](../assets/screenshots/about.png)
+
 **Platform → Configuration → About** (also reachable from the **Help** menu in the top bar and the command palette, *About DBManager*) shows:
 
 - the application, backend and frontend versions, the build identifier, git commit and build date, and the database schema (Alembic) revision;
@@ -41,7 +43,7 @@ DBM_BUILD_DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ) docker compose build
 
 ## API
 
-- `GET /api/v1/version` — public, `{"product": "DBManager", "version": "0.13.0"}`; suitable for load-balancer checks and upgrade scripts.
+- `GET /api/v1/version` — public, `{"product": "DBManager", "version": "0.14.0"}`; suitable for load-balancer checks and upgrade scripts.
 - `GET /api/v1/about` — authenticated; everything shown on the About page.
 
 See also [Notification channels](notifications.md) and [Alerting](../user-guide/alerting.md).

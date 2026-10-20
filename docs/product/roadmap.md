@@ -25,8 +25,8 @@ release. The milestone of this release is described in [Current milestone](curre
 
 !!! note "Roadmap reconciliation (0.14.0)"
     Before 0.14.0, every DONE status below was audited again from the code, the tests and the
-    documentation. 61 claims were reopened because they were broken, partial, untested, or
-    present only in the UI or only in the backend. Two of them were P0 security issues. All 61
+    documentation. 62 claims were reopened because they were broken, partial, untested, or
+    present only in the UI or only in the backend. Two of them were P0 security issues. All 62
     were fixed and verified again in the same release, as remediation sprints R1 – R7. The
     statuses below are the verified ones. The row-by-row evidence is in the
     [roadmap audit](roadmap-audit.md).

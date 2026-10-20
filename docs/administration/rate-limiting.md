@@ -22,8 +22,8 @@ telemetry (charts, metric history, query statistics, dashboards) only counts aga
 Set a policy to `0` to switch it off. Changes take effect when the backend is restarted with the
 new value.
 
-The UI stays well below the defaults: the busiest page (a server's *Activity* tab) refreshes
-sessions and locks every 10 seconds, 12 live queries per minute.
+The UI stays well below the defaults: the busiest pages (a server's **Sessions** and **Locks**
+tabs) refresh every 10 seconds, 6 live queries per minute each.
 
 ## When a limit is reached
 

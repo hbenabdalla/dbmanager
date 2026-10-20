@@ -2,7 +2,7 @@
 
 ## Supported versions
 
-Db2 LUW 11.1 – 12.1 (validated against Db2 Community Edition 11.5.9.0).
+Db2 LUW 11.1 – 12.1 (real-engine validated against Db2 Community Edition 11.5.9.0).
 
 ## Driver
 
@@ -14,7 +14,19 @@ Host, port (50000), database name, username, password, plus *current schema*, *S
 
 ## TLS
 
-TLS mode other than `disable` uses `SECURITY=SSL` against the instance's `SSL_SVCENAME` port; supply the server certificate or CA. Rule `DB2-SEC-004` flags instances without a TLS port.
+The TLS mode becomes Db2 CLI keywords (`connection_string` in `adapters/db2/base.py`, shared with
+the z/OS adapter):
+
+| Mode | Keywords | Effect |
+|---|---|---|
+| `disable` | — | plain TCP |
+| `prefer` | — | **plain TCP**: the CLI has no opportunistic TLS. TLS is used only when the *Server certificate file* option is set |
+| `require` | `SECURITY=SSL` | TLS; the CLI validates the server certificate against the uploaded CA (`SSLServerCertificate`, a private temporary file), the *Server certificate file* option, or its own key store. There is no "encrypt without validation" mode, so `require` behaves like `verify-ca` |
+| `verify-ca` | `SECURITY=SSL` (+ `SSLServerCertificate`) | certificate chain validated; host name not checked |
+| `verify-full` | as `verify-ca` + `SSLClientHostnameValidation=Basic` | chain validated and host name checked (Db2 CLI 11.5.6 or later) |
+
+Connect to the instance's TLS port (`SSL_SVCENAME`), not to `SVCENAME`. Rule `DB2-SEC-004` flags
+instances without a TLS port.
 
 ## Privileges
 
@@ -96,6 +108,22 @@ All matrix rows are FULL except *databases* and *users* (PARTIAL: Db2 users are 
 The authoritative per-capability status is in the [support matrix](index.md#implemented-capabilities) and,
 for a registered server, on its **Overview → Capabilities** (runtime discovery refines every cell).
 
+## Inventory, workspace and storage notes
+
+* **One database per registration.** A Db2 LUW connection is to one database. Workspace statements
+  and EXPLAIN for another database are refused with "this db2 connection is to database 'SAMPLE':
+  register 'OTHER' as its own server to run statements there" — register each database as its own
+  server ([Troubleshooting](../troubleshooting/engines.md#db2-luw-one-database-per-registration)).
+* **Privileges** are read from `SYSCAT.DBAUTH`, `ROLEAUTH`, `SCHEMAAUTH`, `TABAUTH`, `COLAUTH`,
+  `ROUTINEAUTH`, `PACKAGEAUTH`, `SEQUENCEAUTH`, `INDEXAUTH`, `TBSPACEAUTH` and `MODULEAUTH` (system
+  schemas and `NULLID` packages excluded), so *who has access* covers column, routine, package,
+  sequence, index, tablespace and module grants as well as tables.
+* **Largest tables** come from catalog statistics (`SYSCAT.TABLES.CARD` and `FPAGES` × page size,
+  index leaf pages from `SYSCAT.INDEXES.NLEAF`): they are as current as the last `RUNSTATS`
+  (`stats_time` is returned with each row) and tables without statistics are not listed. The shape
+  is the common one (`schema`, `name`, `row_estimate`, `table_bytes`, `index_bytes`,
+  `total_bytes`).
+
 ## Known limitations
 
 * Users are authenticated outside Db2 (OS/LDAP/Kerberos); "create user" is not offered.
@@ -137,12 +165,20 @@ privileged accounts) also apply.
 | `DB2-PERF-008` | Low package cache hit ratio |
 | `DB2-PERF-009` | Deadlocks and lock timeouts |
 
-Plus the common performance rules `GEN-PERF-001` … `GEN-PERF-010`. Recommendations are advice with
+Plus the 12 engine-independent performance rules `GEN-PERF-001` … `GEN-PERF-012` (connections,
+cache, blocking, deadlocks, replication lag, long transactions, expensive queries, spills, CPU,
+storage, query latency regressions and storage forecasts). Recommendations are advice with
 evidence; DBManager never executes them.
+
+**Rule count:** 16 engine-specific rules (7 security, 9 performance) plus the 14
+engine-independent rules, which apply to every engine. Across all engines DBManager ships 61
+performance and 55 security rules; the full catalog is served by `GET /api/v1/advisor/rules`.
 
 ## Troubleshooting
 
 * `SQL30082N`: authentication failed (OS/LDAP password).
 * `SQL1013N` / `SQL30061N`: database not found.
+* "this db2 connection is to database …: register … as its own server": the workspace targets a
+  database other than the registered one; register that database separately.
 * Explain fails with *explain tables are missing* or `SQL0551N … EXPLAIN_INSTANCE`: create the tables and grant DML on them (below).
 * Monitoring shows *Privilege required*: grant `SQLADM` or EXECUTE on the `MON_GET_*` functions ([Db2 monitoring privileges](../troubleshooting/engines.md#db2-monitoring-privileges)).

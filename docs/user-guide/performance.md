@@ -20,5 +20,8 @@ by wait type.
 Metrics an engine does not provide are listed under the charts as *Not available for this server*
 instead of being shown empty or estimated. What each metric means: [Metric catalog](../monitoring/metric-catalog.md).
 
-**Operations → Monitoring → Overview** shows fleet-wide current values; Sessions, Locks and
-Replication pages aggregate across servers.
+**Operations → Monitoring → Overview** shows fleet-wide current values; **Performance** compares
+servers; Sessions and Locks show one server at a time (pick it in the **Server** selector);
+Replication lists replicated servers with their lag and the detail of one selected server.
+
+![Comparing servers under Operations → Monitoring → Performance](../assets/screenshots/monitoring-performance.png)

@@ -18,8 +18,8 @@ tables.
 | `organization` | organizations, environments, sites, clusters, applications |
 | `inventory` | servers, server tags, credentials (still encrypted), discovered databases and accounts |
 | `identity` | users (password hashes, encrypted TOTP seeds), groups, members, roles, role assignments, identity providers, group mappings, linked identities, API tokens (hashes) |
-| `findings` | recommendations and security findings with their triage state |
-| `alerting` | alert rules, maintenance windows, notification channels |
+| `findings` | recommendations and security findings with their triage state, saved query plans |
+| `alerting` | alert rules, maintenance windows, notification channels (webhook URLs and secrets still encrypted), report schedules |
 | `settings` | platform settings, audit forwarding (SIEM) destinations |
 | `backup_config` | backup storage targets and policies |
 | `audit` | audit log and SQL workspace history — *optional*, merged on restore, never deleted |
@@ -38,8 +38,8 @@ monitoring settings). It does not back up the servers' operating systems or data
 
 Operational state that rebuilds itself is excluded on purpose: sign-in sessions, rate-limit
 counters, the collector job queue, legacy metric tables and query fingerprints, simulation run
-history, alert instances and comments, notification delivery logs, and the backup job history and
-catalog. A unit test fails whenever a new table is added without being classified.
+history, alert instances and comments, notification delivery logs, report run history, and the
+backup job history and catalog. A unit test fails whenever a new table is added without being classified.
 
 ## Secrets
 

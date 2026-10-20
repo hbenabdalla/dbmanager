@@ -2,7 +2,9 @@
 
 ## Supported versions
 
-MariaDB 10.6–11.x (validated against 11.4.13 and 10.11.14, with `performance_schema` ON and OFF). Galera clusters are recognised.
+MariaDB 10.5 and later — 10.6, 10.11 and the 11.x LTS releases (real-engine validated against
+11.4.13 and 10.11.14, with `performance_schema` ON and OFF). `SHOW REPLICA HOSTS` is used from
+10.5.1, `SHOW SLAVE HOSTS` before. Galera clusters are recognised when `wsrep` is enabled.
 
 ## Driver
 
@@ -14,7 +16,11 @@ Host, port (3306), default database (optional), username, password.
 
 ## TLS
 
-Same TLS modes as MySQL.
+Same implementation as MySQL ([MySQL TLS](mysql.md#tls)): `prefer` is opportunistic TLS without
+certificate validation (validated when a CA is uploaded), and `require`, `verify-ca` and
+`verify-full` check `Ssl_cipher` after connecting, so a server without TLS is refused with
+`TLS_ERROR` instead of silently connecting in plain text. Real-engine validated: `verify-ca`, a
+wrong CA (refused), `require` and `prefer`.
 
 ## Privileges
 
@@ -66,10 +72,17 @@ See [Least-privilege accounts](permissions.md) for the rules that apply to every
 
 ## Supported capabilities
 
-Like MySQL, except *locks* (PARTIAL: lock waits from `information_schema.INNODB_LOCK_WAITS`) and *query statistics*, which are **REQUIRES CONFIGURATION** while `performance_schema=OFF` (the MariaDB default). Galera metrics are collected on clusters.
+Like MySQL, except *locks* (PARTIAL: locks involved in waits, from `information_schema.INNODB_LOCKS` / `INNODB_LOCK_WAITS`; held-only locks are not listed), *memory metrics* (not supported: MariaDB's memory instrumentation is off by default) and *query statistics*, which are **REQUIRES CONFIGURATION** while `performance_schema=OFF` (the MariaDB default). Galera metrics are collected on clusters.
 
 The authoritative per-capability status is in the [support matrix](index.md#implemented-capabilities) and,
 for a registered server, on its **Overview → Capabilities** (runtime discovery refines every cell).
+
+## SQL workspace and EXPLAIN
+
+As on MySQL, a workspace statement or EXPLAIN for another database switches the server's
+connection to the selected database for that call and back afterwards
+([MySQL workspace](mysql.md#sql-workspace-and-explain)). **Storage → Largest tables** has the
+common shape (`schema`, `name`, `row_estimate`, `table_bytes`, `index_bytes`, `total_bytes`).
 
 ## Known limitations
 
@@ -112,10 +125,18 @@ privileged accounts) also apply.
 | `MYSQL-PERF-008` | Connection limit nearly reached historically |
 | `MYSQL-PERF-009` | Query cache enabled |
 
-Plus the common performance rules `GEN-PERF-001` … `GEN-PERF-010`. Recommendations are advice with
+Plus the 12 engine-independent performance rules `GEN-PERF-001` … `GEN-PERF-012` (connections,
+cache, blocking, deadlocks, replication lag, long transactions, expensive queries, spills, CPU,
+storage, query latency regressions and storage forecasts). Recommendations are advice with
 evidence; DBManager never executes them.
+
+**Rule count:** 17 engine-specific rules (9 security, 8 performance) plus the 14
+engine-independent rules, which apply to every engine. Across all engines DBManager ships 61
+performance and 55 security rules; the full catalog is served by `GET /api/v1/advisor/rules`.
 
 ## Troubleshooting
 
 * *Configuration required* for query statistics: set `performance_schema=ON` in the server configuration and restart.
 * Replica status needs `REPLICA MONITOR` (10.5.9+) or `REPLICATION CLIENT` on older releases.
+* `TLS_ERROR: tls_mode=require but the server did not negotiate TLS`: enable TLS on the server
+  (`ssl_cert`, `ssl_key`) or register the server with `prefer` or `disable`.

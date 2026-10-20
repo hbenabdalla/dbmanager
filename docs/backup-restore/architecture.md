@@ -1,13 +1,17 @@
 # Architecture
 
-```text
-API (app/api/v1/backups.py)
-  └─ BackupService (app/backup/service.py)  — jobs, verification, retention, schedules, notifications
-       ├─ platform archive (app/backup/platform.py)  — export, compatibility, trial restore, apply
-       ├─ DatabaseBackupProvider (app/backup/engines.py) — one provider per engine
-       ├─ encryption (app/backup/encryption.py)       — age via pyrage, no custom cryptography
-       └─ StorageProvider (app/backup/storage.py)     — filesystem (local/mounted/NFS), S3-compatible
+```mermaid
+flowchart TB
+  API["API · app/api/v1/backups.py<br/>RBAC scoping, audit, typed confirmations"] --> SVC
+  SVC["BackupService · app/backup/service.py<br/>jobs, verification, retention, schedules, notifications"]
+  SVC --> PLAT["platform archive · app/backup/platform.py<br/>export, compatibility, trial restore, apply"]
+  SVC --> ENG["DatabaseBackupProvider · app/backup/engines.py<br/>one provider per engine"]
+  SVC --> ENC["encryption · app/backup/encryption.py<br/>age via pyrage"]
+  SVC --> STO["StorageProvider · app/backup/storage.py<br/>filesystem (local / mounted / NFS), S3-compatible"]
+  SVC --> NOTE["notification channels<br/>(not alerts)"]
 ```
+
+The end-to-end flow is drawn in [System architecture → Backup and restore flow](../architecture/index.md#backup-and-restore-flow).
 
 ## Asynchronous jobs
 
@@ -21,12 +25,36 @@ marked `FAILED` ("worker lost").
 | Job state | Meaning |
 |---|---|
 | `QUEUED` | waiting for a worker (can be cancelled) |
-| `RUNNING` / `VERIFYING` | in progress (cancellation is requested and honoured between assets and while external tools run) |
+| `RUNNING` / `VERIFYING` | in progress; a cancel request is honoured at the next checkpoint (see below) |
 | `SUCCESS` | every asset succeeded |
 | `PARTIAL_SUCCESS` | some assets of a bulk backup failed |
 | `FAILED` / `CANCELLED` | ended without (complete) result |
 
-A running platform restore cannot be cancelled: it commits in one transaction.
+**Cancellation checkpoints.** *Cancel* on a queued job ends it at once. On a running job it sets
+`cancel_requested`, which the job checks at defined points, so nothing half-stored remains:
+
+* platform backup: after the tables are exported and again after the archive is built — before
+  anything is written to the storage target;
+* database backup: before each asset, and while an external tool (`pg_dump`, `mysqldump`, …)
+  runs;
+* a running platform restore cannot be cancelled: it commits in one transaction.
+
+A cancelled job ends `CANCELLED` and its backup `FAILED` ("cancelled: …"). Cancelling needs the
+permission that starting the job needed, on every server it touches.
+
+**Failure classification.** A job that fails because the storage target cannot be written or read
+(a `StorageError` from the storage provider) is recorded with `storage_errors` in its result and
+notified as *Backup storage unavailable*; in a bulk database backup each asset carries
+`error_class: storage` when that was the cause. The classification uses the exception type, not
+the error text. Other failures are notified as *Backup failed* (see
+[Policies → Notifications](policies.md#notifications)).
+
+**Visibility.** A `backup.view` grant at platform scope sees every backup, job, policy and target.
+A grant limited to environments or servers sees only the database backups, jobs, policies and
+coverage of the servers it covers — a policy or job only when every server it acts on is in scope —
+and never platform backups, platform jobs or platform policies; storage targets are listed by name
+and kind only (to choose one for a backup). The overview counters are filtered the same way
+(`app/api/v1/backups.py`, `_visible_server_ids`).
 
 Secrets supplied for one run (a passphrase, an age identity) are sealed with the platform key ring
 in the job and removed when the job ends; they are never logged or returned by the API.

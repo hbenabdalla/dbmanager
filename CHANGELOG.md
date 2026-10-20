@@ -9,8 +9,8 @@ they are listed under **Changed** with migration notes.
 
 Milestone 0.14 (Reporting), the DBManager branding and database-engine identity workstream, and
 the **roadmap reconciliation**. Before this release every earlier milestone was audited again
-from the code. 61 claims were reopened because they were broken, partial, untested, or present
-only in the UI or only in the backend; two of them were P0 security issues. All 61 were fixed and
+from the code. 62 claims were reopened because they were broken, partial, untested, or present
+only in the UI or only in the backend; two of them were P0 security issues. All 62 were fixed and
 verified again ([roadmap audit](docs/product/roadmap-audit.md)).
 
 Upgrading from 0.13.0 applies migrations `0012` and `0013` automatically. Three upgrade notes:
@@ -71,6 +71,9 @@ Upgrading from 0.13.0 applies migrations `0012` and `0013` automatically. Three 
   age protects for at most 8 days.
 - Header `X-DBM-Export-Truncated` on audit CSV exports. A single export holds at most 200,000 rows.
 - Read-only settings show the MFA policy (`mfa_required_for`, `mfa_issuer`).
+- Server → Settings: the Oracle management packs licensed for a server. Licensed features are
+  validated on update too.
+- The identity wizard can switch between LDAP / Active Directory and OpenID Connect.
 - Migration `0013`: existing servers keep administration mode.
 - SQL Server and Oracle list a schema's constraints. SQL Server lists the roles of every
   database the login can open (up to 100) on a server-level registration. Oracle connected to
@@ -159,6 +162,10 @@ Upgrading from 0.13.0 applies migrations `0012` and `0013` automatically. Three 
   The address is now read right to left, past trusted proxies only (`DBM_TRUSTED_PROXIES`), and
   nginx resolves the real client from `DBM_OUTER_PROXY`. Configure both when DBManager runs
   behind another proxy.
+  The backend's uvicorn also runs with `--no-proxy-headers`. Its proxy-header mode
+  (`FORWARDED_ALLOW_IPS=*` in the Compose file and the Kubernetes manifests) took the leftmost,
+  client-chosen entry as the peer before DBManager's check ran. `FORWARDED_ALLOW_IPS` is no longer
+  used, and the Kubernetes frontend sets `DBM_OUTER_PROXY`.
 - MFA: the TOTP step ignored the account lockout, and a correct password reset the failure
   counter before the second factor.
 - Webhook URLs and headers of notification channels (which carry tokens) were stored in plain

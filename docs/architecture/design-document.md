@@ -1,8 +1,11 @@
 # DBManager — Product Requirements & Architecture
 
-This document covers Steps 1–8 of the delivery workflow: normalized requirements,
-architecture, technology decisions, data model, API surface, UX architecture,
-repository layout and the phased implementation plan. Companion documents:
+This document covers the normalized requirements, architecture, technology decisions, data
+model, API surface, UX architecture, repository layout and the implementation phases. It
+describes the current release; where the original design and the code differ, the code is
+authoritative and this document follows it. Diagrams of the component overview, the collection
+pipeline, the request flow, alerting and backup are in [System architecture](index.md).
+Companion documents:
 
 | Topic | Document |
 |---|---|
@@ -14,6 +17,8 @@ repository layout and the phased implementation plan. Companion documents:
 | REST API | [api.md](../api/index.md) |
 | Operations / runbook | [operations.md](../operations/index.md) |
 | Engine capability matrix | [database-support-matrix.md](../database-engines/index.md) |
+| Alerting | [alerting.md](alerting.md) |
+| Backup and restore | [backup-restore](../backup-restore/index.md) |
 
 ---
 
@@ -41,24 +46,28 @@ repository layout and the phased implementation plan. Companion documents:
 | R16 | Platform | Python/FastAPI backend, React/TS frontend, PostgreSQL internal store plus a dedicated time-series database for telemetry; 4-container compose; K8s/OpenShift-ready. |
 | R17 | Ops | JSON logs, health/readiness/metrics endpoints, correlation ids, collector status. |
 | R18 | Demo | On-request simulated multi-engine fleet (Super Administrator only), clearly labelled, removable without touching real data ([simulation.md](../administration/simulation.md)). |
+| R19 | Alerting | Threshold, range and baseline (z-score) alert rules with lifecycle, maintenance windows and notification channels (e-mail, webhooks) with retries. |
+| R20 | Backup | Platform and managed-database backups with encryption, verification, retention and guided restore. |
+| R21 | Integration | API tokens, SIEM forwarding of audit events, external secret manager (HashiCorp Vault). |
 
 ### 1.2 Assumptions & default decisions
 
 1. **Single-tenant install, multi-organization data model.** An `organization` entity exists so a later SaaS/multi-tenant mode is possible; the MVP ships with one default organization.
-2. **No Redis in the base deployment.** PostgreSQL is used as the job queue (`SELECT … FOR UPDATE SKIP LOCKED`) and for leader election (advisory locks). This keeps the container topology small (frontend, backend, PostgreSQL, time-series DB) while allowing workers to scale independently (see §2.6).
+2. **No Redis in the base deployment.** PostgreSQL is used as the job queue (`SELECT … FOR UPDATE SKIP LOCKED`), for leader election (a session-level advisory lock on a dedicated connection) and for shared rate-limit counters. This keeps the container topology small (frontend, backend, PostgreSQL, time-series DB) while allowing workers to scale independently (see §2.6).
 3. **Server-side sessions** (opaque, hashed tokens in PostgreSQL) rather than long-lived JWTs, so sessions can be revoked instantly and work across replicas.
 4. **Demo data is simulated, on request and labelled.** Nothing is generated at startup. Simulated rows carry `data_source = 'simulated'` (servers, sites, clusters, applications) and the UI marks them "Simulated". No metrics are ever fabricated for real servers — if a facility is unavailable, the API says so.
 5. **Least-privileged monitoring credential by default.** Each server has a *monitoring* credential and an optional *administration* credential. Read-only features use only the monitoring credential.
 6. **One SQL statement per workspace execution.** Batches are rejected; this makes statement classification reliable.
-7. **Oracle diagnostics** (ASH/AWR = Diagnostics Pack) are disabled per server until an administrator declares the license (`licensed_features`). Same for SQL Server Query Store (version dependent) and pg_stat_statements (extension).
-8. **Time-series storage** uses a plain, indexed PostgreSQL table with retention pruning. TimescaleDB / native partitioning is a documented upgrade path, not a requirement.
+7. **Oracle Diagnostics and Tuning Packs** (AWR, ASH, ADDM, SQL Monitoring, the advisors) are never queried by the collectors. The SQL workspace refuses statements on pack objects unless an administrator declares the license per server (`licensed_features`). SQL Server Query Store and PostgreSQL `pg_stat_statements` are detected, never assumed.
+8. **Time-series storage** is a dedicated VictoriaMetrics single node (cluster or a managed Prometheus-compatible service as the scale-out path). The legacy PostgreSQL metric tables are only read by the migration utility ([monitoring architecture](../monitoring/architecture.md)).
 
 ### 1.3 Explicit non-goals for the first release
 
 * Automatic remediation of any kind (by design, permanently).
-* Approval workflows are modelled (`change_requests` architecture) but not enforced in v1.
-* PDF/XLSX reports (CSV now; the report service has a renderer interface).
-* SAML (designed; OIDC is the preferred federation path and is implemented).
+* Approval (four-eyes) workflows for changes: not implemented; risky actions need typed confirmation and are audited.
+* XLSX reports (CSV and server-side PDF exist, with scheduled e-mail delivery).
+* SAML (OIDC is the federation path and is implemented).
+* AI or LLM features: there are none; no data is sent to an AI service.
 
 ---
 
@@ -75,16 +84,19 @@ flowchart LR
     BE -->|LDAP/LDAPS| AD[(LDAP / Active Directory)]
     BE -->|OIDC| IDP[Identity Provider<br/>Keycloak · Entra ID · Okta]
     BE -->|vendor drivers, TLS| FLEET[(Database fleet<br/>PostgreSQL · MySQL · MariaDB<br/>SQL Server · Oracle · Db2 · Cloud)]
-    BE -->|optional| VAULT[(External secret manager)]
+    BE -->|optional| VAULT[(HashiCorp Vault)]
     BE -->|HTTP, internal only| TS[(Time-series DB<br/>VictoriaMetrics<br/>monitoring telemetry)]
-    PROM[Prometheus / OTel] -->|scrape /metrics| BE
+    BE -->|SMTP · webhooks| NOTIFY[Notification receivers<br/>e-mail · Slack · Teams · generic]
+    BE -->|syslog · signed webhook| SIEM[(SIEM)]
+    BE -->|files · S3| STORE[(Backup storage)]
+    PROM[Prometheus / OTel] -->|"scrape /metrics (backend port only)"| BE
 ```
 
 ### 2.2 Container architecture
 
 ```mermaid
 flowchart TB
-    Browser -->|HTTPS :8443/:8080| FE
+    Browser -->|HTTPS via your proxy, then HTTP :8080| FE
     subgraph compose[docker compose]
       FE[database-manager-frontend<br/>nginx · static SPA · reverse proxy /api]
       BE[database-manager-backend<br/>FastAPI · uvicorn<br/>API + scheduler + workers + batch writer]
@@ -115,7 +127,7 @@ read goes through the backend, which authorizes the caller first. Details:
 ```mermaid
 flowchart TB
     subgraph API[API layer — app/api/v1]
-      R[Routers: auth, users, roles, servers, inventory,<br/>metrics, sessions, queries, workspace, recommendations,<br/>security, audit, reports, settings]
+      R[Routers: auth, MFA, tokens, users, RBAC, servers, inventory,<br/>metrics, server data, queries, workspace, admin actions,<br/>advisor, performance, alerting, backups, reports, audit,<br/>SIEM, platform, onboarding, simulation]
     end
     subgraph SVC[Service layer — app/services]
       AUTHS[AuthService<br/>local · LDAP · OIDC]
@@ -126,7 +138,10 @@ flowchart TB
       QRY[QueryService / Workspace]
       ADV[Advisor engines<br/>performance · security]
       SEC[SecretService]
-      RPT[ReportService]
+      RPT[ReportService<br/>CSV · PDF · schedules]
+      ALR[Alerting + notify]
+      BAK[Backup service — app/backup]
+      INT[SIEM · Vault · API tokens]
     end
     subgraph DOM[Domain — app/domain]
       PERM[Permission catalog]
@@ -140,7 +155,7 @@ flowchart TB
       BASE[BaseDatabaseAdapter + Capabilities]
       PGA[PostgreSQLAdapter]
       DEMO[Simulation adapter]
-      STUB[MySQL · MariaDB · MSSQL · Oracle · Db2 · Db2 z/OS]
+      OTH[MySQL · MariaDB · SQL Server · Oracle · Db2 LUW · Db2 z/OS]
     end
     subgraph JOBS[Jobs — app/jobs]
       SCH[Scheduler leader<br/>advisory lock]
@@ -184,6 +199,15 @@ sequenceDiagram
     FE->>BE: subsequent calls with cookie + X-CSRF-Token
     BE->>BE: Authorizer.require(permission, scope)
 ```
+
+* **MFA**: local accounts can be required to use TOTP (`DBM_MFA_REQUIRED_FOR`); a user who must
+  enrol reaches only the enrolment endpoints until done. OIDC sign-ins can carry `amr`/`acr`.
+* **API tokens** (`Authorization: Bearer …`): hashed, expiring, optionally limited to source CIDRs;
+  their permissions are the owner's current grants intersected with the token's scopes. No CSRF
+  check applies (no ambient cookie) and interactive-only endpoints are refused.
+* **Client address**: taken from `X-Forwarded-For` only through trusted proxies, read right to left
+  (`DBM_TRUSTED_PROXIES`; the frontend nginx accepts it only from `DBM_OUTER_PROXY` and replaces it
+  with one address). It feeds the audit trail, per-IP sign-in limits and token allow-lists.
 
 ### 2.5 RBAC model
 
@@ -230,9 +254,10 @@ flowchart LR
 
 The full write and read paths are described in [monitoring-pipeline.md](../monitoring/pipeline.md).
 
-* **Job types**: `collect_metrics` (NORMAL class, follows the server's interval), `collect_query_stats` (SLOW, 5 min), `discover_inventory` (VERY_SLOW, 1 h), `generate_recommendations`, `security_scan`, and the global `retention` and `timeseries_deletes` jobs. Each (server, job) gets a stable phase offset (`DBM_COLLECTION_JITTER_RATIO`) so a large fleet never collects in lock-step.
+* **Job types**: `collect_metrics` (NORMAL class, follows the server's interval), `collect_query_stats` (SLOW, 5 min), `discover_inventory` (VERY_SLOW, 1 h), `generate_recommendations` (15 min), `security_scan` (6 h), and the global jobs `retention`, `timeseries_deletes`, `evaluate_alerts`, `notification_retries`, `siem_export`, `backup_scheduler`, `validate_recommendations` and `report_scheduler`. Each (server, job) gets a stable phase offset (`DBM_COLLECTION_JITTER_RATIO`) so a large fleet never collects in lock-step.
 * **No persistent connections to every target.** Adapters open a short-lived connection (or a tiny bounded pool) per job; a global semaphore (`DBM_COLLECTOR_CONCURRENCY`) caps concurrent target connections; each call has connect and statement timeouts.
 * **Circuit breaker** per server: after N consecutive failures the server is skipped with exponential back-off, and marked `unavailable`.
+* **Leader election**: the scheduler leader holds a PostgreSQL advisory lock on a dedicated connection and re-checks it every tick; on any error that connection is invalidated (never returned to the pool, which would keep the lock), so another instance can take over ([scaling](../deployment/scaling.md#several-workers-scheduler-leadership)).
 * **Process roles** (`DBM_PROCESS_ROLE`): `api`, `worker`, or `all` (default in compose). In Kubernetes you run `api` replicas behind a Service and a separately scaled `worker` Deployment — no code changes.
 
 ### 2.7 Recommendation architecture
@@ -255,11 +280,12 @@ Rules are deterministic Python objects with `rule_id, engines, category, severit
 evaluate(ctx) -> list[Finding]`. Each finding stores the measured evidence values,
 so every recommendation is explainable and auditable. Findings are fingerprinted
 (`rule_id + server + object`) so re-evaluation updates rather than duplicates, and
-auto-resolves when evidence disappears.
+auto-resolves only when an evaluation ran and the evidence is gone. The catalog has 61
+performance and 55 security rules: 14 engine-independent plus PostgreSQL 22, Oracle 20, SQL Server
+20, MySQL 19, MariaDB 17, Db2 LUW 16 and Db2 for z/OS 5 engine-specific rules.
 
-**Optional AI insights layer (future):** a separate `insights` service that may
-summarize findings. It is off by default, and when enabled only receives finding
-metadata the administrator has approved — never SQL text, credentials or row data.
+There is no AI insights layer: findings are produced and explained by the deterministic rules
+only, and nothing is sent to an AI service.
 
 ### 2.8 Database adapter architecture
 
@@ -349,7 +375,7 @@ OpenShift arbitrary-UID compatibility is preserved (group 0 writable dirs only).
 | Migrations | Alembic | Standard for SQLAlchemy | yoyo |
 | App DB driver | asyncpg | Fastest async PG driver | psycopg 3 |
 | PG target driver | asyncpg | Same driver, server-side timeouts | psycopg 3 |
-| Other target drivers | aiomysql, pyodbc/aioodbc, python-oracledb (thin), ibm_db | Vendor-supported; loaded lazily as optional extras | JDBC bridge |
+| Other target drivers | PyMySQL, pyodbc + Microsoft ODBC Driver 18, python-oracledb (thin), ibm_db | Vendor-supported; blocking drivers run in worker threads with deadlines (`SyncDBAPIAdapter`) and are loaded lazily | aiomysql, aioodbc, JDBC bridge |
 | Password hashing | argon2-cffi (Argon2id) | OWASP recommended | bcrypt, scrypt |
 | Secret encryption | AES-256-GCM envelope (cryptography) | AEAD, key-id for rotation, provider interface | Fernet, Vault Transit (later provider) |
 | Sessions | Opaque server-side sessions in PG | Revocable, replica-safe, no token leakage | JWT access/refresh |
@@ -361,6 +387,10 @@ OpenShift arbitrary-UID compatibility is preserved (group 0 writable dirs only).
 | Cache | None (no Redis) | Measured: fleet dashboard 52 ms and current values for 1,000 servers in 125 ms without a cache | Redis (re-evaluate above ~5,000 servers or for multi-replica dashboards) |
 | Logging | stdlib logging + JSON formatter | Structured, zero extra deps | structlog |
 | Metrics | prometheus-client | Prometheus/OpenMetrics; OTel collector can scrape | OTel SDK direct |
+| MFA | pyotp + segno (QR codes) | RFC 6238 TOTP, no external service | WebAuthn (later) |
+| Backup encryption | pyrage (age) | Audited format, recipients or passphrase, no custom cryptography | GPG |
+| Object storage | boto3 | S3-compatible targets (AWS, MinIO, Ceph) | provider SDKs |
+| PDF reports | reportlab | Server-side rendering without a browser | WeasyPrint |
 | Frontend | React 18 + TypeScript + Vite | Fast build, wide ecosystem | Next.js (SSR not needed) |
 | Styling | Tailwind CSS + shadcn-style components on Radix primitives | Accessible primitives, owned components | MUI, Mantine |
 | Data fetching | TanStack Query | Caching, polling, invalidation | SWR |
@@ -390,9 +420,14 @@ erDiagram
     SERVER }o--o{ TAG : tagged
     SERVER ||--o{ DATABASE_ENTRY : has
     SERVER ||--o{ CREDENTIAL : "monitoring / admin"
-    SERVER ||--o{ METRIC_SAMPLE : emits
-    SERVER ||--o{ QUERY_STAT_SNAPSHOT : emits
+    SERVER ||--o{ QUERY_FINGERPRINT : emits
     SERVER ||--o{ RECOMMENDATION : has
+    SERVER ||--o{ ALERT : raises
+    ALERT_RULE ||--o{ ALERT : creates
+    NOTIFICATION_CHANNEL ||--o{ NOTIFICATION_DELIVERY : sends
+    BACKUP_POLICY ||--o{ BACKUP : produces
+    BACKUP_TARGET ||--o{ BACKUP : stores
+    USER ||--o{ API_TOKEN : owns
     SERVER ||--o{ SECURITY_FINDING : has
     SERVER ||--o{ COLLECTOR_JOB : scheduled
     USER ||--o{ IDENTITY : "local/ldap/oidc"
@@ -435,7 +470,14 @@ erDiagram
 | `audit_events` | ts, user_id, username, auth_source, source_ip, action, target_type, target_id, server_id, database, object, result, failure_reason, request_id, details jsonb | Append-only |
 | `collector_jobs` | id, server_id, kind, status, run_after, attempts, locked_by, locked_at, last_error, duration_ms | Queue + history |
 | `query_history` | user_id, server_id, database, statement_hash, statement (masked), risk_class, duration_ms, row_count, status | |
-| `app_settings` | key, value jsonb | |
+| `app_settings` | key, value jsonb | platform settings such as `backup.notification_channels`, `backup.allow_restore_without_safety_backup`, performance thresholds |
+| `alert_rules`, `alerts`, `alert_comments`, `maintenance_windows` | | [Alerting](alerting.md) |
+| `notification_channels`, `notification_deliveries` | channel config, encrypted secret (webhook URL, headers, signing secret, SMTP password); delivery log | |
+| `backup_targets`, `backup_policies`, `backups`, `backup_jobs` | | [Backup architecture](../backup-restore/architecture.md) |
+| `api_tokens` | owner, token hash, scopes, allowed CIDRs, expiry, last use | |
+| `siem_destinations` | syslog / webhook forwarding of audit events | |
+| `report_schedules`, `report_runs`, `query_plan_snapshots` | scheduled reports and their runs; saved query plans | |
+| `rate_limit_windows` | shared rate-limit counters | |
 
 ---
 
@@ -464,9 +506,12 @@ methods. Lists accept `page`, `page_size` (≤ 500), `sort` (`field` / `-field`)
 | Advisor | `GET /recommendations`, `PATCH /recommendations/{id}` (status), `GET /security/findings`, `PATCH /security/findings/{id}`, `GET /security/posture` |
 | Dashboard | `GET /dashboard/summary` |
 | Audit | `GET /audit`, `GET /audit/export.csv` |
-| Reports | `GET /reports`, `GET /reports/{kind}.csv` |
+| Reports | report definitions, CSV and PDF downloads, report schedules (see [api.md](../api/index.md)) |
+| Alerting | alert rules, alerts (acknowledge, resolve, comment), maintenance windows, notification channels (test, delivery log), `POST /alerts/evaluate` |
+| Backup | `/backup/targets`, `/backup/policies`, `/backups` (platform and database backups, verify, pin, download, restore preview, restore), `/backup/jobs` (cancel), `/backup/overview`, `/servers/{id}/backup-protection` |
+| Tokens / MFA / SIEM | `/me/tokens`, `/users/{id}/tokens` (administrators), MFA enrolment and verification, SIEM destinations |
 | Platform | `GET /collectors/status`, `GET/PUT /settings`, `GET/POST/PATCH/DELETE /identity-providers` |
-| Ops (unversioned) | `GET /healthz`, `GET /readyz`, `GET /metrics` |
+| Ops (unversioned) | `GET /healthz`, `GET /readyz`, `GET /metrics` (unauthenticated; not proxied by the frontend nginx) |
 
 ---
 
@@ -531,7 +576,7 @@ database-manager/
 │   ├── alembic.ini
 │   ├── alembic/
 │   │   ├── env.py
-│   │   └── versions/0001_initial.py
+│   │   └── versions/               # 0001_initial … (13 migrations)
 │   ├── app/
 │   │   ├── main.py                 # app factory, middleware, routers, lifespan
 │   │   ├── worker.py               # `python -m app.worker` stand-alone worker
@@ -542,7 +587,9 @@ database-manager/
 │   │   ├── schemas/                # Pydantic API schemas
 │   │   ├── domain/                 # permissions catalog, risk classes, SQL classifier, plan analysis
 │   │   ├── repositories/           # query helpers (pagination, filters)
-│   │   ├── services/               # auth, authz, audit, inventory, monitoring, queries, workspace, reports, secrets
+│   │   ├── services/               # auth, authz, audit, alerting, notify, api tokens, MFA, SIEM, Vault, reports, collection …
+│   │   ├── backup/                 # platform archive, engine providers, encryption, storage, service
+│   │   ├── timeseries/             # normalizer, batch writer, VictoriaMetrics repository
 │   │   ├── adapters/
 │   │   │   ├── base.py             # BaseDatabaseAdapter, CapabilitySet, DTOs
 │   │   │   ├── registry.py
@@ -563,7 +610,7 @@ database-manager/
 │   └── tests/                      # unit, api, integration (real engines, validation matrix)
 ├── frontend/
 │   ├── Dockerfile
-│   ├── nginx/default.conf
+│   ├── nginx/default.conf.template # rendered at start (BACKEND_URL, DBM_OUTER_PROXY)
 │   ├── package.json, vite.config.ts, tailwind.config.ts, tsconfig.json
 │   └── src/
 │       ├── main.tsx, App.tsx, routes.tsx
@@ -589,12 +636,13 @@ database-manager/
 |---|---|---|---|
 | 1 Foundation | Repo, compose, app DB, FastAPI, React, auth (local+LDAP+OIDC), RBAC, audit, inventory, adapter interface, on-request simulation | — | **Implemented** |
 | 2 PostgreSQL | Full reference adapter: discovery, objects, users/roles/privileges, sessions, locks, metrics, pg_stat_statements, EXPLAIN, security & performance rules | 1 | **Implemented** |
-| 3 MySQL/MariaDB | PyMySQL family adapter (shared base, MySQL and MariaDB variants) on information_schema + performance_schema | 1 | **Implemented**, validated on MySQL 8.0 / MariaDB 10.11 |
-| 4 SQL Server | pyodbc + ODBC Driver 18 on DMVs; Query Store detected; SHOWPLAN plans | 1 | **Implemented**; real-server validation pending |
-| 5 Oracle | python-oracledb thin; V$ views without management packs; CDB/PDB aware; pack flags off by default | 1 | **Implemented**; real-server validation pending |
-| 6 Db2 | ibm_db LUW on MON_GET_* and SYSCAT; separate z/OS adapter on SYSIBM + real-time statistics | 1 | **Implemented** (z/OS partial); real-server validation pending |
-| 7 Cloud | Provider discovery extensions (RDS/Aurora, Azure, Cloud SQL, OCI, IBM) layered on engine adapters | 2–6 | Model + engine flags |
-| 8 Intelligence | Baselines, anomaly detection, forecasting, cross-fleet comparison, optional AI summaries | 2 | Designed |
+| 3 MySQL/MariaDB | PyMySQL family adapter (shared base, MySQL and MariaDB variants) on information_schema + performance_schema | 1 | **Implemented**; validated on MySQL 8.4.11 / 8.0.46 and MariaDB 11.4.13 / 10.11.14 |
+| 4 SQL Server | pyodbc + ODBC Driver 18 on DMVs; Query Store detected; SHOWPLAN plans | 1 | **Implemented**; validated on SQL Server 2022 (16.0.4305.5) |
+| 5 Oracle | python-oracledb thin; V$ views without management packs; CDB/PDB aware; pack flags off by default | 1 | **Implemented**; validated on 21c XE (TCP; TCPS not exercised) |
+| 6 Db2 | ibm_db LUW on MON_GET_* and SYSCAT; separate z/OS adapter on SYSIBM + real-time statistics | 1 | **Implemented**; LUW validated on 11.5.9.0; z/OS partial, external validation required |
+| 7 Cloud | Provider detection (RDS/Aurora, Azure, Cloud SQL) on the engine adapters | 2–6 | Detection implemented; no cloud-API integration |
+| 8 Intelligence | Baselines and z-score alerts, capacity forecasting, query regression detection, period and plan comparison, recommendation outcome validation | 2 | **Implemented**; anomaly detection not implemented; no AI features |
+| 9 Operations | Alerting and notifications, scheduled reports with PDF, API tokens, rate limits, MFA, SIEM forwarding, Vault, platform and database backup and restore | 1 | **Implemented** |
 
 The current gaps per engine are listed in [adapter-gap-analysis.md](../database-engines/adapter-gap-analysis.md).
 

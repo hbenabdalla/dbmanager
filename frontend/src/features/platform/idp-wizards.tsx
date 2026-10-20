@@ -310,10 +310,11 @@ export function IdentityWizardDialog({ kind, provider, onClose }: { kind: "ldap"
 
 /** Route: /platform/identity/wizard?kind=ldap|oidc[&id=<provider id>] */
 export function IdentityWizardPage() {
-  const [params] = useSearchParams();
+  const [params, setParams] = useSearchParams();
   const navigate = useNavigate();
   const { can } = useAuth();
   const kind = params.get("kind") === "oidc" ? "oidc" : "ldap";
+  const choose = (k: "ldap" | "oidc") => setParams((p) => { const n = new URLSearchParams(p); n.set("kind", k); return n; }, { replace: true });
   const id = params.get("id");
   const q = useQuery({ queryKey: ["idps"], queryFn: () => get<IdentityProvider[]>("/identity-providers"), enabled: !!id && can("idp.manage") });
   const provider = id ? q.data?.find((x) => x.id === id) ?? null : null;
@@ -325,6 +326,14 @@ export function IdentityWizardPage() {
         meta={<Badge tone="outline">{kind.toUpperCase()}</Badge>} />
       {!can("idp.manage") ? <Card><EmptyState title="You can't manage identity providers">This needs the idp.manage permission.</EmptyState></Card> : (
         <Card><CardBody>
+          {!id && (
+            <div role="radiogroup" aria-label="Identity provider type" className="mb-4 inline-flex rounded-md border border-border p-0.5 text-[13px]">
+              {([["ldap", "LDAP / Active Directory"], ["oidc", "OpenID Connect"]] as const).map(([k, label]) => (
+                <button key={k} type="button" role="radio" aria-checked={kind === k} onClick={() => choose(k)}
+                  className={`rounded px-3 py-1.5 transition-colors duration-150 ${kind === k ? "bg-surface-2 font-medium text-text" : "text-muted hover:text-text"}`}>{label}</button>
+              ))}
+            </div>
+          )}
           {id && q.isLoading ? null : kind === "ldap" ? <LdapWizard provider={provider} onDone={back} onCancel={back} /> : <OidcWizard provider={provider} onDone={back} onCancel={back} />}
         </CardBody></Card>
       )}

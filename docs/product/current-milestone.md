@@ -17,7 +17,7 @@ server is listed — DBManager's own marks, because vendor logos need the vendor
 
 ## Roadmap reconciliation in this release
 
-Before 0.14.0 was published, every earlier milestone was audited again from the code. The 61
+Before 0.14.0 was published, every earlier milestone was audited again from the code. The 62
 claims that were not true were fixed in remediation sprints R1 – R7, and the
 [roadmap audit](roadmap-audit.md) holds the evidence. The fixes change some behaviour:
 

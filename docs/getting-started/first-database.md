@@ -16,17 +16,22 @@ The grants for every engine are on the [engine pages](../database-engines/index.
 
 ## 2. Run the onboarding wizard
 
-**Fleet → All servers → Add server** (or **+ Add → Database server**) opens a nine-step wizard:
-engine, connection, TLS, credentials, management mode, placement, live test, review, done.
+**Overview → Fleet → All servers → Add server** (or **+ Add → Database server** in the top bar)
+opens the *Add a database server* wizard with nine steps: Engine, Connection, TLS, Credentials,
+Management mode, Placement, Test connection, Review, Done.
 
-![Add database wizard](../assets/screenshots/add-database-wizard.png)
+![Add database wizard](../assets/screenshots/database-onboarding-engine-selection.png)
 
 * The **live test** streams each stage — validation, driver, DNS, TCP, TLS, authentication,
   version, privileges, capabilities — so a failure points at the exact layer.
-* **Monitoring only** is the default management mode. Choose *Administration enabled* only when DBAs
-  will run guarded changes from DBManager; it needs a separate administration credential.
+* **Monitoring Only** is the default management mode (also for servers registered through the API
+  or bulk onboarding without a `management_mode`). Choose **Administration Enabled** only when DBAs
+  will run guarded changes from DBManager; it needs a separate administration account.
+* **Register server** on the Review step stores the server. The test is optional: a server can be
+  registered before the firewall allows the connection.
 
-Details: [Database onboarding](../user-guide/onboarding/database-onboarding.md).
+Details: [Database onboarding](../user-guide/onboarding/database-onboarding.md) and the task
+guide [Register a database](../user-guide/tasks/register-a-database.md).
 
 ## 3. Watch the first collection
 

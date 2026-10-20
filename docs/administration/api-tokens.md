@@ -71,8 +71,8 @@ permission.
 
 ## Administration
 
-Administrators with `users.manage` see a user's tokens under **Platform → Users → (user) → API
-tokens**. They can revoke a token there, but cannot see its secret or create tokens for someone else.
+Administrators with `users.manage` see a user's tokens under **Platform → Configuration → Users**: select
+the user, then the **API tokens** section of the user dialog. They can revoke a token there, but cannot see its secret or create tokens for someone else.
 
 | Method | Path | Permission |
 |---|---|---|

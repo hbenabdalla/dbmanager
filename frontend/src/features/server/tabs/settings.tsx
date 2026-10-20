@@ -114,6 +114,7 @@ export function SettingsTab({ server }: { server: ServerDetail }) {
   const [opts, setOpts] = useState<Record<string, string | boolean>>(
     Object.fromEntries(Object.entries(server.connection_options ?? {}).map(([k, v]) => [k, typeof v === "boolean" ? v : String(v)])),
   );
+  const [licensed, setLicensed] = useState<string[]>(server.licensed_features ?? []);
   const [deleting, setDeleting] = useState(false);
   const set = (k: keyof typeof f, v: string | boolean) => setF((p) => ({ ...p, [k]: v }));
   const save = useMutation({
@@ -123,6 +124,7 @@ export function SettingsTab({ server }: { server: ServerDetail }) {
       cluster_role: f.cluster_role || null, application_id: f.application_id || null, owner: f.owner || null,
       connection_options: Object.fromEntries(Object.entries(opts).filter(([, v]) => v !== "" && v !== undefined)
         .map(([k, v]) => [k, optionDefs.find((d) => d.key === k)?.type === "integer" ? Number(v) : v])),
+      ...(server.engine === "oracle" ? { licensed_features: licensed } : {}),
     }),
     onSuccess: () => { toast.success("Server updated"); qc.invalidateQueries({ queryKey: ["server", server.id] }); qc.invalidateQueries({ queryKey: ["servers"] }); },
     onError: (e: ApiError) => toast.error(e.message),
@@ -177,6 +179,15 @@ export function SettingsTab({ server }: { server: ServerDetail }) {
             ) : (
               <Field key={o.key} label={o.label} hint={o.help}><Input value={String(opts[o.key] ?? "")} onChange={(e) => setOpts({ ...opts, [o.key]: e.target.value })} /></Field>
             ))}
+            {server.engine === "oracle" && (
+              <fieldset className="sm:col-span-2 space-y-1 text-[13px]">
+                <legend className="mb-1 font-medium">Oracle management packs licensed for this database</legend>
+                {([["diagnostics_pack", "Diagnostics Pack"], ["tuning_pack", "Tuning Pack"]] as const).map(([k, l]) => (
+                  <label key={k} className="flex items-center gap-2"><input type="checkbox" checked={licensed.includes(k)} onChange={(e) => setLicensed((p) => e.target.checked ? [...p, k] : p.filter((x) => x !== k))} /> {l}</label>
+                ))}
+                <p className="text-[12px] text-muted">Only tick a pack your organisation licenses for this database. It lets the SQL workspace query pack objects (AWR, ASH, SQL tuning advisors); DBManager's own collectors never use them.</p>
+              </fieldset>
+            )}
             <Field label="Collection interval"><Select value={f.collection_interval_s} onChange={(e) => set("collection_interval_s", e.target.value)}>{[["15", "15 seconds"], ["30", "30 seconds"], ["60", "1 minute"], ["300", "5 minutes"], ["900", "15 minutes"]].map(([v, l]) => <option key={v} value={v}>{l}</option>)}</Select></Field>
           </fieldset>
         </CardBody>

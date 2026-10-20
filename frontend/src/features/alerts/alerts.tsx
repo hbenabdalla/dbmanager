@@ -388,7 +388,7 @@ function RuleDialog({ rule, onClose }: { rule: AlertRule | null; onClose: () => 
       {step === 2 && (
         <div className="space-y-3 text-[13px]">
           {channels.error ? <p className="text-muted">You cannot list notification channels; the rule will only raise alerts in the app.</p> : (channels.data ?? []).length === 0 ? (
-            <p className="text-muted">No notification channels yet. Alerts are still shown in the app; add a channel under Platform → Notification channels.</p>
+            <p className="text-muted">No notification channels yet. Alerts are still shown in the app; add a channel under Platform → Configuration → Notification channels.</p>
           ) : (channels.data ?? []).map((c) => (
             <label key={c.id} className="flex items-center gap-2"><input type="checkbox" checked={f.channel_ids.includes(c.id)} onChange={(e) => set("channel_ids", e.target.checked ? [...f.channel_ids, c.id] : f.channel_ids.filter((x) => x !== c.id))} />
               {c.name} <Badge tone="neutral">{c.kind}</Badge>{!c.enabled && <Badge tone="warn">disabled</Badge>}</label>

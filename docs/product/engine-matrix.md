@@ -33,7 +33,7 @@ by `scripts/integration-test` against the vendors' official container images.
 | Procedures | FULL | FULL | FULL | FULL | FULL (incl. packages) | FULL | FULL |
 | Functions | FULL | FULL | FULL | FULL | FULL | FULL | FULL |
 | Constraints (per schema and per table) | FULL | FULL | FULL | FULL | FULL (CDB views from root) | FULL | FULL |
-| Users | FULL | FULL | FULL | FULL | FULL (from CDB$ROOT also the local users of every open PDB) | PARTIAL (authorization IDs; authentication is external) | EXTERNAL MONITORING REQUIRED (RACF/ACF2/Top Secret) |
+| Users | FULL | FULL | FULL | FULL | FULL (from CDB$ROOT also the local users of every open PDB) | PARTIAL (authorization IDs; authentication is external) | PARTIAL (authorization IDs holding catalog grants; identities live in RACF/ACF2/Top Secret) |
 | Roles | FULL | FULL | FULL | FULL (server roles and the roles of every accessible database, up to 100) | FULL | FULL | PARTIAL |
 | Privileges | FULL | FULL | FULL | FULL | FULL | FULL (database, role, schema, table, column, routine, package, sequence, index, tablespace and module grants) | FULL |
 | Sessions | FULL | FULL | FULL | FULL (REQUIRES PRIVILEGE: VIEW SERVER STATE) | FULL (REQUIRES PRIVILEGE: SELECT_CATALOG_ROLE) | FULL (REQUIRES PRIVILEGE: SQLADM or EXECUTE on MON_GET_*) | NOT IMPLEMENTED |

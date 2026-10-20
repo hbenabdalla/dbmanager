@@ -249,7 +249,7 @@ class OracleAdapter(OracleEvidenceMixin, OracleMonitoringMixin, OracleInventoryM
             raise AdapterError(
                 f"this statement uses Oracle {label} features (AWR, ASH, ADDM, SQL Monitoring or the SQL "
                 f"tuning advisors), which need a separate licence: mark the server as licensed for the "
-                f"{label} under Server → Settings to run it"
+                f"{label} under Server → Settings → Oracle management packs to run it"
             )
         if database:
             info = await self._server()

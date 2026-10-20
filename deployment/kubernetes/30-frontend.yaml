@@ -12,7 +12,11 @@ spec:
       containers:
         - name: web
           image: registry.example.com/database-manager-frontend:1.0.0
-          env: [{ name: BACKEND_URL, value: "http://backend:8000" }]
+          env:
+            - { name: BACKEND_URL, value: "http://backend:8000" }
+            # address range of your ingress controller pods: nginx takes the client address from
+            # their X-Forwarded-For only (adjust to your cluster's pod network)
+            - { name: DBM_OUTER_PROXY, value: "10.0.0.0/8" }
           ports: [{ containerPort: 8080, name: http }]
           readinessProbe: { httpGet: { path: /nginx-health, port: http } }
           resources: { requests: { cpu: 50m, memory: 64Mi }, limits: { memory: 128Mi } }

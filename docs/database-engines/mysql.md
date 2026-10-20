@@ -2,7 +2,11 @@
 
 ## Supported versions
 
-MySQL 8.0 and 8.4 (validated against 8.4.11 and 8.0.46). Amazon RDS/Aurora MySQL is supported with its restricted privilege model.
+MySQL 8.0, 8.4 LTS and 9.x (real-engine validated against 8.4.11 and 8.0.46). MySQL 5.7 works
+with reduced support: no roles (`ROLES` not supported), no `EXPLAIN ANALYZE` (needs 8.0.18+), and
+lock detail from `INFORMATION_SCHEMA.INNODB_LOCKS` / `INNODB_LOCK_WAITS` (locks involved in waits
+only, no metadata locks; PARTIAL). Amazon RDS/Aurora MySQL is supported with its restricted
+privilege model.
 
 ## Driver
 
@@ -14,7 +18,18 @@ Host, port (3306), default database (optional), username, password.
 
 ## TLS
 
-TLS modes `disable`/`prefer`/`require`/`verify-ca`/`verify-full` build an SSL context; combine with `REQUIRE SSL` on the accounts (see below).
+The TLS mode becomes a PyMySQL SSL context (`_open` in `adapters/mysql/base.py`; shared with
+MariaDB):
+
+| Mode | Behaviour |
+|---|---|
+| `disable` | plain TCP (`ssl_disabled`) |
+| `prefer` | **opportunistic TLS**, as the `mysql` client does: TLS when the server offers it, without certificate validation (`CERT_NONE`); plain TCP when the server has no TLS. With an uploaded CA the certificate is validated when TLS is used |
+| `require` | TLS without certificate validation (validated against the CA when one is uploaded). After connecting, DBManager reads `SHOW SESSION STATUS LIKE 'Ssl_cipher'`: PyMySQL silently stays in plain text when the server offers no TLS, so an empty cipher fails the connection with `TLS_ERROR` ("the server did not negotiate TLS") |
+| `verify-ca` | TLS, chain validated against the uploaded CA (or the system trust store), host name not checked; `Ssl_cipher` checked |
+| `verify-full` | as `verify-ca`, plus host name check; `Ssl_cipher` checked |
+
+Combine with `REQUIRE SSL` on the accounts (see below) so the server refuses plain connections too.
 
 ## Privileges
 
@@ -72,6 +87,18 @@ All matrix rows are FULL except memory metrics and wait events (PARTIAL: derived
 The authoritative per-capability status is in the [support matrix](index.md#implemented-capabilities) and,
 for a registered server, on its **Overview → Capabilities** (runtime discovery refines every cell).
 
+## SQL workspace and EXPLAIN
+
+MySQL keeps one connection per registered server. A workspace statement or EXPLAIN for a database
+other than the registered default switches the connection to the selected database
+(`COM_INIT_DB`, i.e. `USE`) for that call and switches back afterwards, so unqualified names
+resolve in the database chosen in the workspace, never silently in the registered default. When
+the server has no default database to return to, the connection is closed and the next call opens
+a fresh one. Read-only runs use `START TRANSACTION READ ONLY` in the selected database.
+
+**Storage → Largest tables** reports `schema`, `name`, `row_estimate`, `table_bytes`, `index_bytes`
+and `total_bytes` from `information_schema.TABLES` (estimates maintained by InnoDB).
+
 ## Known limitations
 
 * Statement digests, never full SQL, are used as statistics labels.
@@ -115,11 +142,20 @@ privileged accounts) also apply.
 | `MYSQL-PERF-008` | Connection limit nearly reached historically |
 | `MYSQL-PERF-009` | Query cache enabled |
 
-Plus the common performance rules `GEN-PERF-001` … `GEN-PERF-010`. Recommendations are advice with
+Plus the 12 engine-independent performance rules `GEN-PERF-001` … `GEN-PERF-012` (connections,
+cache, blocking, deadlocks, replication lag, long transactions, expensive queries, spills, CPU,
+storage, query latency regressions and storage forecasts). Recommendations are advice with
 evidence; DBManager never executes them.
+
+**Rule count:** 19 engine-specific rules (10 security, 9 performance) plus the 14
+engine-independent rules, which apply to every engine. Across all engines DBManager ships 61
+performance and 55 security rules; the full catalog is served by `GET /api/v1/advisor/rules`.
 
 ## Troubleshooting
 
 * Query statistics empty: check `performance_schema` is ON and `SELECT` on `performance_schema.*` is granted.
 * Replication status missing: grant `REPLICATION CLIENT`.
+* `TLS_ERROR: tls_mode=require but the server did not negotiate TLS`: the server has no TLS
+  configured (or it is disabled). Enable TLS on the server, or register the server with `prefer`
+  or `disable` ([Troubleshooting](../troubleshooting/engines.md#mysql-and-mariadb)).
 * `MYSQL-SEC-005`: accounts still use `mysql_native_password`, deprecated in 8.0 and removed in 9.0.

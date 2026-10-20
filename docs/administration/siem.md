@@ -20,7 +20,8 @@ number of events forwarded, the last success and the last error.
 
 **Send test event** sends one `siem.test` event (category `security`) directly, without moving the
 destination's position, and shows whether the receiver accepted it. Tests, creation, changes and
-removal are recorded in the audit log (`siem_destination.*`).
+removal are recorded in the audit log (`siem_destination.*`); a webhook URL appears there as its
+scheme and host only, and headers by name only.
 
 ## Syslog (RFC 5424)
 

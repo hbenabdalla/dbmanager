@@ -1,6 +1,10 @@
 # Restore
 
-Open a backup in **Backup history → Restore**. The wizard walks through:
+Open a backup in **Backup history → Restore**.
+
+## Platform restore
+
+The wizard walks through:
 
 1. **Select backup** — and supply its key when it is encrypted (age identity or passphrase; used
    for this run only, never stored).
@@ -22,8 +26,16 @@ Open a backup in **Backup history → Restore**. The wizard walks through:
    keys would cascade-delete in tables that are not restored (for example alert history of a rule
    that disappears). A failure of the trial (for example a foreign key that cannot be satisfied)
    blocks the restore.
+
+    Steps 2–6 are the **restore preview** (`POST /api/v1/backups/{id}/restore/preview`): it
+    validates, downloads, decrypts and verifies the archive and runs the trial, but changes
+    nothing. Because it decrypts the archive, every preview is **audited** (`restore.preview`,
+    with the components and target) and counts against the *expensive* rate limit.
 7. **Confirmation** — type `RESTORE PLATFORM`. A **pre-restore safety backup** of every component
-   (same target, same encryption) is taken first unless you turn it off.
+   (same target, same encryption) is always taken first. Turning it off is refused with
+   `422 safety_backup_required` unless a Platform Administrator has enabled the platform setting
+   `backup.allow_restore_without_safety_backup` (default off, **Platform → Configuration →
+   Settings**).
 8. **Restore** → 9. **Validation** (row counts equal the backup for every replaced table) →
    10. **Result**, including the id of the safety backup.
 
@@ -53,7 +65,12 @@ re-checks the stored file's SHA-256 and the engine's own verification before res
 
 * Restores need `restore.execute` plus `restore.platform` (platform) or `restore.database`
   (on the target server); Super Admin is not required. See [Security and RBAC](security.md).
-* Every request, start and completion (or failure) is audited with the job's correlation id.
+* Every preview (`restore.preview`), request (`restore.request`), start and completion (or
+  failure) is audited with the job's correlation id.
+* A platform restore cannot run without a safety backup unless
+  `backup.allow_restore_without_safety_backup` is enabled.
+* Cancelling a restore needs the permission that starting it needed (`restore.platform` or
+  `restore.database` on every server it touches); a running platform restore cannot be cancelled.
 * Only one restore runs at a time.
 * Never test restores against production systems: use isolated environments (the automated
   restore tests in the repository only use throw-away databases and containers).

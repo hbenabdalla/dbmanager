@@ -97,6 +97,17 @@ nav:
       - Next steps: getting-started/next-steps.md
   - User Guide:
       - user-guide/index.md
+      - Task guides:
+          - user-guide/tasks/index.md
+          - Register a database: user-guide/tasks/register-a-database.md
+          - Onboard an environment in bulk: user-guide/tasks/bulk-onboard-an-environment.md
+          - Investigate a slow query: user-guide/tasks/investigate-a-slow-query.md
+          - Respond to an alert: user-guide/tasks/respond-to-an-alert.md
+          - Review security findings and compliance: user-guide/tasks/review-security.md
+          - Back up and restore a database: user-guide/tasks/backup-restore-database.md
+          - Back up and restore the platform: user-guide/tasks/backup-restore-platform.md
+          - Schedule a report: user-guide/tasks/schedule-a-report.md
+          - Give a colleague scoped access: user-guide/tasks/give-scoped-access.md
       - Onboarding:
           - user-guide/onboarding/index.md
           - Platform setup: user-guide/onboarding/platform-setup.md
@@ -244,6 +255,7 @@ nav:
       - Real-engine validation: product/real-engine-validation.md
       - Roadmap traceability: product/roadmap-traceability.md
       - Roadmap audit: product/roadmap-audit.md
+      - Roadmap audit history: product/roadmap-audit-history.md
       - Release notes 0.14.0: release-notes/0.14.0.md
       - Release notes 0.13.0: release-notes/0.13.0.md
       - Release notes 0.12.0: release-notes/0.12.0.md

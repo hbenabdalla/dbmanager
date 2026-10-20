@@ -1,7 +1,9 @@
 # Simulation
 
 A simulated fleet lets you explore every page without real databases. It is generated on request by
-a Platform Administrator (**Platform → Simulation**), never at startup.
+a Platform Administrator (**Platform → Configuration → Simulation**), never at startup.
+
+![Simulation](../assets/screenshots/simulation.png)
 
 * Simulated servers are marked *Simulated* everywhere (badge, hatched tiles, banner on the server
   page) and never open a network connection; SQL against them is never executed.

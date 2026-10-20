@@ -12,6 +12,9 @@ sign-on (OIDC) users get MFA from their identity provider, which DBManager can r
 | `DBM_MFA_REQUIRED_FOR` | `none` (default), `admins`, `all` | Whose local accounts must use MFA. `admins` means every user holding a platform-only permission (for example `users.manage`, `roles.manage`, `settings.manage`); `all` means every local user. |
 | `DBM_MFA_ISSUER` | text, default `DBManager` (`DB Manager` before 0.14.0) | Name shown in the authenticator app next to the username. It is stored in the app at enrollment: existing entries keep the old name and keep working. Set `DBM_MFA_ISSUER="DB Manager"` to keep the previous name for new enrollments. |
 
+Both are environment variables. **Platform → Configuration → Settings** shows their current values
+read-only under *Multi-factor authentication policy*.
+
 When the policy applies to a user who has not enrolled yet, that user can still sign in with the
 password, but the session is limited to enrollment: the web interface opens **Account → Security**
 and every other API call answers `403` with the code `mfa_enrollment_required` until an
@@ -59,7 +62,7 @@ MFA for the user, a new authenticator must be set up at the next sign-in.
 ## Administrator reset (lost device)
 
 A user who lost the authenticator and the recovery codes asks an administrator. In
-**Platform → Users**, open the user and select **Reset MFA** (`users.manage`). The authenticator
+**Platform → Configuration → Users**, select the user and select **Reset MFA** (`users.manage`). The authenticator
 and recovery codes are removed; the user signs in with the password and, where the policy applies,
 enrolls again. The reset is audited (`user.mfa_reset`). Verify the request through a second
 channel before resetting.

@@ -31,7 +31,9 @@ client is installed). `INSTALL_BACKUP_TOOLS=false` builds the image without the 
 ## Validation status
 
 Real-engine validation is recorded by the integration suite
-(`backend/tests/integration/test_backup_engines.py`, capabilities `backup` / `restore`). During development it was run against PostgreSQL 16 (pg_dump 16) and
-MariaDB 10.11; the MySQL, SQL Server, Oracle and Db2 tests run with `scripts/integration-test`
-against the engine containers. Platform → Engine support shows what the validation matrix of your
-build actually records.
+(`backend/tests/integration/test_backup_engines.py`, capabilities `backup` / `restore`) run with
+`scripts/integration-test` against the vendors' container images. The recorded runs: PostgreSQL
+16.15, MySQL 8.4.11 (binary logging on), MariaDB 11.4.13 and 10.11, SQL Server 16.0.4305.5, Oracle
+21.3 XE and Db2 LUW 11.5.9.0 (backup with a SYSMAINT operator; restore is external). Db2 for z/OS
+needs external validation. **Platform → Engine support** shows what the validation matrix of your
+build actually records ([engine matrix](../product/engine-matrix.md)).

@@ -33,6 +33,16 @@ def check_options(v: dict[str, Any]) -> dict[str, Any]:
     return v
 
 
+LICENSED_FEATURES = frozenset({"diagnostics_pack", "tuning_pack", "query_store", "db2_connect", "advanced_security"})
+
+
+def check_licensed_features(v: list[str]) -> list[str]:
+    bad = [x for x in v if x not in LICENSED_FEATURES]
+    if bad:
+        raise ValueError(f"unknown licensed features: {bad}")
+    return sorted(set(v))
+
+
 class EnvironmentOut(ORM):
     id: uuid.UUID
     name: str
@@ -150,11 +160,7 @@ class ServerBase(BaseModel):
     @field_validator("licensed_features")
     @classmethod
     def _lic(cls, v: list[str]) -> list[str]:
-        allowed = {"diagnostics_pack", "tuning_pack", "query_store", "db2_connect", "advanced_security"}
-        bad = [x for x in v if x not in allowed]
-        if bad:
-            raise ValueError(f"unknown licensed features: {bad}")
-        return v
+        return check_licensed_features(v)
 
 
 class ServerCreate(ServerBase):
@@ -192,6 +198,11 @@ class ServerUpdate(BaseModel):
     @classmethod
     def _opts(cls, v: dict[str, Any] | None) -> dict[str, Any] | None:
         return check_options(v) if v is not None else v
+
+    @field_validator("licensed_features")
+    @classmethod
+    def _lic(cls, v: list[str] | None) -> list[str] | None:
+        return check_licensed_features(v) if v is not None else v
 
 
 class TestConnectionRequest(BaseModel):

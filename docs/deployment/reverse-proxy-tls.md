@@ -34,7 +34,14 @@ client must not be able to choose it:
    reads it **from the right**, skipping trusted hops; the first untrusted address is the client.
 
 Do not add client networks to `DBM_TRUSTED_PROXIES` or `DBM_OUTER_PROXY`: every trusted address can
-claim to be anybody. The frontend's nginx also forwards `X-Forwarded-Proto` (it keeps the value set
+claim to be anybody.
+
+The backend's uvicorn runs with `--no-proxy-headers`, so the peer address DBManager starts from
+is always the TCP peer. Even a client that reaches port 8000 directly cannot choose its address,
+because a peer outside `DBM_TRUSTED_PROXIES` makes the backend ignore the header.
+
+If the audit log shows your proxy's address for every user, `DBM_OUTER_PROXY` does not match the
+proxy as nginx sees it ([troubleshooting](../troubleshooting/platform.md)). The frontend's nginx also forwards `X-Forwarded-Proto` (it keeps the value set
 by your proxy) and `X-Request-ID`. Configure your proxy to set `X-Forwarded-Proto: https`.
 
 ## Example: nginx in front
@@ -61,7 +68,15 @@ server {
 
 `deployment/kubernetes/30-frontend.yaml` contains the frontend Deployment, Service and Ingress;
 `deployment/openshift/route.yaml` an edge-terminated Route. Set `DBM_PUBLIC_BASE_URL` in
-`00-config.yaml` to the external HTTPS URL.
+`00-config.yaml` to the external HTTPS URL, and `DBM_OUTER_PROXY` on the frontend container to the
+ingress controller's (or router's) pod network — the manifests leave it at `127.0.0.1/32`, so
+client addresses are otherwise recorded as the ingress controller's.
+
+## Prometheus metrics
+
+`/metrics` is served by the backend on port 8000 without authentication and is **not** proxied by
+the frontend nginx (only `/api/` and `/healthz` are). Scrape it on the internal network; do not
+expose it through your reverse proxy ([Diagnostics](../administration/diagnostics.md)).
 
 ## Security headers
 

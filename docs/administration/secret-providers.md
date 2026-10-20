@@ -15,9 +15,9 @@ Passwords are never returned by the API, written to logs or put into audit event
 variables whose names start with `DBM_`, `POSTGRES_`, `PG`, `AWS_`, `AZURE_` or `GOOGLE_` cannot be
 used as database secrets: they belong to the platform itself.
 
-The connection test **before** registration needs the password itself. With an `env`, `file` or
-`vault` source, register the server first and use **Test connection** on its Settings tab: the
-backend then resolves the reference.
+The wizard's connection test **before** registration resolves an `env`, `file` or `vault`
+reference on the backend, so the test shows whether the reference works. After registration,
+**Test connection** on the server's Settings tab does the same with the stored reference.
 
 ## HashiCorp Vault
 

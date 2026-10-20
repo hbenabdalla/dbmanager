@@ -120,5 +120,5 @@ platform settings can disable writes or EXPLAIN ANALYZE on production entirely. 
   in front of internet-facing deployments as well ([rate limiting](../administration/rate-limiting.md)).
 * The DBA's admin credential is as powerful as the account you register. Use dedicated accounts with
   only the privileges your operations need.
-* Optional AI insights are disabled and cannot be enabled in this release; when implemented they will
-  only receive administrator-approved finding metadata, never SQL text, credentials or row data.
+* DBManager has no AI or LLM feature: no finding, SQL text, credential or row data is sent to an AI
+  service. Recommendations and security findings come from deterministic rules.

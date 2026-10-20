@@ -2,13 +2,18 @@
 
 DBManager raises alerts when a rule's condition holds on a monitored server, shows them under **Operations → Alerts**, and optionally sends notifications through [notification channels](../administration/notifications.md).
 
+![Alerts](../assets/screenshots/alerts.png)
+
+The **Alerts** page has the tabs **Active**, **Pending** and **Resolved**, a severity filter and a
+search box. **Acknowledge** and **Resolve** are on each row (permission `alerts.acknowledge`).
+
 ## How evaluation works
 
 A background job (`evaluate_alerts`) runs every `DBM_ALERT_EVALUATION_SECONDS` (default 60, minimum 15). For every enabled rule and every monitored server in the rule's scope it checks a metric, the server health state, or the collector state (details: [alerting architecture](../architecture/alerting.md)):
 
 | Rule type | Fires when |
 |---|---|
-| Metric threshold | `metric operator threshold` holds, e.g. `connections.utilization >= 90`. Metrics are picked from the metric catalog. **Evaluate** chooses the value: the *latest collected value* (a value older than three collection intervals counts as *no data*), or the *average*, *minimum* or *maximum* over a window of history (at least one minute) read from the time-series database — e.g. `avg(cpu.percent, 15m) > 80` — or the *deviation from baseline (z-score)*: how many standard deviations the latest value (or a window average) is from the server's own history over *Baseline (days)*, e.g. `zscore(cpu.percent, 7d baseline) > 3`. For a server-scoped z-score rule the last step previews the baseline. Details: [baselines](../performance/baselines-and-capacity.md#baseline-relative-alert-rules-z-score). No data neither fires nor resolves. |
+| Metric threshold | `metric operator threshold` holds, e.g. `connections.utilization >= 90`. Metrics are picked from the metric catalog. **Evaluate** chooses the value: the *latest collected value* (a value older than three collection intervals counts as *no data*), or the *average*, *minimum* or *maximum* over a window of history (at least one minute) read from the time-series database — e.g. `avg(cpu.percent, 15m) > 80` — or the *deviation from baseline (z-score)*: how many standard deviations the latest value (or a window average) is from the server's own history over *Baseline (days)*, e.g. `zscore(cpu.percent, 7d baseline) > 3` (baseline 1–90 days, at least 60 samples; each server is compared with its own history). The **Notify** step previews the baseline — mean, standard deviation, samples and the current z-score — for the rule's server; for a scope with several servers, pick one in **Preview the baseline of**. Details: [baselines](../performance/baselines-and-capacity.md#baseline-relative-alert-rules-z-score). No data neither fires nor resolves. |
 | Server health state | the server health is in the chosen states (e.g. `unavailable`, `critical`). |
 | Collector failing | a collector component reports `failed`/`unavailable`, or collection failed the given number of times in a row (default: the circuit-breaker threshold). |
 
@@ -38,7 +43,11 @@ The server page shows the server's active alerts and the maintenance windows tha
 
 ## Rules
 
-**Operations → Alerts → Alert rules** (manage with `alerts.manage`): the dialog walks through *Condition* (type, metric, operator, threshold, evaluation and window, duration, severity), *Scope* (all servers, one environment, one server, or a tag `key` / `key=value`; enabled) and *Notify* (channels, notify on resolve, re-notify interval). Channels that subscribe to all alerts receive the rule's alerts even when the rule lists no channel (see [routing](../administration/notifications.md#routing)).
+![Alert rules](../assets/screenshots/alert-rules.png)
+
+**Operations → Alerts → Alert rules** (manage with `alerts.manage` at platform scope): **New rule** opens a dialog in three steps: *Condition* (name, **Rule type**, severity, metric, operator, threshold, **Evaluate** and window, **For (seconds)**), *Scope* (*All monitored servers*, *One environment*, *One server* or *Servers with a tag* `key` / `key=value`; **Rule enabled**) and *Notify* (channels, **Notify on resolve**, **Re-notify every (minutes, 0 = never)**). Channels that subscribe to all alerts receive the rule's alerts even when the rule lists no channel (see [routing](../administration/notifications.md#routing)).
+
+**Evaluate now** (also `alerts.manage`) evaluates every enabled rule immediately instead of waiting for the next scheduled run and reports how many rules were evaluated and how many alerts fired, resolved, stayed pending, were notified or suppressed.
 
 Example rules:
 
@@ -51,7 +60,7 @@ Example rules:
 
 | Permission | Allows | Default roles |
 |---|---|---|
-| `alerts.view` | see alerts of servers in the user's scope, rules and windows | all built-in roles |
+| `alerts.view` | see alerts of servers in the user's scope, rules and windows | all built-in roles except Log Viewer and Backup Operator |
 | `alerts.acknowledge` | acknowledge, resolve and comment on alerts of servers in scope | Platform Administrator, DBA Administrator, Database Operator, Performance Engineer |
 | `alerts.manage` (platform) | create/edit rules and maintenance windows, evaluate now | Platform Administrator |
 | `channels.manage` (platform) | manage notification channels | Platform Administrator |
@@ -77,5 +86,6 @@ Every change (rules, windows, acknowledgements, resolutions, comments, manual ev
 
 ## Limitations
 
-- Range rules use average, minimum or maximum over a window; rate-of-change and baseline-relative conditions are not available yet.
+- Rules use the latest value, the average, minimum or maximum over a window, or the z-score against the server's own baseline; rate-of-change conditions are not available.
+- Baselines are mean and standard deviation of the history; seasonality (time of day, weekday) is not modelled.
 - Re-notification repeats to the same channels; there is no multi-level escalation chain.

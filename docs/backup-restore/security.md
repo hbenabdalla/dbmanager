@@ -4,7 +4,7 @@
 
 | Permission | Scope | Allows |
 |---|---|---|
-| `backup.view` | platform or servers | backups, jobs, policies, targets, protection status |
+| `backup.view` | platform or servers | backups, jobs, policies, targets, protection status — scoped grants see only the database backups, jobs and policies of their servers ([visibility](architecture.md#asynchronous-jobs)) |
 | `backup.create` | platform (platform backups) or servers | run backups, *Run now* |
 | `backup.verify` | platform or servers | verify stored backups |
 | `backup.delete` | platform only | delete stored backups |
@@ -30,7 +30,9 @@ Auditor** gets `backup.view`. Restores do not require the Platform Administrator
 | `backup.delete`, `backup.retention` | a backup is deleted by a user / by retention |
 | `backup.import` | backups are registered by *Scan for backups* |
 | `backup.pin`, `backup.unpin`, `backup.download`, `backup.cancel`, `backup.key_generate` | the corresponding action |
+| `restore.preview` | a restore preview ran (it decrypts the archive and runs a trial restore that is rolled back) |
 | `restore.request`, `restore.start`, `restore.complete` | a restore is requested, starts, ends (with result) |
+| `backup.target.check` | a storage target was checked (write/read/delete probe), with its result |
 | `backup_target.create/update/delete`, `backup_policy.create/update/delete` | configuration changes |
 
 Every event carries the user, time, asset, backup id and job id; events written by a job carry the
@@ -38,9 +40,18 @@ request's correlation id. Keys, identities, passphrases and passwords are never 
 Audit events can be forwarded to a SIEM ([Audit forwarding](../administration/siem.md), category
 `backup`).
 
+## Platform settings
+
+| Setting (**Platform → Configuration → Settings**) | Default | Effect |
+|---|---|---|
+| `backup.notification_channels` | empty | channel names (comma separated) for events of backups no policy owns |
+| `backup.allow_restore_without_safety_backup` | off | allows a platform restore without the pre-restore safety backup; otherwise such a request fails with `422 safety_backup_required` |
+
 ## Metrics
 
-Exposed on `/metrics` of the worker process:
+Exposed on `/metrics` of the process that runs the backup jobs (`DBM_PROCESS_ROLE=all` or
+`worker`; the endpoint is unauthenticated and not proxied by the frontend nginx — see
+[Diagnostics](../administration/diagnostics.md)):
 
 | Metric | Type |
 |---|---|

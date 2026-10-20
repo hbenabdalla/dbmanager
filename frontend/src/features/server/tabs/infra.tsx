@@ -122,7 +122,7 @@ export function ConfigurationTab({ server }: { server: ServerDetail }) {
       <div className="flex flex-wrap items-center gap-3 border-b border-border p-3 text-[13px]">
         <Input aria-label="Filter parameters" className="w-72" placeholder="Parameter, category, description" value={f} onChange={(e) => setF(e.target.value)} />
         <label className="flex items-center gap-2"><input type="checkbox" checked={changed} onChange={(e) => setChanged(e.target.checked)} /> Only non-default values</label>
-        <span className="ml-auto text-[12px] text-muted">Read only. Configuration changes go through the SQL workspace with confirmation, or your provider's parameter groups.</span>
+        <span className="ml-auto text-[12px] text-muted">Read only. Change configuration with your own change process or your provider's parameter groups; DBManager only reads it here.</span>
       </div>
       <DataTable columns={columns} data={rows} loading={q.isLoading} error={q.error} dense pageSize={100} />
     </Card>

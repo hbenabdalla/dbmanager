@@ -24,10 +24,27 @@ Two global jobs run on the scheduler leader (see [scheduler and jobs](design-doc
 |---|---|
 | `metric`, evaluation `latest` | the collector's latest snapshot of the server (`servers.latest_metrics`, the values the dashboards show). It is available even when the time-series database is down. A value older than three collection intervals counts as *no data*. |
 | `metric`, evaluation `avg` / `min` / `max` | an aggregate of the metric's history over `window_seconds` (at least 60 s), read in one query for all servers in scope through the time-series repository (`TimeSeriesRepository.aggregate`, VictoriaMetrics in production). If the storage is unavailable, or a server has no samples in the window, the rule sees *no data* for it. |
+| `metric`, evaluation `zscore` | the latest value (or the window average) as a z-score against the server's own baseline: mean and standard deviation over `baseline_days`, the recent window excluded — [baseline-relative rules](../performance/baselines-and-capacity.md#baseline-relative-alert-rules-z-score) |
 | `health` | the server health state (`unavailable`, `critical`, `warning`, `unknown`) |
 | `collector` | failing collector components, or the number of consecutive failed collections |
 
-*No data* never changes an alert: an active alert stays as it is until data returns.
+*No data* never changes an alert: an active alert stays as it is until data returns — in
+particular it is never auto-resolved without an evaluation that saw the condition clear.
+
+```mermaid
+flowchart LR
+  T[evaluate_alerts tick] --> R[each enabled rule]
+  R --> S[servers in scope]
+  S --> C{condition}
+  C -->|no data| U[unchanged]
+  C -->|true| P[create / update pending or firing]
+  C -->|false| X[resolve, or delete a pending alert]
+  R --> O["active alerts of servers no longer in scope<br/>→ resolved_by = scope"]
+  P --> N{notify?}
+  N -->|window active| SK[skipped delivery]
+  N -->|first firing / renotify due / released| D[route + deliver]
+  X -->|notify_on_resolve and was notified| D
+```
 
 Scopes are `all`, one `environment`, one `server`, or `tag` (`key` matches any value of the
 tag, `key=value` an exact value; keys are case-insensitive). Rules and windows are scope-filtered
@@ -55,6 +72,9 @@ stateDiagram-v2
   `notify_count` counts them). Acknowledging stops repetition. `resolved` is sent when the rule has
   `notify_on_resolve` and the alert was actually notified before.
 * Disabling or deleting a rule closes its active alerts without notifications.
+* An active alert of an enabled rule whose server is no longer evaluated (left the rule's scope,
+  monitoring disabled, server deleted) is resolved with `resolved_by = scope`, without a
+  notification; a pending one is deleted. Nobody can tell whether its condition still holds.
 * Comments (`alert_comments`) and the notification history of an alert are returned by
   `GET /api/v1/alerts/{id}`.
 
@@ -103,8 +123,20 @@ is reached (`failed`). Other 4xx answers fail at once. Test sends (`POST
 * **Email**: SMTP with `security` `starttls` (default, port 587), `tls` (implicit TLS, SMTPS,
   port 465) or `none` (plain, for internal relays only). Certificates are verified against the
   system trust store or `DBM_SMTP_CA_FILE`.
-* Channel secrets (signing secret, SMTP password) are envelope-encrypted with the platform
-  keyring (associated data = channel id) and never returned by the API.
+* Channel secrets — the **webhook URL and extra headers** (a Slack or Teams URL is the
+  credential), the signing secret and the SMTP password — are envelope-encrypted with the platform
+  keyring (associated data = channel id), write-only, and never returned by the API or written to
+  audit details. The API shows a webhook URL as scheme and host only (`config.url_display`,
+  `has_url`) and headers by name (`config.header_names`). Plain-text URLs from older versions are
+  moved into the secret at start-up (`migrate_plaintext_webhooks`).
+
+## Backup events
+
+Backup and restore problems are sent through the same channels and the same `deliver()` code
+(retries, delivery log), but they are **not alerts**: no `alerts` row is created, nothing appears
+on the Alerts page, and there is no acknowledge, resolve or re-notify. They go to the channels of
+the backup policy, or for backups without a policy to the channels named in the platform setting
+`backup.notification_channels`. Titles and triggers: [Backup policies → Notifications](../backup-restore/policies.md#notifications).
 
 ## Permissions and audit
 

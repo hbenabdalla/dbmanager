@@ -12,6 +12,15 @@
 * Query statistics empty or *Configuration required*: `performance_schema` must be `ON` (restart
   required) and the account needs `SELECT` on `performance_schema.*`.
 * Replication status missing: grant `REPLICATION CLIENT` (MariaDB 10.5.9+: `REPLICA MONITOR`).
+* `TLS_ERROR: tls_mode=require but the server did not negotiate TLS (enable TLS on the server, or
+  choose prefer/disable)`: with `require`, `verify-ca` or `verify-full` DBManager reads
+  `Ssl_cipher` after connecting, because PyMySQL silently continues in plain text when the server
+  offers no TLS. Check on the server with `SHOW VARIABLES LIKE 'have_ssl'` (MySQL 8.0:
+  `SHOW GLOBAL VARIABLES LIKE 'tls_version'`) and configure `ssl_cert` / `ssl_key`, or register the
+  server with `prefer` (opportunistic TLS) or `disable` ([MySQL TLS](../database-engines/mysql.md#tls)).
+* Workspace results come from the wrong database: unqualified names resolve in the database
+  selected in the workspace (the connection switches to it for the call). Select the intended
+  database, or qualify the names.
 
 ## SQL Server: ODBC driver missing {#sql-server-odbc-driver-missing}
 
@@ -50,16 +59,42 @@ real-engine suite (the XE image has no TCPS listener).
   `SELECT_CATALOG_ROLE` (or `SELECT ANY DICTIONARY`) — see [Oracle](../database-engines/oracle.md#privileges).
 * Only `CDB$ROOT` is listed from the root: `ALTER USER c##… SET CONTAINER_DATA = ALL CONTAINER = CURRENT`.
 * "Create user" fails with `ORA-01031`: the admin account needs `CREATE SESSION … WITH ADMIN OPTION`.
-* AWR, ASH, ADDM and SQL Tuning features are never used; their absence is not an error
-  ([licensed features](../database-engines/oracle.md#licensed-features-diagnostics-and-tuning-pack)).
+* AWR, ASH, ADDM and SQL Tuning features are never used by the collectors; their absence is not an
+  error ([licensed features](../database-engines/oracle.md#licensed-features-diagnostics-and-tuning-pack)).
+
+## Oracle: workspace refuses a statement ("needs the Diagnostics Pack") {#oracle-licensed-packs}
+
+The SQL workspace answers *this statement uses Oracle Diagnostics Pack features (AWR, ASH, ADDM,
+SQL Monitoring or the SQL tuning advisors), which need a separate licence: mark the server as
+licensed for the Diagnostics Pack under Server → Settings to run it* (or the same for the *Tuning
+Pack*). The statement references a pack object — for example `DBA_HIST_*`,
+`V$ACTIVE_SESSION_HISTORY`, `V$SYSMETRIC`, `DBMS_XPLAN.DISPLAY_AWR`, `DBMS_SQLTUNE` or
+`V$SQL_MONITOR` — and was not sent to the database, because using these objects is recorded as
+feature usage. If the database is licensed for the pack, record it on the server: the
+*Licensed features* checkboxes of the registration form, or for an existing server
+`PATCH /api/v1/servers/{id}` with `{"licensed_features": ["diagnostics_pack"]}` (and/or
+`"tuning_pack"`) by a user allowed to change the server. The message names *Server → Settings*,
+but this release's Settings tab does not show the flags. Otherwise rewrite the query without the
+pack objects.
+
+* Oracle: "statements run in the connected container …: register … (its service name) as its own
+  server" — the workspace targets another PDB; register that PDB's service.
 
 ## Db2 LUW: connection {#db2-connection}
 
 * `SQL30082N`: authentication failed — Db2 authenticates against the operating system, LDAP or
   Kerberos, so check the OS/LDAP user and password.
 * `SQL1013N` / `SQL30061N`: database not found — check the database name (not the instance name).
-* TLS: a TLS mode other than `disable` connects with `SECURITY=SSL` to the instance's
-  `SSL_SVCENAME` port; supply the server certificate or CA.
+* TLS: `require`, `verify-ca` and `verify-full` connect with `SECURITY=SSL` to the instance's
+  `SSL_SVCENAME` port; upload the CA (or set *Server certificate file*). `prefer` connects in plain
+  text — the Db2 CLI has no opportunistic TLS ([Db2 LUW TLS](../database-engines/db2-luw.md#tls)).
+
+## Db2 LUW: one database per registration {#db2-luw-one-database-per-registration}
+
+The workspace or EXPLAIN answers *this db2 connection is to database 'SAMPLE': register 'OTHER' as
+its own server to run statements there*. A Db2 LUW connection is to one database; DBManager refuses
+the statement rather than run it in the registered database. Register the other database as its
+own server (same host and port, its database name) and grant the monitoring account there too.
 
 ## Db2 LUW: monitoring privileges {#db2-monitoring-privileges}
 

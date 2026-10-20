@@ -20,4 +20,5 @@ optional.
 
 The wizard is **resumable**: state is stored on the server after each step (`PUT /api/v1/platform/setup`),
 so you can leave and continue later from another browser. Re-open it any time from
-Platform → Setup; completed steps can be revisited.
+Platform → Setup → Setup wizard or the command palette (*Run the platform setup wizard*); completed
+steps can be revisited.

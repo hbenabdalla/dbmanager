@@ -2,7 +2,8 @@
 
 ## Supported versions
 
-Oracle Database 12.2 – 23ai (validated against Oracle Database 21c XE 21.3, from the CDB root with a common user and from the PDB `XEPDB1`).
+Oracle Database 12.2 – 23ai (real-engine validated against Oracle Database 21c XE 21.3, from the
+CDB root with a common user and from the PDB `XEPDB1`, over TCP; TCPS was not exercised).
 
 ## Driver
 
@@ -14,7 +15,21 @@ Host, port (1521), and either a *service name* (recommended; e.g. the PDB servic
 
 ## TLS
 
-Use protocol `tcps` against a TCPS listener with a wallet; set the DN to match the server certificate. Plain TCP is reported by security rule `ORA-SEC-005` as unencrypted. TCPS was not exercised by the real-engine suite because the XE image has no TCPS listener.
+Oracle Net has no opportunistic TLS: a connection is either plain TCP or TCPS. The protocol is the
+*protocol* option when set, otherwise `tcps` for `require`, `verify-ca` and `verify-full` and `tcp`
+for `disable` and `prefer` (`connect_params` in `adapters/oracle/base.py`).
+
+| Mode | Protocol (default) | TCPS behaviour |
+|---|---|---|
+| `disable` | `tcp` | — |
+| `prefer` | `tcp` (plain) | only with *protocol* `tcps`: encrypted, certificate not validated (validated when a CA is uploaded) |
+| `require` | `tcps` | encrypted; certificate not validated, or chain validated when a CA is uploaded; DN not matched |
+| `verify-ca` | `tcps` | chain validated against the uploaded CA (or the system trust store); DN not matched |
+| `verify-full` | `tcps` | chain validated, host name checked and `ssl_server_dn_match` on; the *SSL server certificate DN* option, when set, must match exactly |
+
+Thin mode needs no wallet on the DBManager side: the CA is uploaded with the server. Plain TCP is
+reported by security rule `ORA-SEC-005` as unencrypted. TCPS was not exercised by the real-engine
+suite because the XE image has no TCPS listener.
 
 ## Privileges
 
@@ -57,10 +72,11 @@ ALTER USER c##dbm_monitor SET CONTAINER_DATA = ALL CONTAINER = CURRENT;   -- see
 ### Licensing
 
 The adapter reads only views that need no management pack (see [Licensed features](#licensed-features-diagnostics-and-tuning-pack)).
-It never queries AWR, ASH, ADDM, SQL Monitoring or the SQL Tuning Advisor, whatever the account's
-privileges, so `SELECT_CATALOG_ROLE` does not lead to Diagnostics/Tuning Pack usage by DBManager.
-The server's *Diagnostics Pack* and *Tuning Pack* flags stay **disabled** unless an administrator
-records that the database is licensed.
+Its collectors never query AWR, ASH, ADDM, SQL Monitoring or the SQL Tuning Advisor, whatever the
+account's privileges, so `SELECT_CATALOG_ROLE` does not lead to Diagnostics/Tuning Pack usage by
+DBManager. The SQL workspace refuses statements that reference pack objects unless the server is
+marked as licensed. The server's *Diagnostics Pack* and *Tuning Pack* flags stay **disabled**
+unless an administrator records that the database is licensed.
 
 ### DBA management account
 
@@ -97,12 +113,42 @@ DBManager **does not include, assume or enable** any Oracle option or management
   Monitoring (`V$SQL_MONITOR`), the SQL Tuning Advisor (`DBMS_SQLTUNE`) or the metric views
   (`V$SYSMETRIC`…). A unit test fails the build if one of them appears in the adapter's SQL, and the
   real-engine suite checks `V$SQL` to prove the monitoring user never ran such a statement.
-* Each Oracle server has **Diagnostics Pack** and **Tuning Pack** flags, **disabled by default**.
-  An administrator may record that the database is licensed; the flags are displayed on the server
-  and in the support matrix, but this release does not unlock pack-licensed views even then.
+* Each Oracle server has **Diagnostics Pack** and **Tuning Pack** flags (`licensed_features`:
+  `diagnostics_pack`, `tuning_pack`), **disabled by default**. They are set on the registration
+  form or with `PATCH /api/v1/servers/{id}`, and shown on the server overview. The collectors
+  ignore them: no pack view is queried even when a flag is set.
+* The **SQL workspace** checks every statement (`licensed_pack_needed` in
+  `adapters/oracle/adapter.py`) for pack objects, matched as whole identifiers:
+    * Diagnostics Pack: `DBA_HIST_*` / `CDB_HIST_*`, `V$ACTIVE_SESSION_HISTORY` (and `GV$`),
+      `DBA_ADDM_*` / `CDB_ADDM_*`, `DBMS_WORKLOAD_REPOSITORY`, `DBMS_ADDM`, `DBMS_ADVISOR`,
+      `DBMS_XPLAN.DISPLAY_AWR`, the metric views (`V$METRIC…`, `V$SYSMETRIC…`, `V$CONMETRIC…`) and
+      `AWR_ROOT_*` / `AWR_PDB_*` / `AWR_CDB_*`;
+    * Tuning Pack: `DBMS_SQLTUNE`, `DBMS_SQL_MONITOR`, `V$SQL_MONITOR…`, `V$SQL_PLAN_MONITOR`,
+      `DBA_SQLTUNE_*`, `DBA_ADVISOR_SQL*`.
+
+    Such a statement is refused before it reaches the database ("this statement uses Oracle
+    Diagnostics Pack features … mark the server as licensed for the Diagnostics Pack under
+    Server → Settings to run it"), because using these objects records feature usage in the
+    database. With the matching flag set, the statement runs like any other.
 * An Enterprise Edition database does not change this policy: the edition is never taken as
   evidence of a pack licence.
 * Active Data Guard is a separate licence; DBManager only reads `V$DATAGUARD_STATS`.
+
+## Inventory, workspace and storage notes
+
+* **Constraints**: the object browser lists the constraints of a whole schema (primary key,
+  unique, foreign key and user-named check constraints, with status, validation and columns);
+  from `CDB$ROOT` through the `CDB_*` views.
+* **Users from the root**: connected to `CDB$ROOT`, *Users* lists the common users and also the
+  local users of every open PDB (`PDB_LOCAL_USERS`: `CDB_USERS` joined with `V$PDBS`, Oracle-
+  maintained accounts excluded, at most 5,000 rows), named `PDB:USER`. Their roles and privileges
+  are read on the PDB's own registration.
+* **Workspace**: statements run in the connected container. Selecting another PDB is refused
+  ("statements run in the connected container …: register … (its service name) as its own
+  server"); Diagnostics/Tuning Pack objects are refused unless licensed (above).
+* **Largest tables** have the common shape (`schema`, `name`, `row_estimate`, `table_bytes`,
+  `index_bytes`, `total_bytes`), from `DBA_SEGMENTS` (LOB segments counted with their table) and
+  `DBA_TABLES.NUM_ROWS`.
 
 ## Known limitations
 
@@ -148,8 +194,14 @@ privileged accounts) also apply.
 | `ORA-PERF-008` | Invalid objects / unusable indexes |
 | `ORA-PERF-009` | Database in NOARCHIVELOG mode |
 
-Plus the common performance rules `GEN-PERF-001` … `GEN-PERF-010`. Recommendations are advice with
+Plus the 12 engine-independent performance rules `GEN-PERF-001` … `GEN-PERF-012` (connections,
+cache, blocking, deadlocks, replication lag, long transactions, expensive queries, spills, CPU,
+storage, query latency regressions and storage forecasts). Recommendations are advice with
 evidence; DBManager never executes them.
+
+**Rule count:** 20 engine-specific rules (11 security, 9 performance) plus the 14
+engine-independent rules, which apply to every engine. Across all engines DBManager ships 61
+performance and 55 security rules; the full catalog is served by `GET /api/v1/advisor/rules`.
 
 ## Troubleshooting
 
@@ -157,3 +209,7 @@ evidence; DBManager never executes them.
 * Only `CDB$ROOT` is listed from the root: `ALTER USER c##… SET CONTAINER_DATA = ALL CONTAINER = CURRENT`.
 * Unknown service: reported as *database not found* (`ORA-12514` / `DPY-6001`); check the service name with `lsnrctl services`.
 * "Create user" fails with ORA-01031: the admin account needs `CREATE SESSION … WITH ADMIN OPTION`.
+* Workspace: "this statement uses Oracle Diagnostics Pack features …": the statement touches AWR,
+  ASH, ADDM, the metric views or a tuning advisor. Mark the pack as licensed on the server only if
+  the database really is licensed
+  ([Troubleshooting](../troubleshooting/engines.md#oracle-licensed-packs)).

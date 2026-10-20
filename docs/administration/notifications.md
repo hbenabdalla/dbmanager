@@ -1,8 +1,13 @@
 # Notification channels
 
-**Platform → Configuration → Notification channels** (permission `channels.manage`) defines where [alert](../user-guide/alerting.md) notifications go. Rules choose their channels, and channels can also subscribe to alerts (see [Routing](#routing)); a channel only sends alerts at or above its **minimum severity**.
+**Platform → Configuration → Notification channels** (permission `channels.manage`, platform scope) defines where [alert](../user-guide/alerting.md) notifications go. Rules choose their channels, and channels can also subscribe to alerts (see [Routing](#routing)); a channel only sends alerts at or above its **minimum severity**.
 
-Secrets (webhook signing secret, SMTP password) are envelope-encrypted at rest with the platform keyring, are write-only in the API and UI (the API only reports `has_signing_secret` / `has_smtp_password`), and never appear in logs or audit events. Omitting a secret on update keeps the stored value; sending an empty string removes it. Secret-looking keys (`password`, `secret`, `token`) and `Authorization` headers are refused in the non-encrypted configuration.
+Secrets are envelope-encrypted at rest with the platform keyring, are write-only in the API and UI, and never appear in logs or audit events:
+
+* the **webhook URL** and the **extra headers** (a Slack or Teams webhook URL is a credential). The channel list and the edit dialog show the URL as scheme and host only (`https://hooks.slack.com/…`) and the headers by name only; the API returns `has_url`, `config.url_display` and `config.header_names`. When editing, leave **URL** or **Extra headers** empty to keep the stored values; entering headers replaces all of them.
+* the **webhook signing secret** and the **SMTP password** (`has_signing_secret` / `has_smtp_password`). Omitting one on update keeps the stored value; sending an empty string removes it.
+
+Keys that look like secrets (`password`, `secret`, `token`) are refused in `config`; use `signing_secret` / `smtp_password`. Webhook URLs stored in plain text by older versions are moved into the encrypted secret at start-up.
 
 ## Routing
 
@@ -46,7 +51,7 @@ request is received"). The generic format is a JSON `POST` to the configured URL
 notification (rule *Re-notify every N minutes*) has `renotify: true`.
 
 - **Signature** — with a signing secret, the request carries `X-DBM-Signature: sha256=<hex>`, the HMAC-SHA256 of the raw body. Verify it with a constant-time comparison.
-- **Extra headers** — optional, stored unencrypted (no credentials).
+- **Extra headers** — optional, one per line as `Name: value`; stored encrypted with the URL, so an `Authorization` header is possible.
 - **Timeout** — `DBM_WEBHOOK_TIMEOUT_SECONDS` (default 10). Redirects are not followed. Non-2xx answers count as failures; see [Retries](#retries).
 - **SSRF guard** — URLs whose host resolves to a private, loopback, link-local, carrier-grade NAT, multicast or reserved address are refused, as are URLs with embedded credentials. Set `DBM_WEBHOOK_ALLOW_PRIVATE=true` to allow internal receivers (for example an on-premises chat bridge). The address is checked at send time before connecting; DNS answers that change between the check and the connection are not detected.
 
@@ -85,6 +90,14 @@ background by the `notification_retries` job with increasing delays; the deliver
 
 A channel that is disabled or deleted before a retry ends the delivery as *failed*.
 
+## Backup events
+
+Backup failures, backups that are overdue and unavailable storage targets are notified through
+channels too. A backup policy names its channels (**Notification channels** in the policy dialog).
+Events of backups that no policy owns — manual backups, their verification and restores — go to the
+channels named in the platform setting `backup.notification_channels` (channel names, comma
+separated; **Platform → Configuration → Settings**). Empty means they are only shown in the app.
+
 ## Simulated servers
 
 Alerts on simulated servers are not sent unless the channel enables **Also send for simulated servers**; skipped deliveries are logged with the reason.
@@ -97,8 +110,8 @@ Alerts on simulated servers are not sent unless the channel enables **Also send 
 
 | Method & path | Purpose |
 |---|---|
-| `GET/POST /api/v1/notification-channels` | list / create (`name`, `kind` webhook\|email, `enabled`, `min_severity`, `send_for_simulated`, `preset` generic\|slack\|teams, `routes` {`subscribe_all`, `environment_ids`, `tags`, `engines`}, `config` incl. email `security`, write-only `signing_secret` / `smtp_password`) |
-| `PUT/DELETE /api/v1/notification-channels/{id}` | update / delete |
+| `GET/POST /api/v1/notification-channels` | list / create (`name`, `kind` webhook\|email, `enabled`, `min_severity`, `send_for_simulated`, `preset` generic\|slack\|teams, `routes` {`subscribe_all`, `environment_ids`, `tags`, `engines`}, `config` — webhook: write-only `url`, `headers`; email: `recipients`, `smtp_host`, `smtp_port`, `smtp_user`, `from`, `security` —, write-only `signing_secret` / `smtp_password`) |
+| `PUT/DELETE /api/v1/notification-channels/{id}` | update (omit `config.url` / `config.headers` to keep them) / delete |
 | `POST /api/v1/notification-channels/{id}/test` | `{status, response_code, error, attempts}` |
 | `GET /api/v1/notification-channels/{id}/deliveries` | delivery log (`limit`) |
 
