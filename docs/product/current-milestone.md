@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Milestone** | 0.15 — Cloud-Native Deployment |
-| **Status** | DONE. Release **0.15.0**; publishing (push, real-engine re-run on the Docker host, tag) remains |
+| **Status** | DONE. Tag `v0.15.0` pushed but not published (release workflow failed before publishing); **0.15.1** fixes it and is the published release |
 | **Release target** | 0.15.0 (this release). Next: milestone 1.0 — Production Release (**NEXT, not started**) |
 | **Previous release** | 0.14.0 (published 2026-10-20) — reporting, branding, roadmap reconciliation |
 

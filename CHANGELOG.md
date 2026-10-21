@@ -5,6 +5,25 @@ All notable changes to DBManager are documented here. The format follows
 [Semantic Versioning](https://semver.org/). Pre-1.0 minor versions may contain breaking changes;
 they are listed under **Changed** with migration notes.
 
+## [0.15.1] — 2026-10-21
+
+Patch release of 0.15.0. The `v0.15.0` tag exists, but its release workflow stopped before
+publishing anything (no images, chart or GitHub release), so **0.15.1 is the first published
+0.15 release**. No product code changed; no migration.
+
+### Fixed
+
+- **Release workflow**: `sigstore/cosign-installer@v4` does not exist as a tag (the action has
+  only `v4.x.y` releases), so every image job failed at *Set up job*. Pinned to `v4.1.2`; every
+  action reference in the workflows was checked to resolve.
+- **Backend CI** (`test_verified_tls_to_the_control_plane`): the CI PostgreSQL certificate came
+  from the shared test-certificate generator, which also names `127.0.0.1`, so the check that
+  `verify-full` refuses an address the certificate does not name could not fail as expected.
+  CI now generates it with `make_certs.py --dns-only`. A test bug, not a product bug: `verify-full`
+  behaved correctly.
+- **Test certificates** carry Subject and Authority Key Identifiers, required by the strict X.509
+  verification of Python 3.13+ (`Missing Authority Key Identifier`); stale material without them,
+  or with other IP addresses than requested, is regenerated.
 ## [0.15.0] — 2026-10-20
 
 Milestone 0.15 (Cloud-Native Deployment), preceded by a clean validation of the whole repository
@@ -69,7 +88,8 @@ changed its meaning.
   and refused valid certificates.
 - `scripts/integration-test.ps1 <engine> …` bound the first engine name to `-K`: that engine was
   neither started nor given its host, and only its tests were selected (all skipped). Engines are
-  now the only positional arguments; the result matrix is printed as UTF-8.
+  now the only positional arguments; the result matrix is printed as UTF-8, and an all-skipped run
+  no longer re-dates `real_engine_validation.json`.
 
 ### Security
 

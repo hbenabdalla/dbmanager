@@ -11,7 +11,7 @@ spec:
       securityContext: { runAsNonRoot: true, seccompProfile: { type: RuntimeDefault } }
       containers:
         - name: migrate
-          image: ghcr.io/hbenabdalla/dbmanager-backend:0.15.0
+          image: ghcr.io/hbenabdalla/dbmanager-backend:0.15.1
           command: ["sh", "-c", "python -m app.cli migrate && python -m app.cli bootstrap"]
           envFrom:
             - configMapRef: { name: dbmanager-config }

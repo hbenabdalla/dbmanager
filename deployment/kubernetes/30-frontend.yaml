@@ -12,7 +12,7 @@ spec:
       securityContext: { runAsNonRoot: true, seccompProfile: { type: RuntimeDefault } }
       containers:
         - name: web
-          image: ghcr.io/hbenabdalla/dbmanager-frontend:0.15.0
+          image: ghcr.io/hbenabdalla/dbmanager-frontend:0.15.1
           env:
             - { name: BACKEND_URL, value: "http://backend:8000" }
             # address range of your ingress controller pods: nginx takes the client address from

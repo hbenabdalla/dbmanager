@@ -12,12 +12,12 @@ administration for PostgreSQL, MySQL, MariaDB, Microsoft SQL Server, Oracle Data
 [![Frontend](https://github.com/hbenabdalla/dbmanager/actions/workflows/ci-frontend.yml/badge.svg)](https://github.com/hbenabdalla/dbmanager/actions/workflows/ci-frontend.yml)
 [![Docs](https://github.com/hbenabdalla/dbmanager/actions/workflows/ci-docs.yml/badge.svg)](https://github.com/hbenabdalla/dbmanager/actions/workflows/ci-docs.yml)
 [![Documentation](https://readthedocs.org/projects/db-manager/badge/?version=latest)](https://db-manager.readthedocs.io/en/latest/)
-[![Version](https://img.shields.io/badge/version-0.15.0-blue)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.15.1-blue)](CHANGELOG.md)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 
 **Documentation: [db-manager.readthedocs.io/en/latest](https://db-manager.readthedocs.io/en/latest/)**
 
-> **Version 0.15.0: cloud-native deployment.** A Helm chart for Kubernetes and OpenShift, signed
+> **Version 0.15.1: cloud-native deployment** (0.15.0 plus release and CI fixes). A Helm chart for Kubernetes and OpenShift, signed
 > images with SBOMs, highly available API and worker replicas with a visible scheduler leader, and
 > TLS to the control-plane databases. DBManager is pre-1.0; 0.12.0 was its first public release.
 > What changed is in the [changelog](CHANGELOG.md); what remains before 1.0 is in the
@@ -134,7 +134,7 @@ No database at hand? **Platform → Simulation** generates a clearly labelled si
 ## Kubernetes and OpenShift (Helm)
 
 ```bash
-helm install dbm oci://ghcr.io/hbenabdalla/charts/dbmanager --version 0.15.0 \
+helm install dbm oci://ghcr.io/hbenabdalla/charts/dbmanager --version 0.15.1 \
   --namespace dbmanager --create-namespace \
   --set secrets.masterKey="$(head -c32 /dev/urandom | base64)" \
   --set secrets.bootstrapAdminPassword='<a strong password>' \
