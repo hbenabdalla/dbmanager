@@ -62,7 +62,7 @@ jobs:
         run: pytest tests/unit -q -rs
       - name: Serve TLS from the PostgreSQL service (control-plane TLS tests)
         run: |
-          python tests/integration/tls/make_certs.py /tmp/pgtls
+          python tests/integration/tls/make_certs.py --dns-only /tmp/pgtls
           C="${{ job.services.postgres.id }}"
           docker cp /tmp/pgtls/server-cert.pem "$C":/var/lib/postgresql/server.crt
           docker cp /tmp/pgtls/server-key.pem "$C":/var/lib/postgresql/server.key

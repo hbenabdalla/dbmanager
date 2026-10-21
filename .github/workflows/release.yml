@@ -79,7 +79,7 @@ jobs:
           # SBOM and SLSA provenance as registry attestations
           sbom: true
           provenance: mode=max
-      - uses: sigstore/cosign-installer@v4
+      - uses: sigstore/cosign-installer@v4.1.2
       - name: Sign the image (keyless, by digest)
         run: cosign sign --yes "ghcr.io/${{ github.repository_owner }}/dbmanager-${{ matrix.name }}@${{ steps.build.outputs.digest }}"
       - name: SBOM file for the release (SPDX JSON)
@@ -105,7 +105,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: azure/setup-helm@v5
-      - uses: sigstore/cosign-installer@v4
+      - uses: sigstore/cosign-installer@v4.1.2
       - name: Package and push to oci://ghcr.io/${{ github.repository_owner }}/charts
         run: |
           echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io -u "${{ github.actor }}" --password-stdin

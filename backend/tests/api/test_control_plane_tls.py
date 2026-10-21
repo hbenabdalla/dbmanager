@@ -1,8 +1,9 @@
 """Control-plane PostgreSQL over TLS (sprint 0.15.4), against the test server.
 
-Needs a PostgreSQL that serves TLS with a certificate for ``localhost`` and its CA in
-``DBM_TEST_DATABASE_TLS_CA`` (PEM). The CI service container has no TLS: the test is skipped
-there and runs where the server is configured (see docs/product/test-validation.md)."""
+Needs a PostgreSQL that serves TLS with a certificate naming ``localhost`` but **not**
+``127.0.0.1`` (``tests/integration/tls/make_certs.py --dns-only``), and its CA in
+``DBM_TEST_DATABASE_TLS_CA`` (PEM). CI configures its PostgreSQL service that way
+(``ci-backend.yml``); without the variable the tests are skipped."""
 
 from __future__ import annotations
 
@@ -42,8 +43,8 @@ async def test_verified_tls_to_the_control_plane() -> None:
     assert await _connect("localhost", "require") == "True"
     assert await _connect("localhost", "verify-full", CA) == "True"
     assert await _connect("127.0.0.1", "verify-ca", CA) == "True"  # chain only, any host name
-    # the certificate names localhost: verify-full refuses another host name
-    with pytest.raises(ssl.SSLCertVerificationError):
+    # the certificate names localhost, not 127.0.0.1: verify-full refuses the address
+    with pytest.raises(ssl.SSLCertVerificationError, match="(?i)hostname|ip address|match"):
         await _connect("127.0.0.1", "verify-full", CA)
 
 
