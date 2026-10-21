@@ -1,6 +1,6 @@
 # Roadmap
 
-DBManager **0.15.1** is the release being published (the `v0.15.0` tag exists but published nothing). **0.14.0** is the latest published release,
+DBManager **0.15.3** is the current release (0.15.1 was the first published 0.15 release; the `v0.15.0` and `v0.15.2` tags published nothing). **0.14.0** is the latest published release,
 and **0.12.0** was the first. The roadmap is organised by milestone and promises no dates.
 
 - [Full roadmap](docs/product/roadmap.md): sprints, acceptance criteria, Definition of Done.

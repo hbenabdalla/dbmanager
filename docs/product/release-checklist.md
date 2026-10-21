@@ -22,7 +22,9 @@ Run before tagging any `v0.x.y` / `v1.x.y` release. Commands are from the reposi
 | 16 | Version updated | one version in backend, frontend, chart and reference manifests; matches the tag | `0.15.0` everywhere (`tests/unit/test_version_consistency.py`, `tests/deploy`, `release.yml` check) |
 | 17 | License present | `LICENSE` exists and README states it | Passing — Apache-2.0 |
 
-Release steps once all rows are green: update `CHANGELOG.md`, bump the version, open a pull
+Release steps once all rows are green (**the version bump comes before the tag**: `release.yml`
+refuses a tag that differs from the product and chart versions, as it did for `v0.15.2`): update
+`CHANGELOG.md`, bump the version, open a pull
 request, merge to `main`, tag `vX.Y.Z`, push the tag. From 0.15.0 the tag runs `release.yml`:
 signed images and chart on GHCR and the GitHub release with the notes and SBOMs; Read the Docs
 builds the tagged version.

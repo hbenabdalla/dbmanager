@@ -27,7 +27,7 @@ kind cluster with `helm test` and a leader failover, see `.github/workflows/ci-k
 Released charts are published as signed OCI artifacts next to the images:
 
 ```bash
-helm install dbm oci://ghcr.io/hbenabdalla/charts/dbmanager --version 0.15.1 \
+helm install dbm oci://ghcr.io/hbenabdalla/charts/dbmanager --version 0.15.3 \
   --namespace dbmanager --create-namespace \
   --set secrets.masterKey="$(head -c32 /dev/urandom | base64)" \
   --set secrets.bootstrapAdminPassword='<a strong password>' \
@@ -83,7 +83,7 @@ are the value sets CI validates.
 ### OpenShift
 
 ```bash
-helm install dbm oci://ghcr.io/hbenabdalla/charts/dbmanager --version 0.15.1 \
+helm install dbm oci://ghcr.io/hbenabdalla/charts/dbmanager --version 0.15.3 \
   -f my-values.yaml --set openshift=true \
   --set route.enabled=true --set route.host=dbmanager.apps.example.com
 ```
@@ -133,7 +133,7 @@ Images and the chart are signed keylessly with Sigstore cosign by the release wo
 before deploying:
 
 ```bash
-cosign verify ghcr.io/hbenabdalla/dbmanager-backend:0.15.1 \
+cosign verify ghcr.io/hbenabdalla/dbmanager-backend:0.15.3 \
   --certificate-identity-regexp 'https://github.com/hbenabdalla/dbmanager/.github/workflows/release.yml@refs/tags/v.*' \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com
 ```

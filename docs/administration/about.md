@@ -16,7 +16,7 @@ Every signed-in user can open the page; it never shows host names, file paths or
 
 ## Version source
 
-There is one version per release: `backend/app/__init__.py` (`__version__`) and `frontend/package.json` (`version`) carry the same value (currently `0.15.1`). The frontend embeds its version at build time.
+There is one version per release: `backend/app/__init__.py` (`__version__`) and `frontend/package.json` (`version`) carry the same value (currently `0.15.3`). The frontend embeds its version at build time.
 
 ## Build metadata
 
@@ -29,7 +29,7 @@ Set these at image build time; they are shown as-is after sanitising (printable 
 | `DBM_BUILD_DATE` | backend build arg / env | ISO-8601 build timestamp |
 
 ```bash
-DBM_BUILD_VERSION=0.15.1 DBM_GIT_COMMIT=$(git rev-parse --short HEAD) \
+DBM_BUILD_VERSION=0.15.3 DBM_GIT_COMMIT=$(git rev-parse --short HEAD) \
 DBM_BUILD_DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ) docker compose build
 ```
 
@@ -44,7 +44,7 @@ DBM_BUILD_DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ) docker compose build
 
 ## API
 
-- `GET /api/v1/version` — public, `{"product": "DBManager", "version": "0.15.1"}`; suitable for load-balancer checks and upgrade scripts.
+- `GET /api/v1/version` — public, `{"product": "DBManager", "version": "0.15.3"}`; suitable for load-balancer checks and upgrade scripts.
 - `GET /api/v1/about` — authenticated; everything shown on the About page.
 
 See also [Notification channels](notifications.md) and [Alerting](../user-guide/alerting.md).

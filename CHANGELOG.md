@@ -5,6 +5,23 @@ All notable changes to DBManager are documented here. The format follows
 [Semantic Versioning](https://semver.org/). Pre-1.0 minor versions may contain breaking changes;
 they are listed under **Changed** with migration notes.
 
+## [0.15.3] — 2026-10-21
+
+Patch release. No application code changed; no migration (schema `0014`).
+
+The `v0.15.2` tag was pushed before the version was raised: the release workflow's first check
+(tag = product version = chart version) refused it, so nothing was published for 0.15.2. Tags are
+not moved, so the release is published as 0.15.3.
+
+### Added
+
+- Helm chart `README.md` (shown on Artifact Hub): features, components, install, production and
+  OpenShift values, main settings, upgrade, signature verification, uninstall.
+- Chart annotations for Artifact Hub: category, links, and the images it deploys (used for the
+  security scan); repository metadata `deployment/helm/artifacthub-repo.yml` pushed to the chart
+  repository's `artifacthub.io` tag (Verified Publisher).
+- Artifact Hub badge in the README and the Helm guide.
+
 ## [0.15.1] — 2026-10-21
 
 Patch release of 0.15.0. The `v0.15.0` tag exists, but its release workflow stopped before

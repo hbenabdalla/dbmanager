@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Milestone** | 0.15 — Cloud-Native Deployment |
-| **Status** | DONE. Tag `v0.15.0` pushed but not published (release workflow failed before publishing); **0.15.1** fixes it and is the published release |
+| **Status** | DONE. Tag `v0.15.0` pushed but not published (release workflow failed before publishing); **0.15.1** fixed it and was the first published release; **0.15.3** adds the chart README (the `v0.15.2` tag was pushed before the version bump and published nothing) |
 | **Release target** | 0.15.0 (this release). Next: milestone 1.0 — Production Release (**NEXT, not started**) |
 | **Previous release** | 0.14.0 (published 2026-10-20) — reporting, branding, roadmap reconciliation |
 
