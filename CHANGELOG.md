@@ -67,6 +67,9 @@ changed its meaning.
   duplicate-object errors.
 - **LDAP StartTLS** against a server addressed by IP: ldap3 ignored IP subject alternative names
   and refused valid certificates.
+- `scripts/integration-test.ps1 <engine> …` bound the first engine name to `-K`: that engine was
+  neither started nor given its host, and only its tests were selected (all skipped). Engines are
+  now the only positional arguments; the result matrix is printed as UTF-8.
 
 ### Security
 

@@ -42,3 +42,35 @@ def test_no_secret_on_a_command_line() -> None:
 def test_backup_script_snapshots_metrics_through_the_backend() -> None:
     s = (ROOT / "scripts" / "backup.sh").read_text()
     assert "exec -T backend python" in s and "/snapshot/create" in s and "/snapshot/delete" in s
+
+
+def test_powershell_integration_script_binds_every_engine_positionally(tmp_path: Path) -> None:
+    """``integration-test.ps1 postgresql mysql …`` once bound ``postgresql`` to ``-K`` (the pytest
+    -k filter): only PostgreSQL tests were selected, without the PostgreSQL host, and all skipped.
+    Engines must be the only positional arguments."""
+    import shutil
+    import subprocess
+
+    script = (ROOT / "scripts" / "integration-test.ps1").read_text(encoding="utf-8")
+    assert re.search(r"\[CmdletBinding\(PositionalBinding\s*=\s*\$false\)\]\s*param\(", script)
+    pwsh = shutil.which("pwsh")
+    if pwsh is None:
+        return  # the static check above still guards the attribute
+    # bind the script's own param block (nothing else of the script runs)
+    block = script[script.index("[CmdletBinding") : script.index("$ErrorActionPreference")]
+    probe = tmp_path / "bind.ps1"
+    probe.write_text(block + "\n'E=' + ($Engines -join ','); 'K=' + $K\n", encoding="utf-8")
+    cases = {
+        ("postgresql", "mysql", "mariadb"): ("E=postgresql,mysql,mariadb", "K="),
+        ("mssql", "oracle"): ("E=mssql,oracle", "K="),
+        ("-K", "backup", "postgresql"): ("E=postgresql", "K=backup"),
+    }
+    for args, expected in cases.items():
+        out = subprocess.run(  # noqa: S603 - fixed arguments
+            [pwsh, "-NoProfile", "-NonInteractive", "-File", str(probe), *args],
+            capture_output=True,
+            text=True,
+            check=True,
+            timeout=60,
+        ).stdout.split()
+        assert tuple(out) == expected, (args, out)

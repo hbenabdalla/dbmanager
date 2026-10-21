@@ -20,6 +20,9 @@
   .\scripts\integration-test.ps1 -K backup             # only tests whose name matches (pytest -k)
   .\scripts\integration-test.ps1 -Down                 # stop and remove the test containers + volumes
 #>
+# engines are the only positional arguments; without this, PowerShell binds the first engine name
+# to -K (the pytest -k filter) and silently runs only that engine's tests without its host
+[CmdletBinding(PositionalBinding = $false)]
 param(
   [Parameter(ValueFromRemainingArguments = $true)][string[]]$Engines,
   [switch]$Down,
@@ -129,7 +132,7 @@ $rc = Invoke-Docker ($compose + @('--profile', 'runner', 'run', '--rm') + $envAr
 $testRc = $rc
 
 if (Test-Path integration-results\real-engine-matrix.md) {
-  Get-Content integration-results\real-engine-matrix.md | ForEach-Object { Write-Log $_; $_ } | Out-Host
+  Get-Content -Encoding UTF8 integration-results\real-engine-matrix.md | ForEach-Object { Write-Log $_; $_ } | Out-Host
 }
 if (-not $KeepRunning) {
   Invoke-Docker ($compose + $profiles + @('stop')) | Out-Null
