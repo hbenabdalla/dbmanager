@@ -1,5 +1,7 @@
 # Kubernetes and OpenShift with Helm
 
+[![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/dbmanager)](https://artifacthub.io/packages/search?repo=dbmanager)
+
 The Helm chart in `deployment/helm/dbmanager` is the supported way to run DBManager on
 Kubernetes (1.27 or later) and OpenShift (4.14 or later). It deploys:
 

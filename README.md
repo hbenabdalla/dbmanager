@@ -14,6 +14,7 @@ administration for PostgreSQL, MySQL, MariaDB, Microsoft SQL Server, Oracle Data
 [![Documentation](https://readthedocs.org/projects/db-manager/badge/?version=latest)](https://db-manager.readthedocs.io/en/latest/)
 [![Version](https://img.shields.io/badge/version-0.15.1-blue)](CHANGELOG.md)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+[![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/dbmanager)](https://artifacthub.io/packages/search?repo=dbmanager)
 
 **Documentation: [db-manager.readthedocs.io/en/latest](https://db-manager.readthedocs.io/en/latest/)**
 
