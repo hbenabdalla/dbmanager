@@ -1,0 +1,7 @@
+# Artifact Hub repository metadata for oci://ghcr.io/hbenabdalla/charts/dbmanager.
+# Pushed to ghcr.io/hbenabdalla/charts/dbmanager:artifacthub.io by .github/workflows/artifacthub.yml;
+# the repository ID marks the publisher as verified, the owners allow ownership claims.
+repositoryID: 296748ca-9b08-4ecb-8a71-9c5030dd1177
+owners:
+  - name: hbenabdalla
+    email: babdallahhamdi@gmail.com

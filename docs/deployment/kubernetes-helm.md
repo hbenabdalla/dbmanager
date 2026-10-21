@@ -136,6 +136,10 @@ cosign verify ghcr.io/hbenabdalla/dbmanager-backend:0.15.1 \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com
 ```
 
+The chart is listed on [Artifact Hub](https://artifacthub.io/) as a verified publisher: the
+repository metadata `deployment/helm/artifacthub-repo.yml` is pushed to the chart repository's
+`artifacthub.io` tag by `.github/workflows/artifacthub.yml`.
+
 Pin the verified digest with `image.backend.digest` / `image.frontend.digest`: a digest wins over
 the tag.
 

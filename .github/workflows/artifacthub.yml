@@ -1,0 +1,31 @@
+name: Artifact Hub metadata
+
+# Publishes deployment/helm/artifacthub-repo.yml as the `artifacthub.io` tag of the chart's OCI
+# repository, where Artifact Hub reads it (Verified Publisher, ownership claim). The tag is
+# independent of chart versions: it is pushed again only when the file changes.
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: [deployment/helm/artifacthub-repo.yml]
+
+permissions:
+  contents: read
+
+jobs:
+  push:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: oras-project/setup-oras@v1
+      - name: Push the metadata to ghcr.io/${{ github.repository_owner }}/charts/dbmanager:artifacthub.io
+        working-directory: deployment/helm
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | oras login ghcr.io -u "${{ github.actor }}" --password-stdin
+          oras push "ghcr.io/${{ github.repository_owner }}/charts/dbmanager:artifacthub.io" \
+            --config /dev/null:application/vnd.cncf.artifacthub.config.v1+yaml \
+            artifacthub-repo.yml:application/vnd.cncf.artifacthub.repository-metadata.layer.v1.yaml
+          oras manifest fetch "ghcr.io/${{ github.repository_owner }}/charts/dbmanager:artifacthub.io"
