@@ -114,9 +114,11 @@ def merge(existing: dict[str, Any] | None, new: dict[str, Any]) -> dict[str, Any
     actually exercised it (passed or failed); engines whose suites were all skipped keep their
     earlier validated result instead of being downgraded."""
     out = {"capabilities": CAPABILITIES, "engines": dict((existing or {}).get("engines", {}))}
+    exercised = False
     for engine, e in new["engines"].items():
         if e["result"] != "skipped" or engine not in out["engines"]:
             out["engines"][engine] = {**e, "validated_at": new["generated_at"]}
+            exercised = exercised or e["result"] != "skipped"
     if existing and "environment" in existing:
         out["environment"] = existing["environment"]
     for key in ("pending", "notes"):
@@ -130,5 +132,6 @@ def merge(existing: dict[str, Any] | None, new: dict[str, Any]) -> dict[str, Any
                 if isinstance(existing[key], dict)
                 else existing[key]
             )
-    out["generated_at"] = new["generated_at"]
+    # a run that exercised nothing (every suite skipped) does not make the file look newer
+    out["generated_at"] = new["generated_at"] if exercised or not existing else existing.get("generated_at")
     return out
