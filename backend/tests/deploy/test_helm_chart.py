@@ -54,6 +54,22 @@ def test_chart_version_follows_the_product() -> None:
     assert chart["version"] == chart["appVersion"] == __version__
 
 
+def test_artifact_hub_metadata_matches_the_chart() -> None:
+    """Artifact Hub scans the images listed in the chart annotations and shows the chart README:
+    the list must name the images this chart version deploys."""
+    chart = yaml.safe_load((CHART / "Chart.yaml").read_text())
+    values = yaml.safe_load((CHART / "values.yaml").read_text())
+    images = {i["image"] for i in yaml.safe_load(chart["annotations"]["artifacthub.io/images"])}
+    assert images == {
+        f"{values['image']['backend']['repository']}:{chart['appVersion']}",
+        f"{values['image']['frontend']['repository']}:{chart['appVersion']}",
+        values["postgresql"]["bundled"]["image"],
+        values["timeseries"]["bundled"]["image"],
+    }
+    assert yaml.safe_load(chart["annotations"]["artifacthub.io/links"])
+    assert (CHART / "README.md").read_text().startswith("# DBManager Helm chart")
+
+
 @pytest.mark.parametrize("values", ["default", "production", "openshift"])
 def test_lint_and_restricted_pod_security(values: str) -> None:
     lint = subprocess.run(  # noqa: S603

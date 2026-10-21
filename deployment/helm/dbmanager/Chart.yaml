@@ -17,3 +17,25 @@ maintainers:
     url: https://github.com/hbenabdalla/dbmanager
 annotations:
   artifacthub.io/license: Apache-2.0
+  artifacthub.io/category: database
+  artifacthub.io/operator: "false"
+  artifacthub.io/prerelease: "false"
+  artifacthub.io/links: |
+    - name: Documentation
+      url: https://db-manager.readthedocs.io/en/latest/
+    - name: Helm guide
+      url: https://db-manager.readthedocs.io/en/latest/deployment/kubernetes-helm/
+    - name: Source
+      url: https://github.com/hbenabdalla/dbmanager
+    - name: Changelog
+      url: https://github.com/hbenabdalla/dbmanager/blob/main/CHANGELOG.md
+  # images Artifact Hub scans for vulnerabilities (keep in step with values.yaml and appVersion)
+  artifacthub.io/images: |
+    - name: dbmanager-backend
+      image: ghcr.io/hbenabdalla/dbmanager-backend:0.15.1
+    - name: dbmanager-frontend
+      image: ghcr.io/hbenabdalla/dbmanager-frontend:0.15.1
+    - name: postgresql
+      image: postgres:16-alpine
+    - name: victoriametrics
+      image: victoriametrics/victoria-metrics:v1.122.0
