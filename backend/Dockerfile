@@ -104,5 +104,6 @@ ENV DBM_IT_RESULTS_DIR=/results DBM_TIMESERIES_BACKEND=memory
 # one line per test (progress is visible while slow engines run), failures with a short traceback,
 # no test may hang the run (15 min each), JUnit XML with every failure message in /results.
 # Narrow a run with PYTEST_ADDOPTS (scripts/integration-test: -K / --select).
-CMD ["python", "-m", "pytest", "-m", "real_database", "tests/integration", "-p", "no:cacheprovider", \
+# "timeseries" too: the VictoriaMetrics suite is not a managed database but is part of the run
+CMD ["python", "-m", "pytest", "-m", "real_database or timeseries", "tests/integration", "-p", "no:cacheprovider", \
      "-v", "-rfEs", "--tb=short", "--timeout=900", "--junitxml=/results/junit.xml"]

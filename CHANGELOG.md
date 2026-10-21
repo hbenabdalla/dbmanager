@@ -9,10 +9,13 @@ they are listed under **Changed** with migration notes.
 
 Patch release of 0.15.0. The `v0.15.0` tag exists, but its release workflow stopped before
 publishing anything (no images, chart or GitHub release), so **0.15.1 is the first published
-0.15 release**. No product code changed; no migration.
+0.15 release**. No application code changed; no migration. The full real-engine Docker matrix
+passed on the 0.15.0 code (2026-10-21: 89 passed, 0 failed, 1 skipped — Oracle TCPS), including
+MySQL and MariaDB TLS.
 
 ### Fixed
 
+- **Real-engine runner** selects the VictoriaMetrics suite too (`-m "real_database or timeseries"`): the owner's Docker run started VictoriaMetrics but deselected its 5 tests.
 - **Release workflow**: `sigstore/cosign-installer@v4` does not exist as a tag (the action has
   only `v4.x.y` releases), so every image job failed at *Set up job*. Pinned to `v4.1.2`; every
   action reference in the workflows was checked to resolve.
@@ -24,6 +27,7 @@ publishing anything (no images, chart or GitHub release), so **0.15.1 is the fir
 - **Test certificates** carry Subject and Authority Key Identifiers, required by the strict X.509
   verification of Python 3.13+ (`Missing Authority Key Identifier`); stale material without them,
   or with other IP addresses than requested, is regenerated.
+
 ## [0.15.0] — 2026-10-20
 
 Milestone 0.15 (Cloud-Native Deployment), preceded by a clean validation of the whole repository

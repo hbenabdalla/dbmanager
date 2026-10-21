@@ -23,6 +23,7 @@ from app.timeseries.victoriametrics import VictoriaMetricsRepository
 
 URL = os.environ.get("DBM_IT_VM_URL")
 pytestmark = [
+    pytest.mark.timeseries,
     pytest.mark.skipif(not URL, reason="DBM_IT_VM_URL not set"),
     pytest.mark.asyncio(loop_scope="session"),
 ]

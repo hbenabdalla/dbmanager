@@ -5,8 +5,16 @@ container images**, driven by the integration suite (`backend/tests/integration/
 `scripts/integration-test.ps1` / `.sh`. Nothing here comes from mocks or the simulation. Results
 also ship in `backend/app/data/real_engine_validation.json` (shown on **Platform → Engine support**).
 
-Last full Docker run: **2026-10-20 07:26 UTC**, by the owner on Docker Desktop (WSL 2) with
-`scripts/integration-test.ps1`, on the 0.14.0 code: **90 tests, 87 passed, 1 failed, 2 skipped**.
+Last full Docker run: **2026-10-21 09:30 UTC**, by the owner on Docker Desktop (WSL 2) with
+`scripts/integration-test.ps1 postgresql mysql mariadb mssql oracle db2 timeseries identity vault`,
+on the 0.15.0 code (commit `d2134e8`): **90 tests, 89 passed, 0 failed, 1 skipped** (Oracle TCPS:
+no TCPS listener in the XE image). MySQL 8.4.11 and MariaDB 11.4.13 TLS now **PASS** with the
+generated test CA (`verify-ca`, wrong CA refused, `require`, `prefer`). The 5 VictoriaMetrics tests
+were deselected by the runner image's marker filter although VictoriaMetrics was started; fixed
+in 0.15.1 (they run locally: 5 passed). These results ship in
+`backend/app/data/real_engine_validation.json`.
+
+Earlier run, 2026-10-20 07:26 UTC on the 0.14.0 code: 90 tests, 87 passed, 1 failed, 2 skipped.
 
 - The failure was MySQL TLS: the test looked for `have_ssl`, which MySQL 8.4 removed. **Test bug**,
   fixed in 0.15.0 (TLS is now detected from `Ssl_server_not_after`).
@@ -14,10 +22,7 @@ Last full Docker run: **2026-10-20 07:26 UTC**, by the owner on Docker Desktop (
   now generates a test CA and starts MySQL and MariaDB with a server certificate.
 - Oracle TCPS was skipped (no TCPS listener in the Oracle XE image).
 
-These results are what `backend/app/data/real_engine_validation.json` ships (Platform → Engine
-support). In the matrix below the MySQL TLS cell is FAIL for that run; the other TLS cells stay NOT TESTED
-where no passing real TLS test exists yet in a Docker run. **The full run is repeated on the 0.15.0 release commit before the
-tag** ([test validation](test-validation.md)).
+The MySQL and MariaDB TLS findings were fixed and re-validated in the 2026-10-21 run.
 
 The earlier run of 2026-10-19 21:34 UTC (release 0.13.0, commit `43c48a3`, 85 passed, 1 skipped)
 covered plan identity in Oracle and SQL Server query statistics, database and tablespace size
@@ -90,8 +95,8 @@ validated only in part.
 | Engine | Version | Connection | TLS | Inventory | Users | Roles | Privileges | Sessions | Locks | Blocking | Performance Metrics | Storage | Queries | Execution Plans | Replication | Security | Recommendations | Administration | Backup | Restore | Overall |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | PostgreSQL | 16.15 | PASS | NOT TESTED | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PARTIAL | PASS | PASS | PASS | PASS | PASS | PASS |
-| MySQL | 8.4.11 | PASS | FAIL (test bug, fixed in 0.15.0; re-run pending) | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PARTIAL | PASS | PASS | PASS | PASS | PASS | PASS |
-| MariaDB | 11.4.13 | PASS | NOT TESTED | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PARTIAL | PASS | PASS | PASS | PASS | PASS | PASS |
+| MySQL | 8.4.11 | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PARTIAL | PASS | PASS | PASS | PASS | PASS | PASS |
+| MariaDB | 11.4.13 | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PARTIAL | PASS | PASS | PASS | PASS | PASS | PASS |
 | SQL Server | 16.0.4305.5 (2022) | PASS | PARTIAL | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PARTIAL | PASS | PASS | PASS | PASS | PASS | PASS |
 | Oracle | 21.3.0.0.0 XE | PASS | NOT TESTED | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PARTIAL | PASS | PASS | PASS | PASS | PASS | PASS |
 | Db2 LUW | 11.5.9.0 | PASS | NOT TESTED | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PASS | PARTIAL | PASS | PASS | PASS | PASS | EXTERNAL VALIDATION REQUIRED | PASS |
@@ -112,7 +117,8 @@ Summary (as requested for the release report):
 ## Run details
 
 - **Environment:** Docker Desktop on Windows (WSL 2), `docker-compose.test.yml` via `scripts/integration-test.ps1`, the backend `it` image as the test runner
-- **Result (2026-10-20 07:26 UTC):** 90 tests: 87 passed, 1 failed (MySQL TLS, test bug fixed in 0.15.0), 2 skipped (MariaDB TLS: no TLS in the containers, fixed in 0.15.0; Oracle TCPS). Previous run (2026-10-19): 86 tests: 85 passed, 1 skipped (Oracle TCPS)
+- **Result (2026-10-21 09:30 UTC, 0.15.0 code):** 90 tests: 89 passed, 0 failed, 1 skipped (Oracle TCPS); 5 VictoriaMetrics tests deselected by the runner (fixed in 0.15.1)
+- **Previous (2026-10-20 07:26 UTC):** 90 tests: 87 passed, 1 failed (MySQL TLS, test bug fixed in 0.15.0), 2 skipped (MariaDB TLS: no TLS in the containers, fixed in 0.15.0; Oracle TCPS). Previous run (2026-10-19): 86 tests: 85 passed, 1 skipped (Oracle TCPS)
 - **Identity and secrets:** OpenLDAP (osixia/openldap 1.5.0): bind, search, groups, StartTLS — PASS; Keycloak 26.0.7: OIDC authorization code flow with PKCE — PASS; HashiCorp Vault 1.17.6: KV v2 with token and AppRole — PASS
 - **Time-series:** VictoriaMetrics v1.122.0 suite not part of this run
 - **Passwords:** generated per environment into `.env.test`; never in this report or the repository

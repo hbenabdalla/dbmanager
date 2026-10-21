@@ -31,6 +31,7 @@ are in the [real-engine validation report](real-engine-validation.md).
 | Backend API | `backend/tests/api` | 30 | 164 | PostgreSQL (`DBM_TEST_DATABASE_URL`); `DBM_TEST_DATABASE_TLS_CA` for the 2 control-plane TLS tests |
 | Migrations | `backend/tests/migrations` | 3 | 8 | PostgreSQL |
 | Deployment (Helm) | `backend/tests/deploy` | 1 | 13 | `helm` binary |
+| 14 | The owner's Docker run started VictoriaMetrics but deselected its 5 tests | PRODUCT BUG (test tooling) | the runner image runs `pytest -m real_database`; the VictoriaMetrics suite is marked `timeseries` (it is not a managed database) | runner selects `real_database or timeseries`; the suite carries the `timeseries` marker | `test_ops_scripts.py::test_the_docker_runner_selects_every_integration_suite` (the runner's marker expression collects every integration test) |
 | Real engines | `backend/tests/integration` | 9 | 95 | the engine named by each `DBM_IT_*_HOST` |
 | Frontend | `frontend/src/test` | 23 | 183 | Node |
 | Type check, build | `tsc -b`, `vite build` | — | — | Node |
@@ -77,9 +78,11 @@ is the enforced static check.
 | gitleaks (directory and history) | — | no leaks | — | — | — | PASS |
 | Documentation (`--strict`) | — | ✓ | — | — | — | PASS |
 | UI pages (screenshot run, page errors and error states) | 41 | 41 | 0 | 0 | — | PASS |
-| Compose build, start and restore drill | — | — | — | — | needs Docker | CI on push |
-| kind install, `helm test`, leader failover | — | — | — | — | needs Docker | CI on push |
-| Real engines, full Docker matrix | 95 | — | — | — | needs Docker | owner's run before the tag |
+| Compose build, start and restore drill (GitHub, `d2134e8`) | 1 | 1 | 0 | 0 | — | PASS |
+| kind install, `helm test`, leader failover (GitHub, `d2134e8`) | 1 | 1 | 0 | 0 | — | PASS |
+| Backend CI on GitHub (`d2134e8`) | — | — | 1 | — | — | FAIL (#12, fixed in 0.15.1) |
+| Release workflow (tag `v0.15.0`) | — | — | 1 | — | — | FAIL (#13, fixed in 0.15.1) |
+| Real engines, full Docker matrix (owner, 2026-10-21, 0.15.0 code) | 95 | 89 | 0 | 1 (Oracle TCPS) | 5 VictoriaMetrics tests deselected by the runner (#14, fixed in 0.15.1); Db2 for z/OS | PASS |
 
 Cloud-workspace real-engine runs per suite (after):
 
@@ -121,18 +124,18 @@ certificate from a generated test CA, so the TLS tests run there.
 
 ## Engine-level validation
 
-| Engine | Cloud workspace (this release) | Owner's Docker run (0.14.0 code) | Before the 0.15.0 tag |
-|---|---|---|---|
-| PostgreSQL | 16.15: 12 + 1 backup passed | 16.15: every capability validated | — |
-| MySQL | not available | 8.4.11: every capability validated except TLS (failed: test bug #2, fixed) | re-run |
-| MariaDB | 10.11.14: 14 + 1 backup passed, TLS verified | 11.4.13: every capability validated, TLS skipped (#3, fixed) | re-run |
-| SQL Server | not available | 2022 (16.0.4305.5): every capability validated | re-run |
-| Oracle | not available | 21.3 XE: every capability validated, TCPS skipped | re-run |
-| Db2 LUW | not available | 11.5.9.0: every tested capability validated (restore is external) | re-run |
-| Db2 for z/OS | — | — | EXTERNAL VALIDATION REQUIRED (z/OS subsystem with Db2 Connect; Db2 LUW results are never used for it) |
-| VictoriaMetrics | 1.122.0: 5 passed | — | — |
-| OpenLDAP | 2.6.10: 2 passed (StartTLS verified) | osixia 1.5.0: validated | — |
-| Keycloak, Vault | not available | validated | — |
+| Engine | Cloud workspace (this release) | Owner's Docker run, 2026-10-21 (0.15.0 code, `d2134e8`) |
+|---|---|---|
+| PostgreSQL | 16.15: 12 + 1 backup passed | 16.15: every capability PASS |
+| MySQL | not available | 8.4.11: every capability PASS, **TLS PASS** (was FAIL on 2026-10-20, #2) |
+| MariaDB | 10.11.14: 14 + 1 backup passed, TLS verified | 11.4.13: every capability PASS, **TLS PASS** (was skipped, #3) |
+| SQL Server | not available | 2022 (16.0.4305.5): every capability PASS |
+| Oracle | not available | 21.3 XE: every capability PASS; TCPS skipped (no listener) |
+| Db2 LUW | not available | 11.5.9.0: every tested capability PASS (restore is external) |
+| Db2 for z/OS | — | EXTERNAL VALIDATION REQUIRED (z/OS subsystem with Db2 Connect; Db2 LUW results are never used for it) |
+| VictoriaMetrics | 1.122.0: 5 passed | started, tests deselected (#14, fixed in 0.15.1) |
+| OpenLDAP | 2.6.10: 2 passed (StartTLS verified) | osixia 1.5.0: PASS |
+| Keycloak, Vault | not available | Keycloak 26, Vault 1.17.6: PASS |
 
 Oracle licensed features (AWR, ASH, ADDM, Tuning Pack) stay disabled by default and are not used
 by any test.
