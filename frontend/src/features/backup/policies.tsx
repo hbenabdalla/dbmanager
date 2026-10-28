@@ -155,7 +155,7 @@ export function PolicyDialog({ policy, prefillServer, onClose }: { policy: Polic
           <Field label="Name"><Input value={f.name} onChange={(e) => set({ name: e.target.value })} placeholder="Nightly platform backup" /></Field>
           <Field label="What to back up">
             <Select value={f.kind} disabled={!!policy} onChange={(e) => set({ kind: e.target.value as PolicyForm["kind"] })}>
-              <option value="platform">DBManager platform (configuration)</option><option value="database">Managed databases</option>
+              <option value="platform">KBM DBManager platform (configuration)</option><option value="database">Managed databases</option>
             </Select>
           </Field>
           <Field label="Storage target">

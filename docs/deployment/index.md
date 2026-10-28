@@ -97,7 +97,7 @@ External Secrets, …). Engine credentials are never configured here.
 
 The backend container runs uvicorn with `--no-proxy-headers`. uvicorn's proxy-header mode would
 replace the peer address with the leftmost `X-Forwarded-For` entry, which the client chooses,
-before DBManager's own right-to-left check runs. `FORWARDED_ALLOW_IPS` is therefore no longer used.
+before KBM DBManager's own right-to-left check runs. `FORWARDED_ALLOW_IPS` is therefore no longer used.
 Absolute links are built from `DBM_PUBLIC_BASE_URL`, not from forwarded headers.
 
 ### Authentication, MFA and API tokens
@@ -105,7 +105,7 @@ Absolute links are built from `DBM_PUBLIC_BASE_URL`, not from forwarded headers.
 | Variable | Default | Description |
 |---|---|---|
 | `DBM_LOGIN_MAX_FAILURES`, `DBM_LOGIN_LOCKOUT_MINUTES` | 5 / 15 | account lockout |
-| `DBM_MFA_REQUIRED_FOR`, `DBM_MFA_ISSUER` | `none` / `DBManager` | TOTP for local accounts: `none`, `admins` or `all` ([MFA](../administration/mfa.md)) |
+| `DBM_MFA_REQUIRED_FOR`, `DBM_MFA_ISSUER` | `none` / `KBM DBManager` | TOTP for local accounts: `none`, `admins` or `all` ([MFA](../administration/mfa.md)) |
 | `DBM_API_TOKEN_MAX_DAYS` | 365 | longest allowed API-token lifetime (1–3650) ([API tokens](../administration/api-tokens.md)) |
 | `DBM_API_TOKEN_AUTH_FAILURES_PER_MINUTE` | 30 | failed Bearer authentications per source address and minute before `429` |
 
@@ -214,7 +214,7 @@ These are read by `docker-compose.yml` (from `.env`), not by the backend's `Sett
 | `DBM_MSODBC_OPTIONAL` | `false` | build the backend without Microsoft ODBC Driver 18 when its repository is unreachable (SQL Server then reports the driver as missing) |
 | `DBM_BACKUP_HOST_DIR` | volume `backups` | host directory or share mounted at `/var/lib/dbmanager/backups` |
 
-### Not read by DBManager
+### Not read by KBM DBManager
 
 `DBM_APP_NAME` exists in `Settings` but is not used. The backend's `/metrics` endpoint has no
 setting: it is always on and unauthenticated, served by the backend on port 8000 (and by a

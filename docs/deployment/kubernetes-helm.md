@@ -2,7 +2,7 @@
 
 [![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/dbmanager)](https://artifacthub.io/packages/search?repo=dbmanager)
 
-The Helm chart in `deployment/helm/dbmanager` is the supported way to run DBManager on
+The Helm chart in `deployment/helm/dbmanager` is the supported way to run KBM DBManager on
 Kubernetes (1.27 or later) and OpenShift (4.14 or later). It deploys:
 
 | Component | Kind | Default replicas | Notes |
@@ -13,7 +13,7 @@ Kubernetes (1.27 or later) and OpenShift (4.14 or later). It deploys:
 | PostgreSQL | StatefulSet (optional) | 1 | bundled single instance for evaluation; use a managed or operator-run HA PostgreSQL in production |
 | VictoriaMetrics | StatefulSet (optional) | 1 | bundled single node for the monitoring history, or point at your own |
 | Ingress or Route | optional | — | TLS at the edge |
-| NetworkPolicy | on by default | — | PostgreSQL and VictoriaMetrics accept only DBManager pods; the API only the frontend pods |
+| NetworkPolicy | on by default | — | PostgreSQL and VictoriaMetrics accept only KBM DBManager pods; the API only the frontend pods |
 
 Every pod satisfies the Kubernetes **restricted** Pod Security Standard (non-root, no privilege
 escalation, all capabilities dropped, `RuntimeDefault` seccomp, read-only root filesystem where
@@ -39,7 +39,7 @@ helm test dbm --namespace dbmanager
 ```
 
 The install refuses to render when a required secret is missing (no default passwords). **Back up
-the master key**: credentials stored in DBManager are encrypted with it and cannot be recovered
+the master key**: credentials stored in KBM DBManager are encrypted with it and cannot be recovered
 without it ([backup and restore](../operations/backup-restore.md)). The chart keeps the Secret it
 created when the release is uninstalled (`helm.sh/resource-policy: keep`).
 

@@ -268,7 +268,7 @@ export function RegisterServerDialog({ open, onOpenChange }: { open: boolean; on
         </Section>
 
         <Section title="Management">
-          <Field label="Mode" hint={f.management_mode === "monitoring" ? "DBManager never offers changes on this server, whatever the credentials allow." : "Guarded changes (preview, confirmation, audit) use the administration credential."}>
+          <Field label="Mode" hint={f.management_mode === "monitoring" ? "KBM DBManager never offers changes on this server, whatever the credentials allow." : "Guarded changes (preview, confirmation, audit) use the administration credential."}>
             <Select value={f.management_mode} onChange={(e) => set("management_mode", e.target.value as Form["management_mode"])}>
               <option value="monitoring">Monitoring only</option>
               <option value="administration">Administration enabled</option>

@@ -115,7 +115,7 @@ export function ServerPage() {
           <SimulatedBadge />
           <span>
             Simulated server{s.simulation ? <> from the <span className="font-medium">{s.simulation.profile}</span> profile (seed {s.simulation.seed}). {s.simulation.story}</> : null}.
-            {" "}Every value is generated; DBManager never connects to it and SQL is never executed.
+            {" "}Every value is generated; KBM DBManager never connects to it and SQL is never executed.
           </span>
         </div>
       )}

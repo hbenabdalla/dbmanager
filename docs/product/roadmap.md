@@ -169,7 +169,7 @@ capability matrix + changelog.
 
 ## Milestone 0.12 — Asset Protection: Backup & Restore
 
-*Goal: DBManager protects its own configuration and the databases it manages, and proves every
+*Goal: KBM DBManager protects its own configuration and the databases it manages, and proves every
 backup can be restored.* Details: [Backup & Restore documentation](../backup-restore/index.md).
 
 | Sprint | Scope | Status |
@@ -210,7 +210,7 @@ recipient's owner may see.* Details: [reports](../user-guide/reports.md),
 | 0.14.1 Report coverage | Report definitions *Security findings* (statuses, minimum severity), *Query statistics* (window), *Query regressions*, *Capacity forecast*; parameters (environment, server, engine) for every report; preview; reports grouped by area in the UI | DONE |
 | 0.14.2 Scheduled reports | Daily/weekly/monthly schedules in a time zone, e-mailed as attachments through e-mail channels; runs with the owner's current access (disabled owner or lost access → failed run, nothing sent); attachment size limit; run history per channel; *Send now*; audit; RBAC `reports.schedule`; migration `0012` | DONE |
 | 0.14.3 PDF export | Server-side PDF (ReportLab): logo, scope, generated-for, repeated table header, landscape for wide tables, row cap with the CSV as complete export; CSV formula-injection guard | DONE |
-| 0.14.4 Branding & engine identity | DBManager logo in the product, documentation, README, favicon and app icons; `DatabaseEngineIcon` with DBManager's own engine marks (no vendor logos) everywhere engines are shown; optional operator-supplied licensed logos (`DBM_BRANDING_DIR`); trademark notice | DONE |
+| 0.14.4 Branding & engine identity | KBM DBManager logo in the product, documentation, README, favicon and app icons; `DatabaseEngineIcon` with KBM DBManager's own engine marks (no vendor logos) everywhere engines are shown; optional operator-supplied licensed logos (`DBM_BRANDING_DIR`); trademark notice | DONE |
 
 ## Remediation sprints R1 – R7 · DONE (0.14.0)
 
@@ -229,7 +229,7 @@ Created by the roadmap reconciliation for the reopened claims. Details and evide
 
 ## Milestone 0.15 — Cloud-Native Deployment · DONE (0.15.0)
 
-*Goal: install and operate DBManager on Kubernetes and OpenShift from signed images, with
+*Goal: install and operate KBM DBManager on Kubernetes and OpenShift from signed images, with
 replicas that coordinate safely and encrypted connections to the control-plane databases, every
 artefact validated in CI.* Details: [Kubernetes and OpenShift with Helm](../deployment/kubernetes-helm.md),
 [high availability](../deployment/high-availability.md), [current milestone](current-milestone.md),
@@ -274,7 +274,7 @@ artefact validated in CI.* Details: [Kubernetes and OpenShift with Helm](../depl
 - The last full Docker real-engine run (2026-10-20, 0.14.0 code) passed except one MySQL TLS test bug, fixed since; 0.15 changed no adapter. The full matrix is re-run on the Docker host before the `v0.15.0` tag ([test validation](test-validation.md)).
 - LDAP/AD were validated against OpenLDAP (no Active Directory server in the test environment); OIDC against Keycloak 26.
 - Scheduled reports are delivered by e-mail only (no webhook/file-share delivery); PDF reports list at most 5,000 rows (the CSV has all rows); no Excel format.
-- DBManager shows its own engine marks, not vendor logos; licensed logos can be supplied by the operator (`DBM_BRANDING_DIR`).
+- KBM DBManager shows its own engine marks, not vendor logos; licensed logos can be supplied by the operator (`DBM_BRANDING_DIR`).
 - Kubernetes: the Helm chart bundles a single-instance PostgreSQL and VictoriaMetrics for evaluation only; production needs a managed or operator-run PostgreSQL. No operator and no VictoriaMetrics cluster chart. The kind install and leader failover run in GitHub Actions, not on a production-size cluster.
 - Database backups: real-engine runs passed for all six engines ([validation report](real-engine-validation.md)). No point-in-time recovery; Db2 LUW restores and Oracle RMAN are external.
 - Backup storage targets: local / mounted / NFS directories and S3-compatible buckets; Azure Blob and GCS natively are planned.

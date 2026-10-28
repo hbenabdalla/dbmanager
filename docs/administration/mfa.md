@@ -1,8 +1,8 @@
 # Multi-factor authentication
 
-DBManager supports a second factor for **local accounts**: an authenticator app (TOTP, RFC 6238)
+KBM DBManager supports a second factor for **local accounts**: an authenticator app (TOTP, RFC 6238)
 plus one-time recovery codes. Directory (LDAP) users authenticate against the directory; single
-sign-on (OIDC) users get MFA from their identity provider, which DBManager can require
+sign-on (OIDC) users get MFA from their identity provider, which KBM DBManager can require
 (see [OIDC](#single-sign-on-oidc) below).
 
 ## Policy
@@ -10,7 +10,7 @@ sign-on (OIDC) users get MFA from their identity provider, which DBManager can r
 | Setting | Values | Effect |
 |---|---|---|
 | `DBM_MFA_REQUIRED_FOR` | `none` (default), `admins`, `all` | Whose local accounts must use MFA. `admins` means every user holding a platform-only permission (for example `users.manage`, `roles.manage`, `settings.manage`); `all` means every local user. |
-| `DBM_MFA_ISSUER` | text, default `DBManager` (`DB Manager` before 0.14.0) | Name shown in the authenticator app next to the username. It is stored in the app at enrollment: existing entries keep the old name and keep working. Set `DBM_MFA_ISSUER="DB Manager"` to keep the previous name for new enrollments. |
+| `DBM_MFA_ISSUER` | text, default `KBM DBManager` (`DBManager` in 0.14 – 0.15, `DB Manager` before 0.14.0) | Name shown in the authenticator app next to the username. It is stored in the app at enrollment: existing entries keep the old name and keep working. Set `DBM_MFA_ISSUER="DB Manager"` to keep the previous name for new enrollments. |
 
 Both are environment variables. **Platform → Configuration → Settings** shows their current values
 read-only under *Multi-factor authentication policy*.
@@ -71,7 +71,7 @@ API: `POST /api/v1/users/{id}/mfa/reset`.
 
 ## Single sign-on (OIDC)
 
-For OpenID Connect providers, the provider performs MFA. DBManager can **require** it per
+For OpenID Connect providers, the provider performs MFA. KBM DBManager can **require** it per
 provider (Identity providers → provider → *Multi-factor authentication*):
 
 | Field | Configuration key | Meaning |
@@ -92,7 +92,7 @@ Check which `amr` / `acr` values your provider puts in the ID token before turni
 * API tokens themselves are not subject to a second factor. Create them only after signing in with
   MFA, keep their lifetime short and scope them through the owner's roles (see
   [API tokens](api-tokens.md)).
-* LDAP users are not enrolled in DBManager; enforce MFA in front of the directory or use OIDC.
+* LDAP users are not enrolled in KBM DBManager; enforce MFA in front of the directory or use OIDC.
 
 ## API reference
 

@@ -112,7 +112,7 @@ export function CreateBackupWizard() {
                 </Select>
               </Field>
               {!targets.data?.length && <p className="text-[13px] text-muted">No storage target yet: add one under <Link className="text-accent underline" to="/platform/backups?tab=targets">Storage targets</Link>.</p>}
-              {isDb && <p className="text-[12.5px] text-muted">SQL Server, Oracle and Db2 write their backup files on the database server itself; DBManager records and verifies them there.</p>}
+              {isDb && <p className="text-[12.5px] text-muted">SQL Server, Oracle and Db2 write their backup files on the database server itself; KBM DBManager records and verifies them there.</p>}
             </div>
           )}
           {step === "encryption" && <EncryptionFields value={enc} onChange={setEnc} allowRunPassphrase passphrase={passphrase} onPassphrase={setPassphrase} />}

@@ -335,7 +335,7 @@ def compatibility(manifest: dict[str, Any]) -> dict[str, Any]:
             "status": "unsupported",
             "notes": [
                 f"Schema {rev!r} is unknown to this version (the backup was made by a newer or different build). "
-                f"Restore it with DBManager {manifest.get('dbm_version')} or later."
+                f"Restore it with KBM DBManager {manifest.get('dbm_version')} or later."
             ],
         }
     current = tables()

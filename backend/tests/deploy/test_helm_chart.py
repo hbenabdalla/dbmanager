@@ -67,7 +67,7 @@ def test_artifact_hub_metadata_matches_the_chart() -> None:
         values["timeseries"]["bundled"]["image"],
     }
     assert yaml.safe_load(chart["annotations"]["artifacthub.io/links"])
-    assert (CHART / "README.md").read_text().startswith("# DBManager Helm chart")
+    assert (CHART / "README.md").read_text().startswith("# KBM DBManager Helm chart")
 
 
 @pytest.mark.parametrize("values", ["default", "production", "openshift"])

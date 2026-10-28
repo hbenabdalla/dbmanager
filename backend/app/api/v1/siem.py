@@ -201,7 +201,7 @@ async def test_destination(dest_id: uuid.UUID, db: DB, p: CurrentPrincipal) -> d
         "category": "security",
         "result": "success",
         "username": p.username,
-        "details": {"message": "Test event from DBManager"},
+        "details": {"message": "Test event from KBM DBManager"},
     }
     try:
         await siem.send(d, [event])

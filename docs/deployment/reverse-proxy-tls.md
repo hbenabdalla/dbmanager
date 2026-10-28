@@ -1,6 +1,6 @@
 # Reverse proxy and TLS
 
-DBManager does not terminate TLS itself. The frontend container (nginx, port 8080) serves the SPA
+KBM DBManager does not terminate TLS itself. The frontend container (nginx, port 8080) serves the SPA
 and proxies `/api/` and `/healthz` to the backend; put your TLS-terminating reverse proxy, load
 balancer, ingress or OpenShift Route in front of it.
 
@@ -36,7 +36,7 @@ client must not be able to choose it:
 Do not add client networks to `DBM_TRUSTED_PROXIES` or `DBM_OUTER_PROXY`: every trusted address can
 claim to be anybody.
 
-The backend's uvicorn runs with `--no-proxy-headers`, so the peer address DBManager starts from
+The backend's uvicorn runs with `--no-proxy-headers`, so the peer address KBM DBManager starts from
 is always the TCP peer. Even a client that reaches port 8000 directly cannot choose its address,
 because a peer outside `DBM_TRUSTED_PROXIES` makes the backend ignore the header.
 

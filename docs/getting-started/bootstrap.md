@@ -16,7 +16,7 @@ generated or reset, you are asked to change it immediately (12+ characters, thre
 
 ## Run the setup wizard
 
-Administrators (`settings.manage`) see the banner *DBManager is not fully set up yet* with **Start setup** (or **Resume setup**) until
+Administrators (`settings.manage`) see the banner *KBM DBManager is not fully set up yet* with **Start setup** (or **Resume setup**) until
 the [Platform setup wizard](../user-guide/onboarding/platform-setup.md) is completed
 (**Platform → Setup → Setup wizard**). It is resumable: progress is saved after each step.
 

@@ -1,6 +1,6 @@
 # High availability
 
-DBManager scales horizontally: any number of API replicas and workers share one control-plane
+KBM DBManager scales horizontally: any number of API replicas and workers share one control-plane
 PostgreSQL database and one time-series store. This page describes how the replicas coordinate,
 how to see them, and how to encrypt their connections to the databases. Sizing is in
 [scaling](scaling.md); the Kubernetes installation in [Kubernetes and OpenShift with Helm](kubernetes-helm.md).

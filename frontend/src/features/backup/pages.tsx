@@ -34,7 +34,7 @@ export function BackupRestorePage() {
   return (
     <div>
       <PageHeader title="Backup & Restore" crumbs={[{ label: "Platform" }, { label: "Backup & Restore" }]}
-        description="Back up DBManager itself and the managed databases, verify the stored copies and restore them. A backup is only reported successful after its stored copy was read back and checked."
+        description="Back up KBM DBManager itself and the managed databases, verify the stored copies and restore them. A backup is only reported successful after its stored copy was read back and checked."
         actions={can("backup.create") && <Button variant="primary" size="sm" asChild><Link to="/platform/backups/new"><Plus /> Create backup</Link></Button>} />
       <Tabs value={tab} onValueChange={(v) => setParams((p) => { const n = new URLSearchParams(p); n.set("tab", v); return n; })}>
         <TabsList className="mb-4">{TABS.map(([k, l]) => <TabsTrigger key={k} value={k}>{l}</TabsTrigger>)}</TabsList>
@@ -114,7 +114,7 @@ function OverviewTab() {
         <CardBody>
           {o.recent_failures.length ? (
             <ul className="space-y-1.5 text-[13px]">
-              {o.recent_failures.map((b) => <li key={b.id} className="flex flex-wrap gap-2"><StatusBadge status={b.status} /><span>{b.server_name ? `${b.server_name}${b.database ? ` / ${b.database}` : ""}` : "DBManager platform"}</span><span className="text-muted">{relTime(b.created_at)}</span>{b.error && <span className="w-full text-[12px] text-crit">{b.error}</span>}</li>)}
+              {o.recent_failures.map((b) => <li key={b.id} className="flex flex-wrap gap-2"><StatusBadge status={b.status} /><span>{b.server_name ? `${b.server_name}${b.database ? ` / ${b.database}` : ""}` : "KBM DBManager platform"}</span><span className="text-muted">{relTime(b.created_at)}</span>{b.error && <span className="w-full text-[12px] text-crit">{b.error}</span>}</li>)}
             </ul>
           ) : <p className="text-[13px] text-muted">No failed backups.</p>}
         </CardBody>
@@ -125,7 +125,7 @@ function OverviewTab() {
 
 // ---- history -------------------------------------------------------------------------------------
 export function asset(b: Backup): string {
-  if (b.kind === "platform") return "DBManager platform";
+  if (b.kind === "platform") return "KBM DBManager platform";
   return `${b.server_name ?? "removed server"}${b.database ? ` / ${b.database}` : ""}`;
 }
 
@@ -204,14 +204,14 @@ function HistoryTab() {
         {total > 50 && <span className="flex gap-1"><Button size="sm" disabled={page <= 1} onClick={() => setPage(page - 1)}>Previous</Button><Button size="sm" disabled={page * 50 >= total} onClick={() => setPage(page + 1)}>Next</Button></span>}
       </div>
       <DataTable columns={columns} data={q.data?.items} loading={q.isLoading} error={q.error} dense
-        empty={<EmptyState icon={<Archive />} title="No backups yet">Create a backup of DBManager or a managed database, or set up a policy.</EmptyState>} />
+        empty={<EmptyState icon={<Archive />} title="No backups yet">Create a backup of KBM DBManager or a managed database, or set up a policy.</EmptyState>} />
       {details && <DetailsDialog backup={details} onClose={() => setDetails(null)} />}
       {verifying && <VerifyDialog backup={verifying} onClose={() => setVerifying(null)} />}
       <ConfirmDialog open={!!removing} onOpenChange={(o) => !o && setRemoving(null)} danger title={`Delete backup ${removing?.id.slice(0, 8) ?? ""}?`}
         expected={removing?.id.slice(0, 8)} expectedLabel={`Type ${removing?.id.slice(0, 8)} (the first 8 characters of its id) to confirm`}
         confirmLabel="Delete backup" busy={remove.isPending} onConfirm={(typed) => removing && remove.mutate({ b: removing, typed })}>
         The stored files are removed from the storage target; the catalog entry stays (status DELETED) for the audit trail.
-        {removing?.location_kind === "server" && " This backup lives on the database server: DBManager does not delete that file."}
+        {removing?.location_kind === "server" && " This backup lives on the database server: KBM DBManager does not delete that file."}
       </ConfirmDialog>
     </Card>
   );
@@ -231,7 +231,7 @@ function DetailsDialog({ backup, onClose }: { backup: Backup; onClose: () => voi
           ["Size", bytes(b.size_bytes)],
           ["SHA-256", b.sha256 ? <span key="h" className="break-all font-mono text-[12px]">{b.sha256}</span> : "—"],
           ["Encryption", b.encrypted ? `${b.encryption.algorithm ?? b.encryption.mode}${b.encryption.recipient ? ` → ${b.encryption.recipient}` : ""}` : "none"],
-          ["Versions", `DBManager ${b.app_version}, schema ${b.schema_version ?? "?"}, format ${b.format_version}`],
+          ["Versions", `KBM DBManager ${b.app_version}, schema ${b.schema_version ?? "?"}, format ${b.format_version}`],
           ["Verification", b.verification ? `${b.verification.level ?? ""} ${b.verification.ok === false ? "failed" : b.verification.ok ? "passed" : ""}${b.verified_at ? `, ${relTime(b.verified_at)}` : ""}` : "not verified"],
         ]} />
         {b.error && <p className="rounded-md border border-crit/30 bg-crit-soft px-3 py-2 text-[13px] text-crit">{b.error}</p>}
@@ -336,7 +336,7 @@ function EnginesTab() {
   return (
     <div className="space-y-4">
       <Card>
-        <CardHeader title="Database engines" description="What DBManager runs itself. Point-in-time recovery is not offered for any engine." />
+        <CardHeader title="Database engines" description="What KBM DBManager runs itself. Point-in-time recovery is not offered for any engine." />
         <div className="overflow-x-auto">
           <table className="w-full text-[13px]">
             <thead className="text-left text-[12px] text-muted"><tr>{["Engine", "Status", "Logical", "Native", "Physical", "PITR", "Restore", "External tooling", "Notes"].map((h) => <th key={h} className="px-3 py-2 font-medium">{h}</th>)}</tr></thead>
@@ -355,7 +355,7 @@ function EnginesTab() {
         </div>
       </Card>
       <Card>
-        <CardHeader title="Client tools on this DBManager host" />
+        <CardHeader title="Client tools on this KBM DBManager host" />
         <CardBody>
           <ul className="space-y-1 text-[13px]">
             {Object.entries(c.tools).map(([n, t]) => <li key={n} className="flex gap-2"><HardDrive className="size-4 text-muted" /><span className="w-28 font-mono">{n}</span>{t.path ? <span>{t.version ?? t.path}</span> : <Badge tone="warn">not installed</Badge>}</li>)}

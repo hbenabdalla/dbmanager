@@ -11,7 +11,7 @@
 
 ## Versions and tags
 
-DBManager uses [Semantic Versioning](https://semver.org/); before 1.0, minor versions may contain
+KBM DBManager uses [Semantic Versioning](https://semver.org/); before 1.0, minor versions may contain
 breaking changes, listed in `CHANGELOG.md` with migration notes. A release is an annotated tag
 `vX.Y.Z` on `main`:
 

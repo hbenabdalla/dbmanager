@@ -5,7 +5,7 @@
   (`LOGARCHMETH1` not `OFF`); otherwise the backup fails with `REQUIRES_CONFIGURATION`.
 * **Verification:** the recovery history (`SYSIBMADM.DB_HISTORY`) must record the backup without
   an error. A full image check needs `db2ckbkp` on the Db2 host (external tool).
-* **Restore:** *external tool required*. DBManager shows the command to run on the Db2 host:
+* **Restore:** *external tool required*. KBM DBManager shows the command to run on the Db2 host:
 
   ```text
   db2 RESTORE DATABASE <db> FROM <dir> TAKEN AT <timestamp> INTO <new> LOGTARGET <dir>/dbm-restore-logs-<timestamp> WITHOUT PROMPTING

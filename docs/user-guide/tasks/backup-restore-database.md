@@ -16,10 +16,10 @@ overwrite an existing database.
   with it). A restore also needs the target server registered as **Administration enabled**.
 * A **storage target** (**Platform → Backup & Restore → Storage targets**, created by someone with
   `backup.target.manage`): a local directory, a mounted volume, an NFS mount or an S3-compatible
-  bucket. SQL Server, Oracle and Db2 write the backup file on the database server itself; DBManager
+  bucket. SQL Server, Oracle and Db2 write the backup file on the database server itself; KBM DBManager
   records and verifies it there.
 * What each engine supports: **Platform → Backup & Restore → Engine support**. PostgreSQL, MySQL,
-  MariaDB, SQL Server and Oracle can be restored by DBManager; Db2 restores and every Db2 for z/OS
+  MariaDB, SQL Server and Oracle can be restored by KBM DBManager; Db2 restores and every Db2 for z/OS
   operation need the engine's own tools. Point-in-time recovery is not offered.
 
     ![Backup engine support](../../assets/screenshots/backup-engine-support.png)
@@ -78,7 +78,7 @@ nothing protects it.
 2. **Select backup** — check the backup, enter the key or passphrase if it is encrypted, and pick
    **Restore to server** (servers of the same engine). **Continue**.
 3. **Validate manifest**, **Verify integrity**, **Check compatibility** — read the results; the
-   wizard stops when the engine cannot be restored by DBManager and shows the command to run with
+   wizard stops when the engine cannot be restored by KBM DBManager and shows the command to run with
    the engine's tools instead. **Continue** after each.
 4. **Select components** — enter the **New database (or schema) name**; it must not exist on the
    target server (default: the original name with `_restored`). **Continue**.

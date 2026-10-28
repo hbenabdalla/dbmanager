@@ -2,7 +2,7 @@
 
 Retention removes backups **created by the policy** that its rules no longer keep. It runs after
 every successful policy run. Backups made manually, by another policy, or before a policy existed
-are never touched, and DBManager never deletes anything outside a backup's own folder in the
+are never touched, and KBM DBManager never deletes anything outside a backup's own folder in the
 storage target.
 
 A backup is kept when **any** rule keeps it:

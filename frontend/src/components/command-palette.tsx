@@ -49,7 +49,7 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
     { label: "Account security", icon: Lock, run: () => go("/account/security"), keywords: "mfa two-factor totp password account security passkey", ok: true },
     { label: "Show active alerts", icon: BellRing, run: () => go("/alerts"), keywords: "alerts alarms firing incidents notifications", ok: can("alerts.view") },
     { label: "Open the documentation", icon: BookOpen, run: () => { onOpenChange(false); window.open(docs!, "_blank", "noopener,noreferrer"); }, keywords: "help docs documentation manual guide", ok: !!docs },
-    { label: "About DBManager", icon: Info, run: () => go("/platform/about"), keywords: "about version build license help", ok: true },
+    { label: "About KBM DBManager", icon: Info, run: () => go("/platform/about"), keywords: "about version build license help", ok: true },
     { label: "Toggle light / dark theme", icon: Moon, run: () => { toggle(); onOpenChange(false); }, keywords: "theme dark light mode", ok: true },
   ].filter((a) => a.ok);
   const ql = q.toLowerCase();

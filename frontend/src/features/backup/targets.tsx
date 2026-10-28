@@ -67,7 +67,7 @@ function TargetDialog({ target, onClose }: { target: Target | null; onClose: () 
   const problem = targetProblem(f);
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()} width="max-w-2xl" title={target ? `Edit ${target.name}` : "New storage target"}
-      description="File-system targets must be inside DBM_BACKUP_ALLOWED_ROOTS. DBManager only writes and deletes its own backup folders."
+      description="File-system targets must be inside DBM_BACKUP_ALLOWED_ROOTS. KBM DBManager only writes and deletes its own backup folders."
       footer={<>{problem && <span className="mr-auto text-[12.5px] text-muted" role="status">{problem}</span>}<Button variant="ghost" onClick={onClose}>Cancel</Button><Button variant="primary" disabled={!!problem || save.isPending} onClick={() => save.mutate()}>{target ? "Save" : "Add target"}</Button></>}>
       <div className="grid gap-3 sm:grid-cols-2">
         <Field label="Name"><Input value={f.name} onChange={(e) => set({ name: e.target.value })} /></Field>
@@ -77,7 +77,7 @@ function TargetDialog({ target, onClose }: { target: Target | null; onClose: () 
           </Select>
         </Field>
         {f.kind !== "s3" ? (
-          <Field label="Directory" className="sm:col-span-2" hint="Absolute path as seen by the DBManager backend container"><Input className="font-mono" value={f.path} onChange={(e) => set({ path: e.target.value })} /></Field>
+          <Field label="Directory" className="sm:col-span-2" hint="Absolute path as seen by the KBM DBManager backend container"><Input className="font-mono" value={f.path} onChange={(e) => set({ path: e.target.value })} /></Field>
         ) : <>
           <Field label="Endpoint URL" hint="Empty = AWS S3"><Input value={f.endpoint_url} onChange={(e) => set({ endpoint_url: e.target.value })} placeholder="https://minio.example.com" /></Field>
           <Field label="Bucket"><Input value={f.bucket} onChange={(e) => set({ bucket: e.target.value })} /></Field>

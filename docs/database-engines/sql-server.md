@@ -157,10 +157,10 @@ privileged accounts) also apply.
 Plus the 12 engine-independent performance rules `GEN-PERF-001` … `GEN-PERF-012` (connections,
 cache, blocking, deadlocks, replication lag, long transactions, expensive queries, spills, CPU,
 storage, query latency regressions and storage forecasts). Recommendations are advice with
-evidence; DBManager never executes them.
+evidence; KBM DBManager never executes them.
 
 **Rule count:** 20 engine-specific rules (10 security, 10 performance) plus the 14
-engine-independent rules, which apply to every engine. Across all engines DBManager ships 61
+engine-independent rules, which apply to every engine. Across all engines KBM DBManager ships 61
 performance and 55 security rules; the full catalog is served by `GET /api/v1/advisor/rules`.
 
 ## Troubleshooting

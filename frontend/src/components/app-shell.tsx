@@ -5,7 +5,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, Navigate, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { BrandMark } from "@/components/brand";
+import { BrandLogo, BrandMark, PRODUCT_NAME } from "@/components/brand";
 import { get } from "@/api/client";
 import { Menu, MenuContent, MenuItem, MenuLabel, MenuSeparator, MenuTrigger } from "@/components/ui/menu";
 import { useAuth } from "@/lib/auth";
@@ -54,7 +54,7 @@ function HelpMenu() {
         {links?.documentation && <MenuItem onSelect={() => open(links.documentation!)}><BookOpen /> Documentation</MenuItem>}
         {links?.github && <MenuItem onSelect={() => open(links.github!)}><Github /> Source code on GitHub</MenuItem>}
         {(links?.documentation || links?.github) && <MenuSeparator />}
-        <MenuItem onSelect={() => navigate("/platform/about")}><Info /> About DBManager{about.data ? ` ${about.data.version.application}` : ""}</MenuItem>
+        <MenuItem onSelect={() => navigate("/platform/about")}><Info /> About KBM DBManager{about.data ? ` ${about.data.version.application}` : ""}</MenuItem>
       </MenuContent>
     </Menu>
   );
@@ -80,21 +80,17 @@ function writeJson(key: string, v: unknown) {
 }
 
 function Brand({ compact }: { compact?: boolean }) {
-  // the sidebar is dark in both themes: the logo sits on its light plate, unaltered
+  // the navigation rail is KBM blue (navy in the dark theme): the white KBM artwork, unaltered
   if (compact) {
     return (
-      <Link to="/" className="flex justify-center py-4 transition-opacity duration-150 hover:opacity-90 motion-reduce:transition-none" aria-label="DBManager — dashboard">
-        <BrandMark size={26} plate />
+      <Link to="/" className="flex justify-center py-5 transition-opacity duration-150 hover:opacity-90 motion-reduce:transition-none" aria-label={`${PRODUCT_NAME} — dashboard`}>
+        <BrandMark size={26} tone="white" />
       </Link>
     );
   }
   return (
-    <Link to="/" className="flex items-center gap-2.5 px-4 py-4 transition-opacity duration-150 hover:opacity-90 motion-reduce:transition-none" aria-label="DBManager — dashboard">
-      <BrandMark size={26} plate />
-      <div className="leading-tight">
-        <div className="text-[14px] font-semibold text-nav-strong">DBManager</div>
-        <div className="text-2xs text-nav-muted">Fleet operations</div>
-      </div>
+    <Link to="/" className="flex items-center px-4 py-4 transition-opacity duration-150 hover:opacity-90 motion-reduce:transition-none" aria-label={`${PRODUCT_NAME} — dashboard`}>
+      <BrandLogo width={168} tone="white" subtitle="Database operations" decorative />
     </Link>
   );
 }
@@ -201,7 +197,7 @@ function AddMenu({ can, canPlatform }: { can: (p: string) => boolean; canPlatfor
         </button>
       </MenuTrigger>
       <MenuContent>
-        <MenuLabel>Add to DBManager</MenuLabel>
+        <MenuLabel>Add to KBM DBManager</MenuLabel>
         {entries.map((e) => <MenuItem key={e.label} onSelect={() => navigate(e.to)}><e.icon /> {e.label}</MenuItem>)}
       </MenuContent>
     </Menu>
@@ -333,7 +329,7 @@ export function AppShell() {
         {showSetup && (
           <div className="anim-fade flex flex-wrap items-center gap-2 border-b border-accent/25 bg-accent-soft px-5 py-1.5 text-[12.5px] text-text-2">
             <Wand2 className="size-4 text-accent" />
-            <span>DBManager is not fully set up yet{setup.data?.current_step ? ` (stopped at “${setup.data.current_step}”)` : ""}.</span>
+            <span>KBM DBManager is not fully set up yet{setup.data?.current_step ? ` (stopped at “${setup.data.current_step}”)` : ""}.</span>
             <NavLink to="/setup" className="font-medium text-accent hover:underline">{setup.data?.current_step ? "Resume setup" : "Start setup"}</NavLink>
           </div>
         )}

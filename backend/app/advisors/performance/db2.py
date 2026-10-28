@@ -168,7 +168,7 @@ def db2_reorg_pending(ctx: EvidenceContext) -> list[RuleFinding]:
             title=f"{len(tables)} table(s) are REORG pending",
             finding="A REORG-pending table rejects most access until it is reorganized (after certain ALTER TABLE operations).",
             evidence={"tables": tables},
-            recommendation="Plan REORG TABLE for each table in a maintenance window (DBManager does not run it).",
+            recommendation="Plan REORG TABLE for each table in a maintenance window (KBM DBManager does not run it).",
             expected_impact="Restores full access to the tables.",
             risk="Classic REORG needs exclusive access; INPLACE is not allowed for every reorg-pending case.",
             confidence=0.95,

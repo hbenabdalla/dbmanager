@@ -67,7 +67,7 @@ backups (component *findings*).
 ## Recommendation validation (before / after)
 
 When a recommendation is resolved — by a user, or automatically because its evidence disappeared —
-DBManager measures whether the change helped:
+KBM DBManager measures whether the change helped:
 
 | Finding | Measured |
 |---|---|

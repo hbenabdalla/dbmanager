@@ -80,7 +80,7 @@ class OracleAdapter(OracleEvidenceMixin, OracleMonitoringMixin, OracleInventoryM
             "label": "Oracle Diagnostics Pack",
             "default": False,
             "covers": "AWR (DBA_HIST_*), ASH (V$ACTIVE_SESSION_HISTORY), ADDM",
-            "used_by_db_manager": "Never queried by DBManager; the SQL workspace refuses statements on these "
+            "used_by_db_manager": "Never queried by KBM DBManager; the SQL workspace refuses statements on these "
             "objects unless the server is marked as licensed",
         },
         {
@@ -88,7 +88,7 @@ class OracleAdapter(OracleEvidenceMixin, OracleMonitoringMixin, OracleInventoryM
             "label": "Oracle Tuning Pack",
             "default": False,
             "covers": "SQL Tuning Advisor (DBMS_SQLTUNE), SQL Access Advisor, SQL Monitoring",
-            "used_by_db_manager": "Never queried by DBManager; the SQL workspace refuses statements on these "
+            "used_by_db_manager": "Never queried by KBM DBManager; the SQL workspace refuses statements on these "
             "objects unless the server is marked as licensed",
         },
     ]

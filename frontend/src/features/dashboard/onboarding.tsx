@@ -2,7 +2,7 @@ import { FlaskConical, Plus } from "lucide-react";
 import { Link } from "react-router-dom";
 import { ENGINES } from "@/lib/engines";
 import { DatabaseEngineIcon } from "@/components/engine-icon";
-import { BrandMark } from "@/components/brand";
+import { BrandLogo } from "@/components/brand";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useAuth } from "@/lib/auth";
@@ -10,7 +10,7 @@ import { useAuth } from "@/lib/auth";
 const STEPS = [
   ["Choose the engine", "PostgreSQL, MySQL, MariaDB, SQL Server, Oracle, Db2 LUW or Db2 for z/OS; Platform → Engine support shows each engine's level."],
   ["Enter connection details", "Host, port, a least-privileged monitoring account and TLS settings."],
-  ["Test the connection", "DBManager checks reachability and permissions before saving."],
+  ["Test the connection", "KBM DBManager checks reachability and permissions before saving."],
   ["Monitoring starts", "Capabilities are discovered and the first collection runs immediately."],
 ];
 
@@ -23,7 +23,7 @@ export function FleetOnboarding() {
     <Card className="overflow-hidden">
       <div className="grid gap-0 lg:grid-cols-[1.1fr_1fr]">
         <div className="px-6 py-8 sm:px-10 sm:py-12">
-          <div className="mb-5"><BrandMark size={52} plate className="dark:ring-white/10" /></div>
+          <div className="mb-5"><BrandLogo width={200} /></div>
           <h2 className="text-[22px] font-semibold leading-tight">No database servers registered</h2>
           <p className="mt-2 max-w-md text-[14px] leading-relaxed text-text-2">
             Connect your first database server to start monitoring and managing your database fleet.

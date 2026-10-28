@@ -1,6 +1,6 @@
 # Security model
 
-DBManager holds credentials for production databases, so it is designed so that it never
+KBM DBManager holds credentials for production databases, so it is designed so that it never
 becomes an easy path to privilege escalation. This document describes the controls and the
 remaining risks.
 
@@ -120,5 +120,5 @@ platform settings can disable writes or EXPLAIN ANALYZE on production entirely. 
   in front of internet-facing deployments as well ([rate limiting](../administration/rate-limiting.md)).
 * The DBA's admin credential is as powerful as the account you register. Use dedicated accounts with
   only the privileges your operations need.
-* DBManager has no AI or LLM feature: no finding, SQL text, credential or row data is sent to an AI
+* KBM DBManager has no AI or LLM feature: no finding, SQL text, credential or row data is sent to an AI
   service. Recommendations and security findings come from deterministic rules.

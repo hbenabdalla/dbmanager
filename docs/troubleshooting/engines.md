@@ -13,7 +13,7 @@
   required) and the account needs `SELECT` on `performance_schema.*`.
 * Replication status missing: grant `REPLICATION CLIENT` (MariaDB 10.5.9+: `REPLICA MONITOR`).
 * `TLS_ERROR: tls_mode=require but the server did not negotiate TLS (enable TLS on the server, or
-  choose prefer/disable)`: with `require`, `verify-ca` or `verify-full` DBManager reads
+  choose prefer/disable)`: with `require`, `verify-ca` or `verify-full` KBM DBManager reads
   `Ssl_cipher` after connecting, because PyMySQL silently continues in plain text when the server
   offers no TLS. Check on the server with `SHOW VARIABLES LIKE 'have_ssl'` (MySQL 8.0:
   `SHOW GLOBAL VARIABLES LIKE 'tls_version'`) and configure `ssl_cert` / `ssl_key`, or register the
@@ -92,7 +92,7 @@ pack objects.
 ## Db2 LUW: one database per registration {#db2-luw-one-database-per-registration}
 
 The workspace or EXPLAIN answers *this db2 connection is to database 'SAMPLE': register 'OTHER' as
-its own server to run statements there*. A Db2 LUW connection is to one database; DBManager refuses
+its own server to run statements there*. A Db2 LUW connection is to one database; KBM DBManager refuses
 the statement rather than run it in the registered database. Register the other database as its
 own server (same host and port, its database name) and grant the monitoring account there too.
 

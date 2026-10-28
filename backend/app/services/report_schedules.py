@@ -60,7 +60,7 @@ def _body(sched: ReportSchedule, rendered: reports.RenderedReport, owner: str) -
         f"Rows: {len(rendered.rows):,}\n\n"
         "The attached file contains data visible to the schedule's owner. Handle it according to your "
         "data classification.\n\n"
-        f"— DBManager {rendered.version}\n"
+        f"— KBM DBManager {rendered.version}\n"
     )
 
 
@@ -111,7 +111,7 @@ async def run_schedule(
         )
         if not channels:
             raise ScheduleError("the schedule has no e-mail channel (they may have been deleted)")
-        subject = f"[DBManager] {rendered.title} — {sched.name}"
+        subject = f"[KBM DBManager] {rendered.title} — {sched.name}"
         body = _body(sched, rendered, owner.username)
         ok = 0
         for ch in channels:

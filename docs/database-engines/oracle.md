@@ -27,7 +27,7 @@ for `disable` and `prefer` (`connect_params` in `adapters/oracle/base.py`).
 | `verify-ca` | `tcps` | chain validated against the uploaded CA (or the system trust store); DN not matched |
 | `verify-full` | `tcps` | chain validated, host name checked and `ssl_server_dn_match` on; the *SSL server certificate DN* option, when set, must match exactly |
 
-Thin mode needs no wallet on the DBManager side: the CA is uploaded with the server. Plain TCP is
+Thin mode needs no wallet on the KBM DBManager side: the CA is uploaded with the server. Plain TCP is
 reported by security rule `ORA-SEC-005` as unencrypted. TCPS was not exercised by the real-engine
 suite because the XE image has no TCPS listener.
 
@@ -74,7 +74,7 @@ ALTER USER c##dbm_monitor SET CONTAINER_DATA = ALL CONTAINER = CURRENT;   -- see
 The adapter reads only views that need no management pack (see [Licensed features](#licensed-features-diagnostics-and-tuning-pack)).
 Its collectors never query AWR, ASH, ADDM, SQL Monitoring or the SQL Tuning Advisor, whatever the
 account's privileges, so `SELECT_CATALOG_ROLE` does not lead to Diagnostics/Tuning Pack usage by
-DBManager. The SQL workspace refuses statements that reference pack objects unless the server is
+KBM DBManager. The SQL workspace refuses statements that reference pack objects unless the server is
 marked as licensed. The server's *Diagnostics Pack* and *Tuning Pack* flags stay **disabled**
 unless an administrator records that the database is licensed.
 
@@ -107,7 +107,7 @@ for a registered server, on its **Overview → Capabilities** (runtime discovery
 
 ## Licensed features (Diagnostics and Tuning Pack)
 
-DBManager **does not include, assume or enable** any Oracle option or management pack.
+KBM DBManager **does not include, assume or enable** any Oracle option or management pack.
 
 * The adapter never queries AWR (`DBA_HIST_*`), ASH (`V$ACTIVE_SESSION_HISTORY`), ADDM, SQL
   Monitoring (`V$SQL_MONITOR`), the SQL Tuning Advisor (`DBMS_SQLTUNE`) or the metric views
@@ -132,7 +132,7 @@ DBManager **does not include, assume or enable** any Oracle option or management
     database. With the matching flag set, the statement runs like any other.
 * An Enterprise Edition database does not change this policy: the edition is never taken as
   evidence of a pack licence.
-* Active Data Guard is a separate licence; DBManager only reads `V$DATAGUARD_STATS`.
+* Active Data Guard is a separate licence; KBM DBManager only reads `V$DATAGUARD_STATS`.
 
 ## Inventory, workspace and storage notes
 
@@ -197,10 +197,10 @@ privileged accounts) also apply.
 Plus the 12 engine-independent performance rules `GEN-PERF-001` … `GEN-PERF-012` (connections,
 cache, blocking, deadlocks, replication lag, long transactions, expensive queries, spills, CPU,
 storage, query latency regressions and storage forecasts). Recommendations are advice with
-evidence; DBManager never executes them.
+evidence; KBM DBManager never executes them.
 
 **Rule count:** 20 engine-specific rules (11 security, 9 performance) plus the 14
-engine-independent rules, which apply to every engine. Across all engines DBManager ships 61
+engine-independent rules, which apply to every engine. Across all engines KBM DBManager ships 61
 performance and 55 security rules; the full catalog is served by `GET /api/v1/advisor/rules`.
 
 ## Troubleshooting

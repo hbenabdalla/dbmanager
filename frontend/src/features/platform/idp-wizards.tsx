@@ -56,7 +56,7 @@ function strip(cfg: Record<string, unknown>) {
 /* ------------------------------------------------------------------ LDAP */
 const LDAP_STEPS: WizardStep[] = [
   { id: "server", title: "Directory server", description: "LDAPS (ldaps://, port 636) or ldap:// with StartTLS. Plain LDAP is not accepted for sign-in." },
-  { id: "bind", title: "Service account", description: "The account DBManager uses to search for users. Users then bind with their own password." },
+  { id: "bind", title: "Service account", description: "The account KBM DBManager uses to search for users. Users then bind with their own password." },
   { id: "search", title: "User and group search", description: "How users and their groups are found." },
   { id: "test", title: "Test", description: "Staged checks against the directory. Optionally sign in as a test user." },
   { id: "save", title: "Save", description: "Name the provider and decide whether it is offered on the sign-in page." },

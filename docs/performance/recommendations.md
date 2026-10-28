@@ -18,7 +18,7 @@ A finding carries:
 
 Findings are de-duplicated by a fingerprint (rule, server, database, object); a finding whose
 condition disappears is resolved automatically. Rules run every 15 minutes. Recommendations are
-**never executed** by DBManager.
+**never executed** by KBM DBManager.
 
 The rule catalog is available at `GET /api/v1/advisor/rules`; the rules per engine are listed on
 each [engine page](../database-engines/index.md). Adding rules: [Adding metrics and rules](../development/adding-metrics-and-rules.md).

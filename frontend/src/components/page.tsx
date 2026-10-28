@@ -22,7 +22,7 @@ export function PageHeader({ title, description, crumbs, actions, meta, classNam
       )}
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="text-[22px] font-semibold leading-tight">{title}</h1>
+          <h1 className="text-[22px] font-bold leading-tight tracking-[-0.01em] text-heading">{title}</h1>
           {description && <p className="mt-1 max-w-3xl text-[13px] text-muted">{description}</p>}
           {meta && <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[12.5px] text-muted">{meta}</div>}
         </div>

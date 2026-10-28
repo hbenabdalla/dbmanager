@@ -4,7 +4,7 @@ import { useState, type FormEvent } from "react";
 import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import { DatabaseEngineIcon } from "@/components/engine-icon";
 import { ENGINES } from "@/lib/engines";
-import { BrandLogo } from "@/components/brand";
+import { BrandLogo, COMPANY_NAME, KbmCoverMotif, KbmLogo, PRODUCT_NAME, PRODUCT_TAGLINE } from "@/components/brand";
 import { ApiError, get } from "@/api/client";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/input";
@@ -27,6 +27,7 @@ export function LoginPage() {
   const [mfaToken, setMfaToken] = useState<string | null>(null);
   const [code, setCode] = useState("");
   const providers = useQuery({ queryKey: ["providers"], queryFn: () => get<{ id: string; name: string }[]>("/auth/providers") });
+  const version = useQuery({ queryKey: ["public-version"], queryFn: () => get<{ version: string }>("/version"), staleTime: Infinity, retry: false });
   const next = params.get("next") || "/";
 
   if (me) return <Navigate to={next} replace />;
@@ -81,11 +82,11 @@ export function LoginPage() {
   };
 
   return (
-    <div className="grid min-h-screen lg:grid-cols-[minmax(420px,1fr)_1.1fr]">
-      <div className="flex items-center justify-center bg-bg px-6 py-12">
-        <div className="w-full max-w-[360px]">
-          <div className="mb-8">
-            <BrandLogo width={168} />
+    <div className="grid min-h-screen lg:grid-cols-[minmax(420px,1fr)_1.15fr]">
+      <div className="flex flex-col bg-bg px-6 py-10">
+        <div className="m-auto w-full max-w-[360px]">
+          <div className="mb-9">
+            <BrandLogo width={210} />
           </div>
           {mfaToken ? (
             <>
@@ -138,37 +139,33 @@ export function LoginPage() {
             Access is logged. Sessions end after 30 minutes of inactivity.
           </p>
         </div>
+        <p className="mx-auto mt-8 w-full max-w-[360px] text-[11.5px] text-muted">
+          {PRODUCT_NAME}{version.data?.version ? ` ${version.data.version}` : ""} · © {new Date().getFullYear()} {COMPANY_NAME}
+        </p>
       </div>
-      <div className="relative hidden overflow-hidden bg-nav lg:block" aria-hidden>
+      <div className="relative hidden overflow-hidden bg-brand lg:block">
         <LoginArt />
       </div>
     </div>
   );
 }
 
-/** A quiet field of server tiles — the same visual language as the dashboard's fleet strip. */
+/** The KBM cover: KBM blue with its band, dot-grid and ring motifs, the white KBM logo and the product statement. */
 function LoginArt() {
-  const cols = 22;
-  const rows = 15;
-  const tiles = Array.from({ length: cols * rows }, (_, i) => {
-    const h = (Math.sin(i * 12.9898) * 43758.5453) % 1;
-    const v = Math.abs(h);
-    return v > 0.985 ? "var(--crit)" : v > 0.95 ? "var(--warn)" : v > 0.93 ? "#3b4b62" : "#37c48f";
-  });
   return (
-    <div className="absolute inset-0 flex flex-col justify-between p-14">
-      <div className="grid gap-[6px] opacity-90" style={{ gridTemplateColumns: `repeat(${cols}, 18px)` }}>
-        {tiles.map((c, i) => (
-          <span key={i} className="block size-[18px] rounded-[3px]" style={{ background: c, opacity: c === "#37c48f" ? 0.22 + ((i * 7) % 10) / 40 : 0.95 }} />
-        ))}
-      </div>
-      <div className="max-w-md">
-        <p className="text-[26px] font-semibold leading-snug text-nav-strong">Every database you run, on one screen.</p>
-        <p className="mt-3 text-[14px] leading-relaxed text-nav-text">
-          PostgreSQL, Oracle, SQL Server, Db2 and MySQL fleets with health, query performance, access reviews and
-          evidence-based tuning advice. Nothing changes on a server until someone with the right role confirms it.
+    <div className="absolute inset-0 flex flex-col justify-between p-14 text-white">
+      <KbmCoverMotif />
+      <KbmLogo full width={170} tone="white" label="KBM — Khorafi Business Machines" className="relative" />
+      <div className="relative max-w-lg">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/70">{PRODUCT_TAGLINE}</p>
+        <h2 className="mt-3 text-[40px] font-bold leading-[1.1] tracking-[-0.015em] text-white">{PRODUCT_NAME}</h2>
+        <p className="mt-4 text-[15px] leading-relaxed text-white/85">
+          One platform to monitor, manage, secure and optimise PostgreSQL, MySQL, MariaDB, SQL Server, Oracle and Db2
+          fleets: health, query performance, access reviews, backups and evidence-based tuning advice. Nothing changes
+          on a server until someone with the right role confirms it.
         </p>
-        <ul className="mt-6 flex flex-wrap gap-x-4 gap-y-2 text-[12.5px] text-nav-text">
+        <div className="mt-7 h-px w-full max-w-md bg-white/25" />
+        <ul className="mt-5 flex flex-wrap gap-x-4 gap-y-2.5 text-[12.5px] text-white/90" aria-label="Supported database engines">
           {Object.keys(ENGINES).map((e) => <li key={e}><DatabaseEngineIcon engine={e} size="sm" withLabel /></li>)}
         </ul>
       </div>

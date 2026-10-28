@@ -1,37 +1,51 @@
 @import "tailwindcss";
-@import "@fontsource/ibm-plex-sans/400.css";
-@import "@fontsource/ibm-plex-sans/500.css";
-@import "@fontsource/ibm-plex-sans/600.css";
+@import "@fontsource/plus-jakarta-sans/400.css";
+@import "@fontsource/plus-jakarta-sans/500.css";
+@import "@fontsource/plus-jakarta-sans/600.css";
+@import "@fontsource/plus-jakarta-sans/700.css";
 @import "@fontsource/ibm-plex-mono/400.css";
 @import "@fontsource/ibm-plex-mono/500.css";
 
 @custom-variant dark (&:where(.dark, .dark *));
 
 /*
- * Design tokens. Status colours are reserved for health/severity only; cobalt is the single
- * action colour. The navigation rail stays deep navy in both themes.
+ * KBM DBManager design tokens (docs/branding/kbm-dbmanager-brand-guidelines.md).
+ * Brand values marked [KBM] are taken from KBM's own material (logo, PowerPoint theme, Word
+ * template); the others are derived for the UI. Status colours are reserved for health and
+ * severity and are never the brand blue; KBM blue is the single action colour. The navigation
+ * rail is KBM blue in the light theme and KBM navy in the dark theme.
  */
 :root {
-  --bg: #f3f5f8;
-  --surface: #ffffff;
-  --surface-2: #f6f8fb;
-  --surface-3: #eceff4;
-  --border: #dde3ea;
-  --border-strong: #c7d0db;
-  --text: #13202e;
-  --text-2: #3c4a5b;
-  --muted: #64748a;
-  --accent: #2456d4;
-  --accent-hover: #1c47b4;
-  --accent-soft: #e6edfc;
-  --accent-fg: #ffffff;
-  --ring: #2456d466;
+  /* brand palette */
+  --brand-primary: #1a4796;   /* [KBM] logo blue */
+  --brand-secondary: #091450; /* [KBM] navy (slides) */
+  --brand-accent: #0689d8;    /* [KBM] PowerPoint theme accent */
+  --brand-deep: #1f3864;      /* [KBM] document headings and table headers */
+  --brand-slate: #5a6478;     /* [KBM] secondary text */
+  --brand-line: #ccd8ed;      /* [KBM] tint */
+  --brand-tint: #edf3fc;      /* [KBM] callout background */
 
-  --nav-bg: #0e1a29;
-  --nav-surface: #15243a;
-  --nav-text: #b9c6d6;
-  --nav-text-strong: #f2f6fb;
-  --nav-muted: #6f8299;
+  --bg: #f4f6fa;
+  --surface: #ffffff;
+  --surface-2: #f7f9fc;       /* [KBM] table fill */
+  --surface-3: #edf3fc;       /* [KBM] callout fill */
+  --border: #d9e1f2;          /* [KBM] tint */
+  --border-strong: #c3cfe6;
+  --text: #2d3548;            /* [KBM] body text */
+  --heading: #1a4796;         /* [KBM] document headings are set in logo blue */
+  --text-2: #46506a;
+  --muted: #5b6b87;           /* [KBM] secondary text */
+  --accent: var(--brand-primary);
+  --accent-hover: #143a7d;
+  --accent-soft: #e5ecf8;
+  --accent-fg: #ffffff;
+  --ring: #1a479666;
+
+  --nav-bg: var(--brand-primary);
+  --nav-surface: #2a58a8;
+  --nav-text: #dce5f4;
+  --nav-text-strong: #ffffff;
+  --nav-muted: #b4c5e3;
 
   --ok: #17895c;
   --ok-soft: #e3f4ec;
@@ -41,18 +55,19 @@
   --crit-soft: #fbe5e5;
   --down: #6b7886;
   --down-soft: #eceff2;
-  --info: #2f73b7;
-  --info-soft: #e4effa;
+  --info: #0571b4;
+  --info-soft: #e2f1fb;
   /* Simulated (demo) data. Not a status colour: it marks provenance, never health. */
   --sim: #6a4cc4;
   --sim-soft: #f0ecfb;
 
-  --chart-1: #2456d4;
-  --chart-2: #17895c;
-  --chart-3: #b77a10;
-  --chart-4: #8a4fd8;
-  --chart-5: #c93636;
-  --chart-grid: #e6eaf0;
+  /* charts: [KBM] PowerPoint theme accents, kept apart from the status colours */
+  --chart-1: #1a4796;
+  --chart-2: #0689d8;
+  --chart-3: #a02b93;
+  --chart-4: #75787b;
+  --chart-5: #4ea72e;
+  --chart-grid: #e4e9f3;
 
   /* Motion: short and purposeful (150–300 ms); all of it is disabled under prefers-reduced-motion. */
   --dur-fast: 150ms;
@@ -60,27 +75,43 @@
   --dur-slow: 300ms;
   --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
   --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
-  --shadow-pop: 0 16px 40px -16px rgba(5, 11, 20, 0.35);
+  --shadow-card: 0 1px 2px rgba(9, 20, 80, 0.06), 0 6px 18px -12px rgba(9, 20, 80, 0.18);
+  --shadow-pop: 0 16px 40px -16px rgba(9, 20, 80, 0.35);
+
+  /* semantic aliases (shadcn-style names) */
+  --background: var(--bg);
+  --foreground: var(--text);
+  --card: var(--surface);
+  --muted-foreground: var(--muted);
+  --destructive: var(--crit);
+  --success: var(--ok);
+  --warning: var(--warn);
 }
 
 .dark {
-  --bg: #0a121e;
-  --surface: #101b2b;
-  --surface-2: #142236;
-  --surface-3: #1a2a41;
-  --border: #213148;
-  --border-strong: #2d4161;
-  --text: #e3eaf3;
-  --text-2: #bac6d5;
-  --muted: #8495ab;
-  --accent: #5d8bff;
-  --accent-hover: #7aa0ff;
-  --accent-soft: #1a2c52;
-  --accent-fg: #071226;
-  --ring: #5d8bff66;
+  --brand-line: #2b3a6b;
+  --brand-tint: #121d47;
 
-  --nav-bg: #070e18;
-  --nav-surface: #101c2d;
+  --bg: #070d24;
+  --surface: #0d1533;
+  --surface-2: #111b3d;
+  --surface-3: #17224a;
+  --border: #1f2b55;
+  --border-strong: #2d3d70;
+  --text: #e6ebf5;
+  --heading: #eef2fa;
+  --text-2: #bcc6da;
+  --muted: #8e9ab5;
+  --accent: #7199ea;
+  --accent-hover: #92b2f0;
+  --accent-soft: #172857;
+  --accent-fg: #050b22;
+  --ring: #7199ea66;
+
+  --nav-bg: var(--brand-secondary);
+  --nav-surface: #16236e;
+  --nav-text: #c9d4ea;
+  --nav-muted: #8995c2;
 
   --ok: #37c48f;
   --ok-soft: #10321f;
@@ -90,21 +121,23 @@
   --crit-soft: #3e1518;
   --down: #8c99a8;
   --down-soft: #1f2a38;
-  --info: #62a8f0;
-  --info-soft: #102a45;
+  --info: #4fb3f2;
+  --info-soft: #0c2a45;
   --sim: #b7a4ff;
   --sim-soft: #251d45;
 
-  --chart-1: #6c97ff;
-  --chart-2: #37c48f;
-  --chart-3: #efb04a;
-  --chart-4: #b08cff;
-  --chart-5: #ff6d6d;
-  --chart-grid: #1b2a40;
+  --chart-1: #7199ea;
+  --chart-2: #3cb0f2;
+  --chart-3: #d36ac7;
+  --chart-4: #a7abb3;
+  --chart-5: #7cca5e;
+  --chart-grid: #1a2550;
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-pop: 0 16px 40px -16px rgba(0, 0, 0, 0.6);
 }
 
 @theme inline {
-  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, "Segoe UI", Arial, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
   --color-bg: var(--bg);
   --color-surface: var(--surface);
@@ -113,6 +146,7 @@
   --color-border: var(--border);
   --color-border-strong: var(--border-strong);
   --color-text: var(--text);
+  --color-heading: var(--heading);
   --color-text-2: var(--text-2);
   --color-muted: var(--muted);
   --color-accent: var(--accent);
@@ -136,6 +170,11 @@
   --color-down-soft: var(--down-soft);
   --color-info: var(--info);
   --color-info-soft: var(--info-soft);
+  --color-brand: var(--brand-primary);
+  --color-brand-navy: var(--brand-secondary);
+  --color-brand-accent: var(--brand-accent);
+  --color-brand-line: var(--brand-line);
+  --color-brand-tint: var(--brand-tint);
   --radius-ctl: 6px;
   --radius-panel: 10px;
   --text-2xs: 0.6875rem;
@@ -191,7 +230,7 @@
 .anim-stagger > *:nth-child(4) { animation-delay: 90ms; }
 .anim-stagger > *:nth-child(n + 5) { animation-delay: 120ms; }
 .lift { transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out), border-color var(--dur-fast); }
-.lift:hover { transform: translateY(-1px); box-shadow: 0 8px 24px -16px rgba(5, 11, 20, 0.45); }
+.lift:hover { transform: translateY(-1px); box-shadow: 0 8px 24px -16px rgba(9, 20, 80, 0.45); }
 
 @keyframes dbm-fade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes dbm-rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
@@ -234,5 +273,5 @@
   background-image: repeating-linear-gradient(135deg, rgb(255 255 255 / 0.38) 0 2px, transparent 2px 5px);
 }
 .dark .sim-hatch {
-  background-image: repeating-linear-gradient(135deg, rgb(7 14 24 / 0.45) 0 2px, transparent 2px 5px);
+  background-image: repeating-linear-gradient(135deg, rgb(7 13 36 / 0.45) 0 2px, transparent 2px 5px);
 }

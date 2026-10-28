@@ -24,7 +24,7 @@ class Settings(BaseSettings):
     process_role: Literal["all", "api", "worker"] = "all"
     log_level: str = "INFO"
     log_json: bool = True
-    app_name: str = "DBManager"
+    app_name: str = "KBM DBManager"
     public_base_url: str = "http://localhost:8080"
     #: how often each process reports itself in platform_instances (stale after 3 intervals)
     instance_heartbeat_seconds: int = Field(default=15, ge=5, le=300)
@@ -62,7 +62,7 @@ class Settings(BaseSettings):
     #: administrative permission) | all. Users who must use MFA and have not enrolled can only
     #: reach the enrollment endpoints until they do.
     mfa_required_for: Literal["none", "admins", "all"] = "none"
-    mfa_issuer: str = "DBManager"
+    mfa_issuer: str = "KBM DBManager"
     login_max_failures: int = 5
     login_lockout_minutes: int = 15
     # --- rate limiting (app.services.ratelimit) -------------------------------------------
@@ -255,7 +255,7 @@ SETUP_HINT = (
     "Fill .env with generated secrets: on Windows run "
     "'powershell -ExecutionPolicy Bypass -File scripts\\init-env.ps1', elsewhere './scripts/init-env.sh'. "
     "If the database volume was created with the placeholder password, recreate it first with "
-    "'docker compose down -v' (this deletes all DBManager data)."
+    "'docker compose down -v' (this deletes all KBM DBManager data)."
 )
 
 

@@ -41,7 +41,7 @@ total, **CSV** and **PDF** download the whole report with the same parameters.
 
 - **CSV** has every row and full timestamps. Text values that a spreadsheet would read as a formula
   (starting with `=`, `+`, `-`, `@`, tab or carriage return) are prefixed with an apostrophe.
-- **PDF** is rendered on the server: DBManager logo, title, description, who it was generated for,
+- **PDF** is rendered on the server: KBM DBManager logo, title, description, who it was generated for,
   when, the scope and the row count, then the table with its header repeated on every page
   (landscape when the table is wide). It lists at most 5,000 rows and cuts cells after 400
   characters; the CSV has everything. Every page footer says that the file contains data visible to
@@ -85,7 +85,7 @@ has the report's permission, the run **fails without sending anything** and says
 ### Runs and history
 
 The scheduler (on the scheduler leader, checked every minute) runs schedules that are due. A run
-missed while DBManager was stopped is sent once at the next start, not once per missed period.
+missed while KBM DBManager was stopped is sent once at the next start, not once per missed period.
 **Send now** runs a schedule immediately without changing its timing.
 
 Each run is recorded with its status — `success`, `partial` (some channels failed) or `failed` —,

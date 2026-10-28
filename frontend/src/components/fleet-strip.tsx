@@ -33,7 +33,7 @@ export function FleetStrip({ tiles }: { tiles: FleetTile[] }) {
                   <Tooltip content={
                     <span>
                       <span className="font-medium">{t.name}</span>
-                      <span className="block text-[#b9c6d6]">{ENGINES[t.engine]?.label ?? t.engine}, {HEALTH_LABEL[t.health] ?? t.health}{t.is_demo ? ", simulated" : ""}</span>
+                      <span className="block text-white/75">{ENGINES[t.engine]?.label ?? t.engine}, {HEALTH_LABEL[t.health] ?? t.health}{t.is_demo ? ", simulated" : ""}</span>
                       {t.reasons.length > 0 && <span className="mt-1 block">{t.reasons.join("; ")}</span>}
                     </span>
                   }>

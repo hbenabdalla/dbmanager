@@ -11,9 +11,9 @@ Everything that is not listed below as missing is implemented.
 
 Vocabulary used here:
 
-* **Not implemented** — the engine offers it, DBManager does not read it yet. The UI shows the
+* **Not implemented** — the engine offers it, KBM DBManager does not read it yet. The UI shows the
   capability as unavailable; no value is invented.
-* **Not supported** — the engine does not offer it through SQL, or DBManager deliberately does not
+* **Not supported** — the engine does not offer it through SQL, or KBM DBManager deliberately does not
   offer it (for example creating Oracle PDBs).
 * **Partial** — implemented with a stated limitation.
 * **External** — needs infrastructure outside the database (z/OS monitors, host agents).
@@ -25,7 +25,7 @@ platform does not have the integration yet.
 
 | Area | Status | Notes |
 |---|---|---|
-| Host CPU / memory / disk for PostgreSQL, MySQL, MariaDB | Not supported over SQL | SQL Server, Oracle and Db2 LUW report CPU from their own views. The others need a host or cloud-monitoring integration (node exporter, CloudWatch, Azure Monitor), which DBManager does not have |
+| Host CPU / memory / disk for PostgreSQL, MySQL, MariaDB | Not supported over SQL | SQL Server, Oracle and Db2 LUW report CPU from their own views. The others need a host or cloud-monitoring integration (node exporter, CloudWatch, Azure Monitor), which KBM DBManager does not have |
 | Server log collection | Not implemented on any engine | PostgreSQL and MySQL/MariaDB logs need file access; SQL Server `xp_readerrorlog`, Oracle `V$DIAG_ALERT_EXT` and Db2 `PD_GET_DIAG_HIST` are reachable but not read. The Logs tab shows the collection log only |
 | Query history | Partial on every engine | built from periodic snapshots of the engine's statement statistics in the time-series database; no per-execution history |
 | Applying recommendations | Not offered, by design | rules are advisory; changes go through guarded administration actions or the SQL workspace with confirmation |
@@ -57,7 +57,7 @@ largest tables.
 |---|---|---|
 | CPU metrics | Not supported | not exposed over SQL |
 | Memory metrics | Partial | memory instrumented by `performance_schema` only |
-| Wait events | Partial | row-lock waits from status counters; per-event waits need `performance_schema` consumers that DBManager does not enable |
+| Wait events | Partial | row-lock waits from status counters; per-event waits need `performance_schema` consumers that KBM DBManager does not enable |
 | Tablespaces | Partial | InnoDB tablespaces (needs `PROCESS`) |
 | MySQL 5.7 | Partial | no roles, no `EXPLAIN ANALYZE`, locks only when involved in waits, no metadata locks |
 | Error log, Group Replication details, Aurora-specific metrics | Not implemented | `performance_schema.error_log` is not read |
@@ -112,11 +112,11 @@ largest tables.
 | Create / drop database, create user | Not supported | CLP/instance commands and external identities |
 | Object DDL | Partial | view, routine and trigger text from `SYSCAT`; table DDL reconstructed (`db2look` for full DDL) |
 | Wait events | Partial | lock waits and activity states; no time-spent breakdown |
-| Actual plans | Not supported | section actuals need an activity event monitor, which DBManager does not create |
+| Actual plans | Not supported | section actuals need an activity event monitor, which KBM DBManager does not create |
 | Replication | Partial | HADR via `MON_GET_HADR`; Q Replication and CDC are not monitored |
 | Largest tables | Partial | catalog statistics, as current as the last `RUNSTATS` |
 | Read-only workspace | Partial | classifier, privileges and rollback |
-| Restore | External tool | DBManager shows the `RESTORE` command; it does not run it |
+| Restore | External tool | KBM DBManager shows the `RESTORE` command; it does not run it |
 | pureScale per-member breakdown, `db2diag.log` | Not implemented | |
 
 ## IBM Db2 for z/OS (`adapters/db2zos`)

@@ -121,7 +121,7 @@ describe("backup history", () => {
       return undefined;
     });
     providers(<AppRoutes />, "/platform/backups?tab=history");
-    expect(await screen.findByText("DBManager platform")).toBeInTheDocument();
+    expect(await screen.findByText("KBM DBManager platform")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /^Restore b1b2c3d4/ })).not.toBeInTheDocument(); // no restore.platform
     expect(screen.getByRole("button", { name: /^Verify b1b2c3d4/ })).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: /^Delete b1b2c3d4/ }));

@@ -1,6 +1,6 @@
 # Back up and restore the platform
 
-**Goal:** DBManager's own configuration — inventory, identity, findings, alerting, settings and
+**Goal:** KBM DBManager's own configuration — inventory, identity, findings, alerting, settings and
 backup configuration — is backed up on a schedule, verified, and can be restored after a mistake
 or onto a rebuilt installation.
 
@@ -11,8 +11,8 @@ or onto a rebuilt installation.
   `restore.execute` **and** `restore.platform` to restore or download a platform backup. Platform
   Administrator holds all of them. (The Backup Operator role cannot back up or restore the platform.)
 * A storage target (**Platform → Backup & Restore → Storage targets → New target**): a local
-  directory, mounted volume, NFS mount or S3-compatible bucket, ideally outside the DBManager host.
-  **Check** on the target reports whether DBManager can write to it.
+  directory, mounted volume, NFS mount or S3-compatible bucket, ideally outside the KBM DBManager host.
+  **Check** on the target reports whether KBM DBManager can write to it.
 * **`DBM_MASTER_KEY` kept safely elsewhere.** Stored database credentials inside the backup stay
   encrypted with the master key; the key itself is never included. Without it, a restored
   installation cannot decrypt them.
@@ -36,7 +36,7 @@ or onto a rebuilt installation.
    of reading the stored copy back. With an encrypted backup, **Verify contents with the key**
    checks every file in the archive.
 
-For a nightly backup: **Backup policies → New policy**, **What to back up** *DBManager platform
+For a nightly backup: **Backup policies → New policy**, **What to back up** *KBM DBManager platform
 (configuration)*, **Frequency** *Daily* at a **Time (HH:MM)** and **Time zone**, **Retention**
 rules, **Notification channels** for failures, and **Alert when no successful backup for (hours)**
 (0 = derived from the schedule: daily 26 h, weekly 8 days, monthly 32 days). Use a passphrase
@@ -54,7 +54,7 @@ A platform restore replaces the selected components of the current configuration
 1. In **Platform → Backup & Restore → Backup history**, set **Type** to *Platform* and select the
    restore icon on the backup.
 2. **Select backup** — enter the private key or passphrase if it is encrypted. **Continue**.
-3. **Validate manifest** — format, creator, DBManager and schema version, components. **Continue**.
+3. **Validate manifest** — format, creator, KBM DBManager and schema version, components. **Continue**.
 4. **Verify integrity** — the archive matches its SHA-256 and every table its checksum. **Continue**.
 5. **Check compatibility** — *compatible*, or *migration required* when the backup comes from an
    older schema (columns added since then take their defaults), or unsupported. Missing master keys

@@ -27,7 +27,7 @@
    CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
    ```
 
-   Add an *administration* credential only if DBAs will run changes from DBManager.
+   Add an *administration* credential only if DBAs will run changes from KBM DBManager.
 5. Assign roles with the narrowest scope that works ([rbac.md](../administration/rbac.md)).
 
 ## CLI (inside the backend container)

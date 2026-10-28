@@ -1,6 +1,6 @@
 # Alerting
 
-DBManager raises alerts when a rule's condition holds on a monitored server, shows them under **Operations → Alerts**, and optionally sends notifications through [notification channels](../administration/notifications.md).
+KBM DBManager raises alerts when a rule's condition holds on a monitored server, shows them under **Operations → Alerts**, and optionally sends notifications through [notification channels](../administration/notifications.md).
 
 ![Alerts](../assets/screenshots/alerts.png)
 

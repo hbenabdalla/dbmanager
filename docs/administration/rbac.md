@@ -81,7 +81,7 @@ narrower scope has no effect.
 | | `backup.policy.manage`\* | backup policies (schedule, retention) and pinning backups |
 | | `backup.target.manage`\* | backup storage targets |
 | | `restore.execute` | start restores, together with `restore.platform` or `restore.database` |
-| | `restore.platform`\* | restore DBManager's own configuration from a platform backup |
+| | `restore.platform`\* | restore KBM DBManager's own configuration from a platform backup |
 | | `restore.database` | restore a managed database from its backup into a new database |
 | Simulation | `simulation.view`\*, `simulation.generate`\*, `simulation.delete`\* | view, generate / regenerate, remove the simulated fleet |
 

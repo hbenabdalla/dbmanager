@@ -25,7 +25,7 @@ MariaDB):
 |---|---|
 | `disable` | plain TCP (`ssl_disabled`) |
 | `prefer` | **opportunistic TLS**, as the `mysql` client does: TLS when the server offers it, without certificate validation (`CERT_NONE`); plain TCP when the server has no TLS. With an uploaded CA the certificate is validated when TLS is used |
-| `require` | TLS without certificate validation (validated against the CA when one is uploaded). After connecting, DBManager reads `SHOW SESSION STATUS LIKE 'Ssl_cipher'`: PyMySQL silently stays in plain text when the server offers no TLS, so an empty cipher fails the connection with `TLS_ERROR` ("the server did not negotiate TLS") |
+| `require` | TLS without certificate validation (validated against the CA when one is uploaded). After connecting, KBM DBManager reads `SHOW SESSION STATUS LIKE 'Ssl_cipher'`: PyMySQL silently stays in plain text when the server offers no TLS, so an empty cipher fails the connection with `TLS_ERROR` ("the server did not negotiate TLS") |
 | `verify-ca` | TLS, chain validated against the uploaded CA (or the system trust store), host name not checked; `Ssl_cipher` checked |
 | `verify-full` | as `verify-ca`, plus host name check; `Ssl_cipher` checked |
 
@@ -75,7 +75,7 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON appdb.* TO 'dbm_admin'@'10.0.%' WITH GRA
 GRANT CONNECTION_ADMIN ON *.* TO 'dbm_admin'@'10.0.%';   -- KILL other accounts' sessions
 ```
 
-Grant only the database privileges you want DBManager to be able to delegate (`WITH GRANT OPTION`
+Grant only the database privileges you want KBM DBManager to be able to delegate (`WITH GRANT OPTION`
 on the schemas concerned). Passwords in `CREATE USER` are sent as bound parameters.
 
 See [Least-privilege accounts](permissions.md) for the rules that apply to every engine.
@@ -145,10 +145,10 @@ privileged accounts) also apply.
 Plus the 12 engine-independent performance rules `GEN-PERF-001` … `GEN-PERF-012` (connections,
 cache, blocking, deadlocks, replication lag, long transactions, expensive queries, spills, CPU,
 storage, query latency regressions and storage forecasts). Recommendations are advice with
-evidence; DBManager never executes them.
+evidence; KBM DBManager never executes them.
 
 **Rule count:** 19 engine-specific rules (10 security, 9 performance) plus the 14
-engine-independent rules, which apply to every engine. Across all engines DBManager ships 61
+engine-independent rules, which apply to every engine. Across all engines KBM DBManager ships 61
 performance and 55 security rules; the full catalog is served by `GET /api/v1/advisor/rules`.
 
 ## Troubleshooting

@@ -1,6 +1,6 @@
 # Performance
 
-Performance analysis in DBManager combines metric history, statement statistics, plans, waits and
+Performance analysis in KBM DBManager combines metric history, statement statistics, plans, waits and
 locks, and deterministic rules. **Engines do not expose identical data** — each page states what
 comes from where, and what is missing on a given engine is shown as unavailable, never estimated.
 

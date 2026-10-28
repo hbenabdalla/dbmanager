@@ -70,7 +70,7 @@ def require_administration(server: Server) -> None:
     stored credential would technically allow them."""
     if management_mode(server) == "monitoring":
         raise MonitoringOnly(
-            "This server is registered as Monitoring only: DBManager does not perform changes on it. "
+            "This server is registered as Monitoring only: KBM DBManager does not perform changes on it. "
             "Switch it to Administration enabled under Server → Settings to allow guarded changes.",
             details={"management_mode": "monitoring"},
         )

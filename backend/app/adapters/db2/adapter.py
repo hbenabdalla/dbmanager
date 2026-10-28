@@ -76,7 +76,7 @@ class Db2Adapter(Db2EvidenceMixin, Db2MonitoringMixin, Db2InventoryMixin):
         C.QUERY_HISTORY: cap(PARTIAL, "time-series history of package-cache snapshots"),
         C.EXPLAIN: cap(FULL, "EXPLAIN PLAN into the explain tables (rolled back afterwards)"),
         C.EXPLAIN_ANALYZE: cap(
-            NOT_SUPPORTED, "section actuals need an activity event monitor (not created by DBManager)"
+            NOT_SUPPORTED, "section actuals need an activity event monitor (not created by KBM DBManager)"
         ),
         C.REPLICATION: cap(PARTIAL, "HADR via MON_GET_HADR; Q Replication / CDC not monitored"),
         C.CONFIGURATION: cap(FULL, "SYSIBMADM.DBCFG and DBMCFG (deferred values flagged)"),

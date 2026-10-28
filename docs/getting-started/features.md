@@ -12,7 +12,7 @@
 | Security | posture score, findings (55 rules), privileged accounts, compliance view with failing servers per rule | [Security](../user-guide/security.md) |
 | Alerting | threshold, window, z-score (baseline), health and collector rules; maintenance windows; webhook (generic, Slack, Teams) and e-mail channels | [Alerting](../user-guide/alerting.md) |
 | Administration | guarded, previewed, confirmed and audited changes per engine, on servers registered with administration enabled | [Users and privileges](../user-guide/users-and-privileges.md) |
-| Backup and restore | platform backups of DBManager's own configuration, database backups with the engines' own tools, verification, policies with retention, storage targets (directory, NFS, S3), restore wizards | [Backup and restore](../user-guide/tasks/backup-restore-database.md) |
+| Backup and restore | platform backups of KBM DBManager's own configuration, database backups with the engines' own tools, verification, policies with retention, storage targets (directory, NFS, S3), restore wizards | [Backup and restore](../user-guide/tasks/backup-restore-database.md) |
 | Reports | 13 reports as CSV or PDF, preview, schedules e-mailed with the owner's access | [Reports](../user-guide/reports.md) |
 | Identity | local accounts, LDAP/AD, OIDC (Keycloak, Entra ID, Okta, generic), group mapping, TOTP multi-factor authentication, personal API tokens | [Identity providers](../administration/identity-providers.md) |
 | RBAC | permissions scoped to platform, environment, site, cluster, server, database or schema | [RBAC](../administration/rbac.md) |

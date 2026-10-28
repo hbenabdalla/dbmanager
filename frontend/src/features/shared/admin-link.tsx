@@ -11,7 +11,7 @@ export function AdministrationHint({ serverId, what, action }: { serverId: strin
     <span className="text-muted">
       {what} are made from the server&apos;s{" "}
       <Link className="font-medium text-accent hover:underline" to={adminTabPath(serverId, action)}>Administration tab</Link>
-      : DBManager generates the statements for review, executes them with the administration credential after confirmation, and audits them.
+      : KBM DBManager generates the statements for review, executes them with the administration credential after confirmation, and audits them.
       This needs the server registered with administration enabled and the matching permission.
     </span>
   );

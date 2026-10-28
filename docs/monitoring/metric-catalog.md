@@ -92,7 +92,7 @@ One series per server × database × fingerprint. The fingerprint is the first 1
 
 ## Platform self-observability (`/metrics` on the backend, Prometheus format)
 
-These describe DBManager itself and are **not** written into the time-series database (no recursive collection); scrape them with Prometheus or an OpenTelemetry collector if needed.
+These describe KBM DBManager itself and are **not** written into the time-series database (no recursive collection); scrape them with Prometheus or an OpenTelemetry collector if needed.
 
 | Metric | Type | Meaning |
 |---|---|---|

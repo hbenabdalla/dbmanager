@@ -11,7 +11,7 @@
 | `backup.policy.manage` | platform only | create/edit/delete policies, pin backups, generate key pairs |
 | `backup.target.manage` | platform only | storage targets, *Scan for backups* |
 | `restore.execute` | platform or servers | start restores (with one of the next two) |
-| `restore.platform` | platform only | restore DBManager's configuration; download platform backups |
+| `restore.platform` | platform only | restore KBM DBManager's configuration; download platform backups |
 | `restore.database` | servers | restore managed databases; download database backups |
 
 Built-in roles: **Platform Administrator** has all of them; **Backup Operator** (`backup.view`,

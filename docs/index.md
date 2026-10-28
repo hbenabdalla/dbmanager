@@ -1,8 +1,8 @@
-# DBManager
+# KBM DBManager
 
-![DBManager](assets/brand/dbmanager-logo.png){ width="280" }
+![KBM DBManager — unified database operations by Khorafi Business Machines (KBM)](assets/brand/kbm/kbm-dbmanager-banner.png)
 
-**DBManager** is a self-hosted platform for administering, monitoring and securing a fleet of
+**KBM DBManager** is a self-hosted platform for administering, monitoring and securing a fleet of
 relational databases from one place: PostgreSQL, MySQL, MariaDB, Microsoft SQL Server, Oracle
 Database, IBM Db2 LUW and (partially) IBM Db2 for z/OS.
 
@@ -11,7 +11,7 @@ Database, IBM Db2 LUW and (partially) IBM Db2 for z/OS.
 It collects health, performance, query and security evidence through least-privilege monitoring
 accounts, keeps metric history in a dedicated time-series database, turns evidence into
 recommendations and security findings (116 deterministic rules: 61 performance, 55 security),
-raises alerts, backs up DBManager itself and the managed databases, and offers guarded
+raises alerts, backs up KBM DBManager itself and the managed databases, and offers guarded
 administration with role-based access control and a complete audit trail.
 
 <div class="grid cards" markdown>
@@ -39,7 +39,7 @@ administration with role-based access control and a complete audit trail.
 images with SBOMs, highly available replicas with a visible scheduler leader, and TLS to the
 control-plane databases (see the [release notes](release-notes/0.15.0.md), the
 [changelog](https://github.com/hbenabdalla/dbmanager/blob/main/CHANGELOG.md) and
-[versioning](product/roadmap.md#versioning)). DBManager is pre-1.0 software. The capability status of every area is tracked honestly in the
+[versioning](product/roadmap.md#versioning)). KBM DBManager is pre-1.0 software. The capability status of every area is tracked honestly in the
 [capability matrix](product/capability-matrix.md) and the [roadmap](product/roadmap.md):
 PostgreSQL, MySQL, MariaDB, SQL Server, Oracle and Db2 LUW are validated against real engines
 (see [Database engines](database-engines/index.md)); Db2 for z/OS is partial and still needs

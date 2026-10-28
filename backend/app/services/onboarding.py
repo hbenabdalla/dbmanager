@@ -223,7 +223,7 @@ async def staged_test(
                 {"requires_privilege": notes},
             )
         else:
-            yield _event("privileges", "ok", "the account has every privilege DBManager uses", _ms(t1))
+            yield _event("privileges", "ok", "the account has every privilege KBM DBManager uses", _ms(t1))
 
         t1 = time.perf_counter()
         yield _event("capabilities", "running", "summarising capabilities")

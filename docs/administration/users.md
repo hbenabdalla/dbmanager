@@ -1,7 +1,7 @@
 # Users and groups
 
 **Platform → Configuration → Users** manages platform accounts — the people who sign in to
-DBManager, not database accounts. The page is shown with `users.manage` or `rbac.manage`; creating,
+KBM DBManager, not database accounts. The page is shown with `users.manage` or `rbac.manage`; creating,
 changing and deleting users and groups needs `users.manage`, assigning roles needs `rbac.manage`.
 It has the tabs **Users** and **Groups**; select a user to open the user dialog.
 

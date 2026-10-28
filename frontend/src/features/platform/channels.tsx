@@ -28,7 +28,7 @@ export interface NotificationChannel {
   has_url?: boolean; has_signing_secret: boolean; has_smtp_password: boolean; created_by: string | null; created_at: string;
 }
 interface Delivery { id: number; alert_id: string | null; event: string; status: string; attempts: number; response_code: number | null; error: string | null; created_at: string; next_attempt_at?: string | null }
-const PRESET_LABEL: Record<Preset, string> = { generic: "DBManager JSON", slack: "Slack", teams: "Microsoft Teams" };
+const PRESET_LABEL: Record<Preset, string> = { generic: "KBM DBManager JSON", slack: "Slack", teams: "Microsoft Teams" };
 interface TestResult { status: string; response_code: number | null; error: string | null; attempts: number }
 
 const SEVERITIES = ["info", "low", "medium", "high", "critical"];
@@ -102,7 +102,7 @@ function ChannelDialog({ channel, onClose }: { channel: NotificationChannel | nu
           </Select>
         </Field>
         {f.kind === "webhook" ? <>
-          <Field label="Payload format" hint="Slack incoming webhook or a Teams workflow (Adaptive Card); the generic format is DBManager JSON">
+          <Field label="Payload format" hint="Slack incoming webhook or a Teams workflow (Adaptive Card); the generic format is KBM DBManager JSON">
             <Select value={f.preset} onChange={(e) => set("preset", e.target.value as Preset)}>
               {(Object.keys(PRESET_LABEL) as Preset[]).map((p) => <option key={p} value={p}>{PRESET_LABEL[p]}</option>)}
             </Select>

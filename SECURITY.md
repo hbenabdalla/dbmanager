@@ -1,11 +1,11 @@
 # Security policy
 
-DBManager connects to production databases with stored credentials, so security reports are
+KBM DBManager connects to production databases with stored credentials, so security reports are
 taken seriously and handled privately.
 
 ## Supported versions
 
-DBManager has not had a stable (1.0) release yet. Until then, only the latest pre-release on the
+KBM DBManager has not had a stable (1.0) release yet. Until then, only the latest pre-release on the
 `main` branch receives security fixes.
 
 | Version | Supported |

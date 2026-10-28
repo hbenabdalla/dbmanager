@@ -10,7 +10,7 @@ export function Dialog({ open, onOpenChange, title, description, children, foote
   return (
     <D.Root open={open} onOpenChange={onOpenChange}>
       <D.Portal>
-        <D.Overlay className="fixed inset-0 z-50 bg-[#050b14]/55 backdrop-blur-[1px]" />
+        <D.Overlay className="fixed inset-0 z-50 bg-brand-navy/55 backdrop-blur-[1px]" />
         <D.Content
           className={cn("fixed left-1/2 top-[8vh] z-50 flex max-h-[84vh] w-[calc(100vw-2rem)] -translate-x-1/2 flex-col rounded-[var(--radius-panel)] border border-border bg-surface shadow-[0_24px_64px_-24px_rgba(5,11,20,0.45)]", width)}
         >

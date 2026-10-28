@@ -132,7 +132,7 @@ export function buildReplicationGraph(servers: Server[], info: Map<string, Repli
         target = `ext:${s.id}:${String(ident ?? nodes.size)}`;
         nodes.set(target, {
           id: target, label: String(pick(r, ["application_name", "replica_server_name", "dest_name", "standby_member_host"]) ?? ident ?? "replica"),
-          sub: (pick(r, ["client_addr", "destination", "standby_member_host"]) as string | undefined) ?? "not registered in DBManager",
+          sub: (pick(r, ["client_addr", "destination", "standby_member_host"]) as string | undefined) ?? "not registered in KBM DBManager",
           role: "replica", cluster: s.cluster?.name ?? null, external: true,
         });
       }

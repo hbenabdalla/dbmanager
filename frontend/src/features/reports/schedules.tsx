@@ -123,7 +123,7 @@ export function ScheduleWizard({ reports, schedule, initial, onClose }: {
         {step === "format" && (
           <div className="grid gap-2 sm:grid-cols-2">
             <ChoiceCard name="format" selected={f.format === "pdf"} onSelect={() => set({ format: "pdf" })} title="PDF" icon={<FileText />}>
-              A formatted document with the DBManager logo, the scope and the generation time. Up to 5,000 rows.
+              A formatted document with the KBM DBManager logo, the scope and the generation time. Up to 5,000 rows.
             </ChoiceCard>
             <ChoiceCard name="format" selected={f.format === "csv"} onSelect={() => set({ format: "csv" })} title="CSV" icon={<FileSpreadsheet />}>
               Every row, for spreadsheets and scripts. Values that could be read as formulas are neutralised.
@@ -147,7 +147,7 @@ export function ScheduleWizard({ reports, schedule, initial, onClose }: {
             )}
             <Field label="Time (24 h)"><Input value={f.schedule.time} onChange={(e) => setSch({ time: e.target.value })} placeholder="07:00" /></Field>
             <Field label="Time zone" hint="IANA name, e.g. Europe/Paris"><Input value={f.schedule.time_zone} onChange={(e) => setSch({ time_zone: e.target.value })} /></Field>
-            <p className="text-[12.5px] text-muted sm:col-span-4">{describeSchedule(f.schedule)}. Runs on the scheduler leader; a run missed while DBManager was down is sent at the next start.</p>
+            <p className="text-[12.5px] text-muted sm:col-span-4">{describeSchedule(f.schedule)}. Runs on the scheduler leader; a run missed while KBM DBManager was down is sent at the next start.</p>
           </div>
         )}
         {step === "delivery" && (

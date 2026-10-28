@@ -1,6 +1,6 @@
 # Rate limiting
 
-DBManager limits how fast a single caller can use the API, so that one user, script or runaway
+KBM DBManager limits how fast a single caller can use the API, so that one user, script or runaway
 dashboard cannot exhaust the platform or flood a managed database with live queries.
 Limits apply **per principal**: an interactive session counts against its user, and each
 [API token](api-tokens.md) has its own budget.
@@ -61,14 +61,14 @@ def get(client: httpx.Client, url: str) -> httpx.Response:
 
 ## How it works
 
-DBManager uses a *sliding-window counter*: hits are counted in one-minute windows, and the
+KBM DBManager uses a *sliding-window counter*: hits are counted in one-minute windows, and the
 current rate is estimated as the previous window's count, weighted by how much of it still
 overlaps the last 60 seconds, plus the current window's count. This avoids the burst a plain
 per-minute counter allows at a window boundary.
 
 | `DBM_RATE_LIMIT_BACKEND` | Behaviour |
 |---|---|
-| `database` (default) | Counters live in the `rate_limit_windows` table of DBManager's own PostgreSQL database. Every backend replica shares them, so the limits hold for the whole installation, not per replica. Each counter update is one short statement through a small pool of its own (`DBM_RATE_LIMIT_POOL_SIZE`, default 5). Each caller keeps at most two rows; idle rows are removed by the retention job. |
+| `database` (default) | Counters live in the `rate_limit_windows` table of KBM DBManager's own PostgreSQL database. Every backend replica shares them, so the limits hold for the whole installation, not per replica. Each counter update is one short statement through a small pool of its own (`DBM_RATE_LIMIT_POOL_SIZE`, default 5). Each caller keeps at most two rows; idle rows are removed by the retention job. |
 | `memory` | Counters in each backend process. For single-instance installations that want to avoid the extra statements; with several replicas each one counts separately. |
 
 If the limiter's storage is unavailable, requests are **allowed** and a warning is logged. Rate
@@ -80,7 +80,7 @@ Every refusal increments the Prometheus counter `dbm_rate_limited_total{policy="
 
 ## Behind a reverse proxy
 
-`login` and `token_failures` are counted per client address. DBManager derives that address
+`login` and `token_failures` are counted per client address. KBM DBManager derives that address
 from `X-Forwarded-For` only for proxies listed in `DBM_TRUSTED_PROXIES`; otherwise every request
 appears to come from the proxy and all users share one login budget. See
 [reverse proxy and TLS](../deployment/reverse-proxy-tls.md).

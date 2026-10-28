@@ -34,7 +34,7 @@ configuration. None of this has been exercised against a real z/OS subsystem.
 
 ## Privileges
 
-Authorization IDs are RACF/ACF2/Top Secret identities; DRDA access from DBManager also needs
+Authorization IDs are RACF/ACF2/Top Secret identities; DRDA access from KBM DBManager also needs
 **Db2 Connect** (a license file on the client, or server-side activation of the subsystem).
 
 ### Minimum inventory / monitoring account
@@ -71,7 +71,7 @@ GRANT EXPLAIN TO DBMMON;
 ### Not covered by SQL
 
 Subsystem performance (statistics and accounting traces, IFCID records, SMF, CPU/zIIP usage) is
-not reachable by a SQL client. DBManager marks those capabilities **REQUIRES EXTERNAL
+not reachable by a SQL client. KBM DBManager marks those capabilities **REQUIRES EXTERNAL
 MONITORING**; use a z/OS monitor such as OMEGAMON for Db2.
 
 ### DBA management account
@@ -118,7 +118,7 @@ for a registered server, on its **Overview → Capabilities** (runtime discovery
 
 ## Known limitations
 
-* No thread, lock or subsystem performance monitoring: use a z/OS monitor (for example OMEGAMON for Db2). DBManager does not fabricate these values.
+* No thread, lock or subsystem performance monitoring: use a z/OS monitor (for example OMEGAMON for Db2). KBM DBManager does not fabricate these values.
 * No administration actions.
 * Not validated against a real subsystem (no claim in this documentation is based on a run
   against z/OS).
@@ -149,10 +149,10 @@ privileged accounts) also apply.
 Plus the 12 engine-independent performance rules `GEN-PERF-001` … `GEN-PERF-012` (connections,
 cache, blocking, deadlocks, replication lag, long transactions, expensive queries, spills, CPU,
 storage, query latency regressions and storage forecasts). Recommendations are advice with
-evidence; DBManager never executes them.
+evidence; KBM DBManager never executes them.
 
 **Rule count:** 5 engine-specific rules (2 security, 3 performance) plus the 14
-engine-independent rules, which apply to every engine. Across all engines DBManager ships 61
+engine-independent rules, which apply to every engine. Across all engines KBM DBManager ships 61
 performance and 55 security rules; the full catalog is served by `GET /api/v1/advisor/rules`.
 
 ## Troubleshooting

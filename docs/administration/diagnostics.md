@@ -40,7 +40,7 @@ For support cases, the server page's **Settings** tab → **Operations** → **D
   consecutive failures and circuit-breaker state;
 * collector state per component and the detected capabilities;
 * the last 50 collector jobs with kind, status, duration, error and result;
-* driver, DBManager, Python and database schema versions.
+* driver, KBM DBManager, Python and database schema versions.
 
 Passwords, tokens, keys and `user:password@` in connection strings are replaced by `***` wherever
 they appear, including error messages, options and job results. Review the file before sending it

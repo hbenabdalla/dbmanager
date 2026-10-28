@@ -26,7 +26,7 @@ Management mode, Placement, Test connection, Review, Done.
   version, privileges, capabilities — so a failure points at the exact layer.
 * **Monitoring Only** is the default management mode (also for servers registered through the API
   or bulk onboarding without a `management_mode`). Choose **Administration Enabled** only when DBAs
-  will run guarded changes from DBManager; it needs a separate administration account.
+  will run guarded changes from KBM DBManager; it needs a separate administration account.
 * **Register server** on the Review step stores the server. The test is optional: a server can be
   registered before the firewall allows the connection.
 

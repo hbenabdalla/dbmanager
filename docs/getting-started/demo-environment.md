@@ -1,6 +1,6 @@
 # Generate a demo environment
 
-To explore DBManager without connecting real databases, a Platform Administrator can generate a
+To explore KBM DBManager without connecting real databases, a Platform Administrator can generate a
 **simulated fleet** under **Platform → Configuration → Simulation** (permission `simulation.generate`;
 removal needs `simulation.delete`):
 

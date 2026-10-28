@@ -70,7 +70,7 @@ def build(action: str, p: dict[str, Any]) -> A.AdminStatement:
             [sql],
             [None],
             [f"CREATE ROLE {qi(name)} LOGIN PASSWORD '********'"],
-            notes=["The password is sent as a SCRAM-SHA-256 verifier computed by DBManager, never in clear text."],
+            notes=["The password is sent as a SCRAM-SHA-256 verifier computed by KBM DBManager, never in clear text."],
             target_object=name,
         )
     if action == "drop_user":

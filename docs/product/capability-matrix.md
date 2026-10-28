@@ -1,6 +1,6 @@
 # Capability matrix
 
-Evidence-based inventory of what DBManager does **today**, produced by inspecting the source tree
+Evidence-based inventory of what KBM DBManager does **today**, produced by inspecting the source tree
 (backend `app/`, frontend `src/`, migrations, deployment files, tests). Engine-level detail is in
 the [engine capability matrix](engine-matrix.md); what is missing and why is in the
 [gap analysis](gap-analysis.md).

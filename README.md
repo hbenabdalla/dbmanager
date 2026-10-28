@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="docs/assets/brand/dbmanager-logo.png" alt="DBManager" width="320">
+  <img src="docs/assets/brand/kbm/kbm-dbmanager-banner.png" alt="KBM DBManager — unified database operations by Khorafi Business Machines (KBM)" width="100%">
 </p>
 
-# DBManager
+# KBM DBManager
 
 **One management plane for heterogeneous relational database fleets** — inventory, monitoring,
 query performance, execution plans, security posture, evidence-based recommendations and guarded
@@ -20,7 +20,7 @@ administration for PostgreSQL, MySQL, MariaDB, Microsoft SQL Server, Oracle Data
 
 > **Version 0.15.3: cloud-native deployment** (0.15.0 plus release fixes and the chart README). A Helm chart for Kubernetes and OpenShift, signed
 > images with SBOMs, highly available API and worker replicas with a visible scheduler leader, and
-> TLS to the control-plane databases. DBManager is pre-1.0; 0.12.0 was its first public release.
+> TLS to the control-plane databases. KBM DBManager is pre-1.0; 0.12.0 was its first public release.
 > What changed is in the [changelog](CHANGELOG.md); what remains before 1.0 is in the
 > [roadmap](ROADMAP.md).
 
@@ -28,7 +28,7 @@ administration for PostgreSQL, MySQL, MariaDB, Microsoft SQL Server, Oracle Data
 
 ## Why
 
-DBAs who run several engines usually juggle one tool per vendor. DBManager gives them one place
+DBAs who run several engines usually juggle one tool per vendor. KBM DBManager gives them one place
 to see every server, compare what is slow, review who can do what, and make safe changes — while
 staying honest about what each engine, version, privilege set and license actually allows. A
 capability the server cannot provide is shown as *requires privilege / configuration / license*,
@@ -153,7 +153,7 @@ replicas and leader election: [high availability](docs/deployment/high-availabil
 All settings are environment variables prefixed `DBM_` (see [`.env.example`](.env.example)).
 The most important: `DBM_MASTER_KEY`, `DBM_DATABASE_URL`, `DBM_PUBLIC_BASE_URL`,
 `DBM_TIMESERIES_*`, `DBM_COOKIE_SECURE`, `DBM_SMTP_*` for e-mail alerts, and
-`DBM_TRUSTED_PROXIES` / `DBM_OUTER_PROXY` when DBManager runs behind a reverse proxy (so the
+`DBM_TRUSTED_PROXIES` / `DBM_OUTER_PROXY` when KBM DBManager runs behind a reverse proxy (so the
 audit log and rate limits see the real client address), and
 `DBM_DOCUMENTATION_URL` (the Help menu links to the published documentation by default; set your
 own URL for an internal copy or `off` to hide it). LDAP and
@@ -187,15 +187,15 @@ public issue.
 
 ## License
 
-DBManager is licensed under the [Apache License, Version 2.0](LICENSE) (SPDX: `Apache-2.0`). The
-DBManager logo is part of the project ([brand assets](docs/development/brand-assets.md)).
+KBM DBManager is licensed under the [Apache License, Version 2.0](LICENSE) (SPDX: `Apache-2.0`). The
+KBM DBManager logo is part of the project ([brand assets](docs/development/brand-assets.md)).
 Contributions are accepted under the same license (see [CONTRIBUTING.md](CONTRIBUTING.md)).
 
-The license covers DBManager's own code only. Database drivers and the vendor database images
+The license covers KBM DBManager's own code only. Database drivers and the vendor database images
 used for integration testing (SQL Server Developer, Oracle Database, IBM Db2 Community Edition)
-are under their vendors' terms, and nothing in DBManager grants rights to Oracle Diagnostics or
+are under their vendors' terms, and nothing in KBM DBManager grants rights to Oracle Diagnostics or
 Tuning Pack features or other separately licensed database options.
 
 PostgreSQL, MySQL, MariaDB, SQL Server, Oracle and Db2 are trademarks of their respective owners.
-DBManager is not affiliated with or endorsed by them; the engine marks in the product are
-DBManager's own designs, not the vendors' logos ([brand assets](docs/development/brand-assets.md#trademark-notice)).
+KBM DBManager is not affiliated with or endorsed by them; the engine marks in the product are
+KBM DBManager's own designs, not the vendors' logos ([brand assets](docs/development/brand-assets.md#trademark-notice)).

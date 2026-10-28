@@ -68,7 +68,7 @@ GRANT pg_signal_backend TO dbm_admin;               -- cancel / terminate sessio
 GRANT app_owner TO dbm_admin;
 ```
 
-DBManager sends passwords for `CREATE ROLE` as SCRAM-SHA-256 verifiers, so the clear text never
+KBM DBManager sends passwords for `CREATE ROLE` as SCRAM-SHA-256 verifiers, so the clear text never
 reaches the server logs.
 
 See [Least-privilege accounts](permissions.md) for the rules that apply to every engine.
@@ -136,10 +136,10 @@ privileged accounts) also apply.
 Plus the 12 engine-independent performance rules `GEN-PERF-001` … `GEN-PERF-012` (connections,
 cache, blocking, deadlocks, replication lag, long transactions, expensive queries, spills, CPU,
 storage, query latency regressions and storage forecasts). Recommendations are advice with
-evidence; DBManager never executes them.
+evidence; KBM DBManager never executes them.
 
 **Rule count:** 22 engine-specific rules (13 security, 9 performance) plus the 14
-engine-independent rules, which apply to every engine. Across all engines DBManager ships 61
+engine-independent rules, which apply to every engine. Across all engines KBM DBManager ships 61
 performance and 55 security rules; the full catalog is served by `GET /api/v1/advisor/rules`.
 
 ## Troubleshooting

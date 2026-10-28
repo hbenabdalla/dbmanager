@@ -27,7 +27,7 @@ partitions at the next cleanup; lengthening keeps everything that still exists.
 ## Downsampling strategy
 
 The open-source VictoriaMetrics stores raw samples only (stored downsampling is an
-Enterprise feature). DBManager therefore downsamples **at query time**:
+Enterprise feature). KBM DBManager therefore downsamples **at query time**:
 
 * every range request picks a step so that a series has at most 240 points (configurable
   10–1,000 per request); the database computes the aggregation of all raw samples inside

@@ -256,7 +256,7 @@ async def delete_server(
             "timeseries_delete": "done" if ts_done else "queued",
         },
     )
-    return Message(message=f"{name} removed from DBManager")
+    return Message(message=f"{name} removed from KBM DBManager")
 
 
 @router.post(

@@ -1,6 +1,7 @@
 """Server-side PDF rendering of reports (ReportLab, BSD licence).
 
-The document carries the DBManager logo, the report title and description, who it was
+The document follows KBM's document style: the KBM logo (rendered from the artwork KBM supplied,
+docs/assets/brand/kbm) and the product name in the header, the report title and description, who it was
 generated for, when, the scope and the row count, then the table (header repeated on every
 page, landscape when the table is wide). Every page footer says the file contains data visible
 to that principal — reports are snapshots of what the caller may see, not of the whole fleet.
@@ -16,16 +17,22 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     from app.services.reports import RenderedReport
 
-LOGO = Path(__file__).resolve().parents[1] / "data" / "brand" / "dbmanager-logo.png"
+BRAND = Path(__file__).resolve().parents[1] / "data" / "brand"
+LOGO = BRAND / "kbm-logo.png"
+MARK = BRAND / "kbm-mark.png"
+PRODUCT = "KBM DBManager"
 #: a cell is cut after this many characters (the CSV keeps the full value)
 MAX_CELL = 400
 #: the PDF lists at most this many rows; the CSV has all of them
 MAX_ROWS = 5000
 
-NAVY = "#13263f"
-MUTED = "#5b6b80"
-GRID = "#d5dde8"
-ZEBRA = "#f4f7fb"
+# KBM document palette (docs/branding/kbm-brand-analysis.md)
+BLUE = "#1a4796"  # KBM logo blue: titles, rules
+NAVY = "#1f3864"  # KBM table headers
+TEXT = "#2d3548"
+MUTED = "#5b6b87"
+GRID = "#d9e1f2"
+ZEBRA = "#f7f9fc"
 
 
 def _escape(text: str) -> str:
@@ -75,33 +82,31 @@ class PdfRenderer:
         from reportlab.lib.pagesizes import A4, landscape
         from reportlab.lib.styles import ParagraphStyle
         from reportlab.lib.units import mm
-        from reportlab.platypus import Image, LongTable, Paragraph, SimpleDocTemplate, Spacer, TableStyle
+        from reportlab.platypus import LongTable, Paragraph, SimpleDocTemplate, Spacer, TableStyle
 
         wide = len(report.columns) > 7
         pagesize = landscape(A4) if wide else A4
         margin = 12 * mm
         width = pagesize[0] - 2 * margin
         body = ParagraphStyle(
-            "body", fontName="Helvetica", fontSize=6.6 if wide else 7.4, leading=8.4, alignment=TA_LEFT
+            "body",
+            fontName="Helvetica",
+            fontSize=6.6 if wide else 7.4,
+            leading=8.4,
+            alignment=TA_LEFT,
+            textColor=colors.HexColor(TEXT),
         )
         head = ParagraphStyle("head", parent=body, fontName="Helvetica-Bold", textColor=colors.white)
         title = ParagraphStyle(
-            "title", fontName="Helvetica-Bold", fontSize=15, leading=18, textColor=colors.HexColor(NAVY)
+            "title", fontName="Helvetica-Bold", fontSize=16, leading=19, textColor=colors.HexColor(BLUE)
         )
         meta = ParagraphStyle("meta", fontName="Helvetica", fontSize=8, leading=10.5, textColor=colors.HexColor(MUTED))
 
-        story: list[Any] = []
-        if LOGO.exists():
-            img = Image(str(LOGO))
-            ratio = img.imageWidth / img.imageHeight
-            img.drawHeight = 16 * mm
-            img.drawWidth = 16 * mm * ratio
-            img.hAlign = "LEFT"
-            story += [img, Spacer(1, 3 * mm)]
+        story: list[Any] = [Spacer(1, 15 * mm)]  # the header (logo, product, rule) is drawn on the canvas
         story.append(Paragraph(_escape(report.title), title))
         story.append(Paragraph(_escape(report.description), meta))
         when = report.generated_at.strftime("%Y-%m-%d %H:%M UTC")
-        line = f"Generated {when} for {_escape(report.generated_for)} · DBManager {_escape(report.version)}"
+        line = f"Generated {when} for {_escape(report.generated_for)} · {PRODUCT} {_escape(report.version)}"
         story.append(Paragraph(line, meta))
         rows = report.rows[:MAX_ROWS]
         scope = "; ".join(report.scope) if report.scope else "all servers visible to this account"
@@ -135,11 +140,30 @@ class PdfRenderer:
         footer_text = f"{report.title} · contains data visible to {report.generated_for}; handle it according to your data classification"
 
         def footer(canvas: Any, doc: Any) -> None:
+            top = pagesize[1] - margin
+            right = pagesize[0] - margin
             canvas.saveState()
+            # header: the KBM logo left, the product and report name right, a thin rule below
+            if LOGO.exists():
+                canvas.drawImage(str(LOGO), margin, top - 11 * mm, width=21.6 * mm, height=11 * mm, mask="auto")
+            canvas.setFont("Helvetica-Bold", 8.5)
+            canvas.setFillColor(colors.HexColor(NAVY))
+            canvas.drawRightString(right, top - 4 * mm, PRODUCT)
+            canvas.setFont("Helvetica", 7.5)
+            canvas.setFillColor(colors.HexColor(MUTED))
+            canvas.drawRightString(right, top - 8 * mm, report.title[:90])
+            canvas.setStrokeColor(colors.HexColor(GRID))
+            canvas.setLineWidth(0.6)
+            canvas.line(margin, top - 13 * mm, right, top - 13 * mm)
+            # footer: the KBM mark, the data-classification note and the page number in KBM blue
+            if MARK.exists():
+                canvas.drawImage(str(MARK), margin, 5.6 * mm, width=9 * mm, height=3 * mm, mask="auto")
             canvas.setFont("Helvetica", 6.5)
             canvas.setFillColor(colors.HexColor(MUTED))
-            canvas.drawString(margin, 7 * mm, footer_text[:180])
-            canvas.drawRightString(pagesize[0] - margin, 7 * mm, f"Page {doc.page}")
+            canvas.drawString(margin + 11 * mm, 6.2 * mm, footer_text[:170])
+            canvas.setFont("Helvetica-Bold", 7)
+            canvas.setFillColor(colors.HexColor(BLUE))
+            canvas.drawRightString(right, 6.2 * mm, f"Page {doc.page}")
             canvas.restoreState()
 
         buf = io.BytesIO()
@@ -151,9 +175,9 @@ class PdfRenderer:
             topMargin=margin,
             bottomMargin=14 * mm,
             title=report.title,
-            author="DBManager",
+            author=PRODUCT,
             subject=report.description,
-            creator=f"DBManager {report.version}",
+            creator=f"{PRODUCT} {report.version}",
         )
         doc.build(story, onFirstPage=footer, onLaterPages=footer)
         return buf.getvalue()

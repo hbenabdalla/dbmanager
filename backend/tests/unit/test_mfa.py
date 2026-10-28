@@ -32,7 +32,7 @@ def user(**kw):  # type: ignore[no-untyped-def]
 def _enrolled():  # type: ignore[no-untyped-def]
     u = user()
     out = mfa.begin_enrollment(u)
-    assert out["otpauth_uri"].startswith("otpauth://totp/") and "issuer=DBManager" in out["otpauth_uri"]
+    assert out["otpauth_uri"].startswith("otpauth://totp/") and "issuer=KBM%20DBManager" in out["otpauth_uri"]
     assert out["qr_svg"].startswith("<svg") and out["secret"] not in str(u.totp_secret)  # stored encrypted
     return u, pyotp.TOTP(out["secret"])
 

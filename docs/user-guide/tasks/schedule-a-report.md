@@ -43,7 +43,7 @@ CSV every week, containing only what its owner may see.
 
 * The schedule in the **Schedules** list with its next run, and after **Send now** a run with status
   `success` in **History** (clock icon): row count, file size and the recipients per channel.
-* An e-mail with the subject `[DBManager] <report title> — <schedule name>` and the file attached.
+* An e-mail with the subject `[KBM DBManager] <report title> — <schedule name>` and the file attached.
 * Audit events `report_schedule.create` and `report.delivered`.
 
 Only the schedule's owner, its creator or a user with `users.manage` can edit, send or delete it.

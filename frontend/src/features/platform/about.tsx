@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { deploymentText, type AboutDeployment } from "@/features/platform/deployment";
 import { BookOpen, ExternalLink, Github, Map as MapIcon } from "lucide-react";
-import { BrandLogo } from "@/components/brand";
+import { COMPANY_NAME, KbmCoverMotif, KbmLogo, PRODUCT_TAGLINE } from "@/components/brand";
 import { get } from "@/api/client";
 import { KeyValue, PageHeader } from "@/components/page";
 import { DatabaseEngineIcon } from "@/components/status";
@@ -63,15 +63,18 @@ export function AboutPage() {
     <div>
       <PageHeader title={`About ${a.product}`} description={a.description} crumbs={[{ label: "Platform" }, { label: "About" }]} />
       <div className="grid gap-4 lg:grid-cols-2">
-        <Card className="lg:col-span-2">
-          <CardBody className="flex flex-wrap items-center gap-6">
-            <BrandLogo width={200} />
+        <Card className="relative overflow-hidden border-0 bg-brand text-white lg:col-span-2 dark:bg-brand-navy">
+          <KbmCoverMotif className="opacity-70" />
+          <CardBody className="relative flex flex-wrap items-center gap-8 py-7">
+            <KbmLogo full width={190} tone="white" label="KBM — Khorafi Business Machines" />
             <div className="min-w-0 max-w-xl space-y-1.5 text-[13px]">
-              <p className="text-[18px] font-semibold">{a.product} <span className="font-mono text-[15px] text-text-2">{v.application}</span></p>
-              <p className="text-text-2">{a.description}</p>
-              <p className="text-[12px] text-muted">
-                PostgreSQL, MySQL, MariaDB, SQL Server, Oracle and Db2 are trademarks of their respective owners. DBManager is not affiliated with or
-                endorsed by them; the engine marks shown in DBManager are its own and are not the vendors' logos.
+              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/70">{PRODUCT_TAGLINE}</p>
+              <p className="text-[24px] font-bold tracking-[-0.01em]">{a.product} <span className="font-mono text-[15px] font-medium text-white/80">{v.application}</span></p>
+              <p className="text-white/85">{a.description}</p>
+              <p className="text-white/85">A product of {COMPANY_NAME}.</p>
+              <p className="text-[12px] text-white/65">
+                PostgreSQL, MySQL, MariaDB, SQL Server, Oracle and Db2 are trademarks of their respective owners. KBM DBManager is not affiliated with or
+                endorsed by them; the engine marks shown in KBM DBManager are its own and are not the vendors' logos.
               </p>
             </div>
           </CardBody>

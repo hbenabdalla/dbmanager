@@ -45,7 +45,7 @@ export function OverviewTab({ server }: { server: ServerDetail }) {
     <div className="space-y-4">
       {server.implementation === "planned" && (
         <Card className="border-info/30 bg-info-soft/40"><CardBody className="text-[13px] text-text-2">
-          This server is registered for inventory and ownership. No {server.engine_label} adapter is available, so DBManager doesn't connect to it and shows no metrics rather than estimates.
+          This server is registered for inventory and ownership. No {server.engine_label} adapter is available, so KBM DBManager doesn't connect to it and shows no metrics rather than estimates.
         </CardBody></Card>
       )}
       <div className="overflow-hidden rounded-[var(--radius-panel)] border border-border bg-surface">
@@ -131,7 +131,7 @@ export function OverviewTab({ server }: { server: ServerDetail }) {
           </CardBody>
         </Card>
         <Card>
-          <CardHeader title="Capabilities" description="What DBManager can do on this server, from runtime discovery" />
+          <CardHeader title="Capabilities" description="What KBM DBManager can do on this server, from runtime discovery" />
           <CardBody>
             <ul className="grid gap-x-6 gap-y-1.5 sm:grid-cols-2">
               {Object.entries(server.capabilities).sort().map(([k, c]) => (

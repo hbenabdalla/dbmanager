@@ -21,7 +21,7 @@ DBA (Administration tab or SQL workspace), subject to RBAC, confirmation and aud
 
 ## Outcomes
 
-When a recommendation is resolved, DBManager measures the metric (or the statement latency) that
+When a recommendation is resolved, KBM DBManager measures the metric (or the statement latency) that
 triggered it for a window before and after the resolution and shows the outcome — *improved*,
 *unchanged*, *regressed* — in the recommendation's dialog and on **Optimization → Recommendations →
 Outcomes**. See

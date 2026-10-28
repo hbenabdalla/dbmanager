@@ -20,13 +20,13 @@ Platform administration lives under **Platform** in the sidebar, in the sections
 | Audit log and SIEM | Security → Audit logs; Platform → Configuration → Audit forwarding | [Audit](audit.md), [Audit forwarding](siem.md) |
 | Demo data | Platform → Configuration → Simulation | [Simulation](simulation.md) |
 | Version and build | Platform → Configuration → About | [About](about.md) |
-| Backup and restore of DBManager and of databases | Platform → Backup & Restore | [Backup & Restore](../backup-restore/index.md) |
+| Backup and restore of KBM DBManager and of databases | Platform → Backup & Restore | [Backup & Restore](../backup-restore/index.md) |
 | Upgrade | — | [Upgrade](../operations/upgrade.md) |
 | Platform security settings | — | [Security settings](security.md), [Rate limiting](rate-limiting.md) |
 
 ## Configuration
 
-DBManager is configured in two places:
+KBM DBManager is configured in two places:
 
 * **Environment variables** (`DBM_*`, read at start-up; in Docker Compose from `.env`). The full
   list is in [Deployment → environment variables](../deployment/index.md#environment-variables).

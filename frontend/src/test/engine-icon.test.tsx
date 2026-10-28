@@ -1,7 +1,11 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import { BrandLogo, BrandMark } from "@/components/brand";
+import { BrandLogo, BrandMark, KbmLogo } from "@/components/brand";
+import kbmLogo from "@/assets/brand/kbm/kbm-logo.svg";
+import kbmLogoWhite from "@/assets/brand/kbm/kbm-logo-white.svg";
+import kbmMark from "@/assets/brand/kbm/kbm-mark.svg";
+import kbmMarkWhite from "@/assets/brand/kbm/kbm-mark-white.svg";
 import { DatabaseEngineIcon } from "@/components/engine-icon";
 import { AuthProvider } from "@/lib/auth";
 import { ENGINES, engineMeta, normalizeEngine } from "@/lib/engines";
@@ -70,13 +74,21 @@ describe("DatabaseEngineIcon", () => {
   });
 });
 
-describe("DBManager logo", () => {
-  it("renders the provided logo files with the product name as text alternative", () => {
-    const { container } = renderWithProviders(<><BrandLogo width={160} /><BrandMark size={24} plate label="DBManager" /><BrandLogo decorative /></>);
-    expect(screen.getAllByRole("img", { name: "DBManager" })).toHaveLength(2); // logo img + labelled mark
-    const imgs = [...container.querySelectorAll("img")];
-    expect(imgs.map((i) => i.getAttribute("src"))).toEqual(expect.arrayContaining([expect.stringMatching(/dbmanager-logo-small\.png$/), expect.stringMatching(/dbmanager-mark\.png$/)]));
-    expect(imgs.filter((i) => i.getAttribute("alt") === "DBManager")).toHaveLength(1);
-    expect(imgs.find((i) => i.getAttribute("src")?.includes("dbmanager-logo-small"))?.getAttribute("width")).toBe("160");
+describe("KBM DBManager brand", () => {
+  it("uses the supplied KBM artwork unaltered, with the product name as text alternative", () => {
+    const { container } = renderWithProviders(<><BrandLogo width={160} /><BrandMark size={24} label="KBM DBManager" /><BrandLogo decorative /><KbmLogo full width={140} tone="white" label="KBM" /></>);
+    expect(screen.getAllByRole("img", { name: "KBM DBManager" })).toHaveLength(2); // lockup + labelled mark
+    const srcs = [...container.querySelectorAll("img")].map((i) => i.getAttribute("src") ?? "");
+    // only the four files supplied by KBM, never the retired DBManager artwork
+    const supplied = [kbmLogo, kbmLogoWhite, kbmMark, kbmMarkWhite];
+    expect(srcs.every((s) => supplied.includes(s))).toBe(true);
+    expect(srcs).toContain(kbmLogoWhite);
+    expect(srcs).toContain(kbmMark);
+    // scaled with its own aspect ratio (491 x 250 for the full logo), never stretched
+    const full = [...container.querySelectorAll("img")].find((i) => i.getAttribute("src") === kbmLogoWhite)!;
+    expect(full.getAttribute("width")).toBe("140");
+    expect(full.getAttribute("height")).toBe(String(Math.round(140 / (491 / 250))));
+    expect(full.className).toContain("object-contain");
+    expect(screen.getAllByText("DBManager")).toHaveLength(2); // the product word of both lockups
   });
 });

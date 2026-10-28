@@ -55,7 +55,7 @@ export function EngineMarkSvg({ engine, px, title }: { engine: string; px: numbe
         </g>
       ) : (
         <text x="16" y={zos ? 18.6 : 20.6} textAnchor="middle" fill="#fff" fontSize={m.short.length > 2 ? 11 : 13.5} fontWeight="700"
-          fontFamily="'IBM Plex Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif" letterSpacing="-0.2">
+          fontFamily="'Plus Jakarta Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif" letterSpacing="-0.2">
           {m.short}
         </text>
       )}

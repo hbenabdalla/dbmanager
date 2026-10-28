@@ -10,7 +10,7 @@ and visible in the fleet.
 * A least-privileged **monitoring account** on the database server, created with the grants on the
   [engine page](../../database-engines/index.md) — never `postgres`, `root`, `sa`, `SYS` or the Db2
   instance owner.
-* Network access from the DBManager backend to the server's host and port.
+* Network access from the KBM DBManager backend to the server's host and port.
 * For *Administration enabled*: a second, separate **administration account**.
 
 ## Steps
@@ -26,18 +26,18 @@ and visible in the fleet.
 4. **TLS** — choose the TLS mode; `verify-full` is preselected. Paste a **CA certificate (PEM)** if
    the server certificate is signed by a private CA. **Continue**.
 5. **Credentials** — enter the **Monitoring user**, choose the **Secret source** (encrypted in
-   DBManager, environment variable, mounted file or, when configured, HashiCorp Vault) and the
+   KBM DBManager, environment variable, mounted file or, when configured, HashiCorp Vault) and the
    password or reference. Leave **Collect metrics** on and choose the **Collection interval**.
    **Continue**.
 6. **Management mode** — keep **Monitoring Only** unless DBAs will run guarded changes from
-   DBManager. **Administration Enabled** needs **Administration user** and **Administration
+   KBM DBManager. **Administration Enabled** needs **Administration user** and **Administration
    password**. **Continue**.
 7. **Placement** — choose **Environment**, **Site**, **Cluster**, **Role in cluster**,
    **Application**, **Owner** and **Tags** (`team=payments, pci=true`). Environment and tags decide
    which alert rules, backup policies and role assignments apply. **Continue**.
 8. **Test connection** — select **Run test**. Each stage (validate, driver, DNS, TCP, TLS,
    authenticate, version, privileges, capabilities) turns ok, warn or fail. With a secret source
-   other than *encrypted in DBManager*, the backend resolves the reference for the test. Select
+   other than *encrypted in KBM DBManager*, the backend resolves the reference for the test. Select
    **Continue**, or **Skip test** to register before the network is ready.
 9. **Review** — check the summary and select **Register server**.
 10. **Done** — select **Open server**, or **Add another**.

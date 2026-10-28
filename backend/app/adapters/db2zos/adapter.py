@@ -190,7 +190,9 @@ class Db2zOSAdapter(Db2Base):
         C.LOGS: cap(REQUIRES_EXTERNAL_MONITORING, "MSTR/DBM1 job logs and SYSLOG are on z/OS"),
         C.SQL_WORKSPACE: cap(FULL),
         C.READ_ONLY_TRANSACTIONS: cap(PARTIAL, "classifier + privileges + rollback"),
-        C.ADMINISTRATION: cap(NOT_IMPLEMENTED, "administration on z/OS goes through change management, not DBManager"),
+        C.ADMINISTRATION: cap(
+            NOT_IMPLEMENTED, "administration on z/OS goes through change management, not KBM DBManager"
+        ),
         C.RECOMMENDATIONS: cap(PARTIAL, "REORG / RUNSTATS / COPY recommendations from real-time statistics"),
     }
     engine_capabilities: ClassVar[CapabilityMap] = static_capabilities

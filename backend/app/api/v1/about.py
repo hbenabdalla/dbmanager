@@ -19,7 +19,11 @@ from app.core.config import get_settings
 
 router = APIRouter(tags=["about"])
 
-PRODUCT = "DBManager"
+#: customer-facing product name (KBM corporate rebrand, 0.16)
+PRODUCT = "KBM DBManager"
+#: stable machine identifier of the public /version endpoint (load-balancer checks and upgrade
+#: scripts match it): unchanged by the rebrand
+PRODUCT_ID = "DBManager"
 #: the roadmap milestone this build belongs to (kept in step with ROADMAP.md)
 CURRENT_MILESTONE = {"version": "v0.15", "name": "Cloud-Native Deployment"}
 _SAFE = re.compile(r"[^0-9A-Za-z.+_:\-]")
@@ -62,7 +66,7 @@ def version_info(schema_version: str | None = None) -> dict[str, Any]:
 
 @router.get("/version", summary="Product version (no authentication required)")
 async def version() -> dict[str, Any]:
-    return {"product": PRODUCT, "version": __version__}
+    return {"product": PRODUCT_ID, "version": __version__}
 
 
 @router.get("/about", summary="Product, version, engines, status and links")

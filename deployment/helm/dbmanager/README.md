@@ -1,18 +1,18 @@
-# DBManager Helm chart
+# KBM DBManager Helm chart
 
-<img src="https://raw.githubusercontent.com/hbenabdalla/dbmanager/main/docs/assets/brand/dbmanager-logo.png" alt="DBManager" width="260">
+<img src="https://raw.githubusercontent.com/hbenabdalla/dbmanager/main/docs/assets/brand/kbm/kbm-dbmanager-banner.png" alt="KBM DBManager by Khorafi Business Machines (KBM)" width="100%">
 
 [![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/dbmanager)](https://artifacthub.io/packages/search?repo=dbmanager)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://github.com/hbenabdalla/dbmanager/blob/main/LICENSE)
 [![Documentation](https://readthedocs.org/projects/db-manager/badge/?version=latest)](https://db-manager.readthedocs.io/en/latest/)
 
-**DBManager** is a self-hosted platform for administering, monitoring and securing a fleet of
+**KBM DBManager** is a self-hosted platform for administering, monitoring and securing a fleet of
 relational databases from one place: PostgreSQL, MySQL, MariaDB, Microsoft SQL Server, Oracle
 Database, IBM Db2 LUW and (partially) IBM Db2 for z/OS.
 
-This chart deploys DBManager on **Kubernetes 1.27+** and **OpenShift 4.14+**.
+This chart deploys KBM DBManager on **Kubernetes 1.27+** and **OpenShift 4.14+**.
 
-## What DBManager does
+## What KBM DBManager does
 
 - **Fleet monitoring:** health, sessions, locks and blocking, wait classes, storage and
   replication, collected into VictoriaMetrics, with dashboards and a topology view.
@@ -63,7 +63,7 @@ Sign in as `admin` with the bootstrap password. The **Platform Setup Wizard** th
 through the organization, sign-in methods and monitoring settings.
 
 The install refuses to render when a required secret is missing; there are no default
-passwords. **Back up `secrets.masterKey`.** Database credentials stored in DBManager are
+passwords. **Back up `secrets.masterKey`.** Database credentials stored in KBM DBManager are
 encrypted with it and cannot be recovered without it.
 
 ### Production
@@ -117,7 +117,7 @@ helm install dbm oci://ghcr.io/hbenabdalla/charts/dbmanager -f my-values.yaml \
 | `postgresql.tls.mode` | `""` | `require`, `verify-ca` or `verify-full` to the control-plane PostgreSQL |
 | `timeseries.bundled.enabled` | `true` | single-node VictoriaMetrics; else `timeseries.external.url` |
 | `ingress.enabled` / `route.enabled` | `false` / `false` | Ingress, or an OpenShift Route with edge TLS |
-| `networkPolicy.enabled` | `true` | databases accept only DBManager pods; the API only the frontend |
+| `networkPolicy.enabled` | `true` | databases accept only KBM DBManager pods; the API only the frontend |
 | `openshift` | `false` | leave UID/GID/fsGroup to the restricted-v2 SCC |
 | `image.backend.digest` / `image.frontend.digest` | `""` | pin a verified image digest (wins over the tag) |
 
@@ -160,4 +160,4 @@ data.
 - Source, issues and changelog: <https://github.com/hbenabdalla/dbmanager>
 
 PostgreSQL, MySQL, MariaDB, SQL Server, Oracle and Db2 are trademarks of their respective
-owners. DBManager is not affiliated with or endorsed by them.
+owners. KBM DBManager is not affiliated with or endorsed by them.

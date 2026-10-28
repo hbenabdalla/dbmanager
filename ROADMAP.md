@@ -1,6 +1,6 @@
 # Roadmap
 
-DBManager **0.15.3** is the current release (0.15.1 was the first published 0.15 release; the `v0.15.0` and `v0.15.2` tags published nothing). **0.14.0** is the latest published release,
+KBM DBManager **0.15.3** is the current release (0.15.1 was the first published 0.15 release; the `v0.15.0` and `v0.15.2` tags published nothing). **0.14.0** is the latest published release,
 and **0.12.0** was the first. The roadmap is organised by milestone and promises no dates.
 
 - [Full roadmap](docs/product/roadmap.md): sprints, acceptance criteria, Definition of Done.
@@ -27,7 +27,7 @@ present on only one side (UI or backend). All of them were fixed and verified ag
 | 0.11 | Enterprise integration: API tokens, rate limiting, LDAP/OIDC/Vault validation, SIEM forwarding, Vault, MFA | VERIFIED COMPLETE (reconciled); cloud secret stores PLANNED (0.11.7) |
 | 0.12 | Asset protection: backup and restore of the platform and of managed databases | VERIFIED COMPLETE (reconciled); native Azure/GCS (0.12.6) and PITR (0.12.7) PLANNED |
 | 0.13 | Performance intelligence: z-score rules, regressions, forecasts, comparisons, outcome validation | VERIFIED COMPLETE (reconciled) |
-| 0.14 | Reporting (definitions, preview, PDF, schedules) and DBManager branding | VERIFIED COMPLETE (release 0.14.0, published) |
+| 0.14 | Reporting (definitions, preview, PDF, schedules) and KBM DBManager branding | VERIFIED COMPLETE (release 0.14.0, published) |
 | 0.15 | Cloud-native deployment: Helm chart, signed images with SBOM, manifest validation and kind install in CI, HA (concurrent start, instance registry, leader failover), internal TLS, dependency majors | VERIFIED COMPLETE (release 0.15.0) |
 
 ## Remediation
@@ -60,7 +60,7 @@ publishes images, chart and GitHub release; see [release checklist](docs/product
 | Item | Needs | Status |
 |---|---|---|
 | Db2 for z/OS real validation; thread, lock and subsystem monitoring | A z/OS subsystem with Db2 Connect. Db2 LUW results are never used as z/OS evidence | BLOCKED (EXTERNAL VALIDATION REQUIRED) |
-| Db2 LUW database restore | Runs on the Db2 host, outside DBManager | EXTERNAL VALIDATION REQUIRED |
+| Db2 LUW database restore | Runs on the Db2 host, outside KBM DBManager | EXTERNAL VALIDATION REQUIRED |
 | Oracle TCPS | A TCPS listener in the test environment | FUTURE |
 | Cloud secret stores (AWS, Azure, Google) | Cloud accounts to validate against | PLANNED (0.11.7) |
 

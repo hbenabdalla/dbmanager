@@ -228,17 +228,17 @@ class DatabaseBackupProvider:
             "restore": False,
             "external": True,
             "status": EXTERNAL_TOOL_REQUIRED,
-            "notes": ["Back this engine up with its own tooling; DBManager does not run it."],
+            "notes": ["Back this engine up with its own tooling; KBM DBManager does not run it."],
         }
 
     async def backup(self, ctx: Context) -> Outcome:
-        raise BackupProviderError(f"{self.engine}: backups are not performed by DBManager")
+        raise BackupProviderError(f"{self.engine}: backups are not performed by KBM DBManager")
 
     async def verify(self, ctx: Context, backup: Any, local: Path | None) -> dict[str, Any]:
         raise BackupProviderError(f"{self.engine}: no verification available")
 
     async def restore(self, ctx: Context, backup: Any, local: Path | None, target: str) -> dict[str, Any]:
-        raise BackupProviderError(f"{self.engine}: restore is not performed by DBManager")
+        raise BackupProviderError(f"{self.engine}: restore is not performed by KBM DBManager")
 
     async def estimate_size(self, ctx: Context) -> int | None:
         return None
@@ -259,12 +259,12 @@ class PostgreSQLProvider(DatabaseBackupProvider):
         status = AVAILABLE
         if not dump.get("path") or not rest.get("path"):
             status = TOOL_MISSING
-            notes.append("pg_dump / pg_restore are not installed on the DBManager host (DBM_BACKUP_PG_BIN_DIR).")
+            notes.append("pg_dump / pg_restore are not installed on the KBM DBManager host (DBM_BACKUP_PG_BIN_DIR).")
         else:
             notes.append(
                 f"Client: {dump.get('version')}. pg_dump must be the same major version as the server or newer."
             )
-        notes.append("Physical backups (pg_basebackup) and point-in-time recovery are not managed by DBManager.")
+        notes.append("Physical backups (pg_basebackup) and point-in-time recovery are not managed by KBM DBManager.")
         return {
             "logical": True,
             "native": False,
@@ -298,7 +298,7 @@ class PostgreSQLProvider(DatabaseBackupProvider):
     async def backup(self, ctx: Context) -> Outcome:
         found = await tools()
         if not found["pg_dump"]["path"]:
-            raise BackupProviderError("pg_dump is not installed on the DBManager host")
+            raise BackupProviderError("pg_dump is not installed on the KBM DBManager host")
         out = ctx.workdir / f"{ctx.database}.dump"
         await run_tool(
             [found["pg_dump"]["path"], "--format=custom", "--no-password", f"--file={out}", "--dbname", ctx.database],
@@ -319,7 +319,7 @@ class PostgreSQLProvider(DatabaseBackupProvider):
             raise BackupProviderError("the dump file is needed for verification")
         found = await tools()
         if not found["pg_restore"]["path"]:
-            raise BackupProviderError("pg_restore is not installed on the DBManager host")
+            raise BackupProviderError("pg_restore is not installed on the KBM DBManager host")
         listing = ctx.workdir / "toc.txt"
         await run_tool([found["pg_restore"]["path"], "--list", str(local)], stdout=listing)
         entries = [ln for ln in listing.read_text(errors="replace").splitlines() if ln and not ln.startswith(";")]
@@ -334,7 +334,7 @@ class PostgreSQLProvider(DatabaseBackupProvider):
             raise BackupProviderError("the dump file is needed for restore")
         found = await tools()
         if not found["pg_restore"]["path"]:
-            raise BackupProviderError("pg_restore is not installed on the DBManager host")
+            raise BackupProviderError("pg_restore is not installed on the KBM DBManager host")
         assert ctx.adapter is not None
         adapter = await ctx.adapter()
         try:
@@ -439,7 +439,9 @@ class MySQLFamilyProvider(DatabaseBackupProvider):
         )
         if not dump or not client:
             status = TOOL_MISSING
-            notes.append("The dump / client tools are not installed on the DBManager host (DBM_BACKUP_MYSQL_BIN_DIR).")
+            notes.append(
+                "The dump / client tools are not installed on the KBM DBManager host (DBM_BACKUP_MYSQL_BIN_DIR)."
+            )
         elif self.engine == "mysql" and "mariadb" in dump[1].lower():
             status = PARTIAL
             notes.append("Only the MariaDB dump client is installed: MySQL-specific objects may not round-trip.")
@@ -490,7 +492,7 @@ class MySQLFamilyProvider(DatabaseBackupProvider):
         check_identifier(ctx.database)
         picked = self._pick(await tools(), self.dump_tools)
         if not picked:
-            raise BackupProviderError("no mysqldump / mariadb-dump on the DBManager host")
+            raise BackupProviderError("no mysqldump / mariadb-dump on the KBM DBManager host")
         path, version = picked
         flavor = "mariadb" if "mariadb" in version.lower() else "mysql"
         defaults = self._defaults(ctx, flavor)
@@ -551,7 +553,7 @@ class MySQLFamilyProvider(DatabaseBackupProvider):
             )
         picked = self._pick(await tools(), self.client_tools)
         if not picked:
-            raise BackupProviderError("no mysql / mariadb client on the DBManager host")
+            raise BackupProviderError("no mysql / mariadb client on the KBM DBManager host")
         path, version = picked
         flavor = "mariadb" if "mariadb" in version.lower() else "mysql"
         defaults = self._defaults(ctx, flavor)
@@ -754,7 +756,7 @@ class SQLServerProvider(DatabaseBackupProvider):
                 "Native BACKUP DATABASE … WITH COPY_ONLY, CHECKSUM (does not disturb the log chain of your own "
                 "backup schedule). The .bak file is written by SQL Server on its own host or container, in the "
                 "instance default backup directory or a validated directory.",
-                "Copy the file to protected storage with your file-level backup; DBManager records and verifies it.",
+                "Copy the file to protected storage with your file-level backup; KBM DBManager records and verifies it.",
                 "Restore: RESTORE VERIFYONLY, then RESTORE DATABASE as a new database with MOVE of every file.",
                 "Needs sysadmin or db_backupoperator (backup) and dbcreator (restore) for the administration login.",
             ],
@@ -927,7 +929,7 @@ class OracleProvider(DatabaseBackupProvider):
                 "Restore: Data Pump import with REMAP_SCHEMA into a new schema.",
                 "No Data Pump compression or encryption options are used (they need the Advanced Compression / "
                 "Advanced Security options).",
-                "Physical backups and point-in-time recovery need RMAN: external tool required, not run by DBManager.",
+                "Physical backups and point-in-time recovery need RMAN: external tool required, not run by KBM DBManager.",
                 "Needs the DATAPUMP_EXP_FULL_DATABASE / DATAPUMP_IMP_FULL_DATABASE roles (or the schema owner) "
                 "and READ, WRITE on the directory object.",
             ],
@@ -1042,7 +1044,7 @@ class Db2LUWProvider(DatabaseBackupProvider):
                 "Db2 server; needs archive logging (LOGARCHMETH1 not OFF) — otherwise REQUIRES_CONFIGURATION.",
                 "Verification reads the recovery history (SYSIBMADM.DB_HISTORY); a full image check needs "
                 "db2ckbkp on the Db2 host (external tool).",
-                "Restore: external tool required — DBManager shows the RESTORE DATABASE command to run on the "
+                "Restore: external tool required — KBM DBManager shows the RESTORE DATABASE command to run on the "
                 "Db2 host. Rollforward / point-in-time recovery is not managed.",
                 "Applies to Db2 for Linux, UNIX and Windows only (not Db2 for z/OS).",
             ],
@@ -1142,7 +1144,7 @@ class Db2ZOSProvider(DatabaseBackupProvider):
             "status": EXTERNAL_TOOL_REQUIRED,
             "notes": [
                 "Db2 for z/OS is backed up with z/OS utilities (COPY / RECOVER, DFSMSdss, BACKUP SYSTEM) under "
-                "your site's job scheduler. DBManager does not run them (NOT IMPLEMENTED).",
+                "your site's job scheduler. KBM DBManager does not run them (NOT IMPLEMENTED).",
             ],
         }
 

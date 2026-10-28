@@ -16,7 +16,7 @@
 | `this backup is encrypted: supply its …` | Paste the age identity / passphrase, or configure `DBM_BACKUP_IDENTITY_FILE` / a passphrase reference. |
 | `wrong passphrase (or the key file is damaged)` / `decryption failed` | Wrong key, or the archive was modified. |
 | `integrity check failed` / status `CORRUPTED` | The stored object does not match its checksum: restore from another backup and check the storage. |
-| `incompatible backup` / *Unsupported* | The backup was made by a newer or unknown schema: restore it with that DBManager version or newer. |
+| `incompatible backup` / *Unsupported* | The backup was made by a newer or unknown schema: restore it with that KBM DBManager version or newer. |
 | `master key(s) … are not configured` | Configure the old key in `DBM_PREVIOUS_MASTER_KEYS`. |
 | `worker lost (no heartbeat)` | The worker stopped during the job; run it again. |
 | `the trial restore failed: IntegrityError …` | Restoring only some components would break a reference (for example servers whose environments are not restored): add the referenced component. |

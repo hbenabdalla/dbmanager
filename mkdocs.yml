@@ -1,7 +1,7 @@
-site_name: DBManager
-copyright: DBManager is licensed under the Apache License 2.0
+site_name: KBM DBManager Documentation
+copyright: KBM DBManager by Khorafi Business Machines (KBM) · licensed under the Apache License 2.0
 site_url: !ENV [READTHEDOCS_CANONICAL_URL, "https://db-manager.readthedocs.io/en/latest/"]
-site_description: Monitoring, performance analysis, security posture and safe administration for PostgreSQL, MySQL, MariaDB, SQL Server, Oracle and Db2.
+site_description: KBM DBManager — unified database operations. Monitoring, performance analysis, security posture and safe administration for PostgreSQL, MySQL, MariaDB, SQL Server, Oracle and Db2.
 repo_url: https://github.com/hbenabdalla/dbmanager
 repo_name: hbenabdalla/dbmanager
 edit_uri: edit/main/docs/
@@ -11,9 +11,12 @@ strict: true
 theme:
   name: material
   language: en
-  # the DBManager logo as provided, on a light plate so it stays legible on the coloured header
-  logo: assets/brand/dbmanager-mark-plate.png
-  favicon: assets/brand/favicon-32.png
+  # the KBM logo as supplied by KBM (white artwork on the KBM-blue header), docs/assets/brand/kbm
+  logo: assets/brand/kbm/kbm-mark-white.svg
+  favicon: assets/brand/kbm/favicon-32.png
+  font:
+    text: Plus Jakarta Sans
+    code: IBM Plex Mono
   features:
     - navigation.tabs
     - navigation.sections
@@ -29,18 +32,21 @@ theme:
   palette:
     - media: "(prefers-color-scheme: light)"
       scheme: default
-      primary: indigo
-      accent: indigo
+      primary: custom
+      accent: custom
       toggle:
         icon: material/weather-night
         name: Switch to dark mode
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
-      primary: indigo
-      accent: indigo
+      primary: custom
+      accent: custom
       toggle:
         icon: material/weather-sunny
         name: Switch to light mode
+
+extra_css:
+  - assets/stylesheets/kbm.css
 
 plugins:
   - search
@@ -239,6 +245,8 @@ nav:
       - Documentation: development/documentation.md
       - Release process: development/release-process.md
       - Brand assets: development/brand-assets.md
+      - KBM brand guidelines: branding/kbm-dbmanager-brand-guidelines.md
+      - KBM brand analysis: branding/kbm-brand-analysis.md
   - Troubleshooting:
       - troubleshooting/index.md
       - Connections: troubleshooting/connections.md

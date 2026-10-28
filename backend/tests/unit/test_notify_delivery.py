@@ -95,7 +95,7 @@ async def test_smtp_starttls_with_auth_against_a_local_server(tmp_path, monkeypa
         assert await notify.send(_channel(port, "starttls"), "firing", ALERT) == 250
         mail_from, rcpts, content = inbox.messages[0]
         assert mail_from == "dbm@example.com" and rcpts == ["dba@example.com"]
-        assert "Subject: [DBManager] CRITICAL: Disk full on PG-1" in content
+        assert "Subject: [KBM DBManager] CRITICAL: Disk full on PG-1" in content
         # without the CA the server certificate is not trusted: delivery fails, nothing is sent
         monkeypatch.setattr(get_settings(), "smtp_ca_file", "")
         with pytest.raises(notify.DeliveryError, match="CERTIFICATE_VERIFY_FAILED|certificate verify failed"):
@@ -117,7 +117,7 @@ async def test_smtp_implicit_tls_against_a_local_server(tmp_path, monkeypatch) -
     try:
         monkeypatch.setattr(get_settings(), "smtp_ca_file", str(ca))
         assert await notify.send(_channel(port, "tls"), "resolved", ALERT) == 250
-        assert "Subject: [DBManager] RESOLVED: Disk full on PG-1" in inbox.messages[0][2]
+        assert "Subject: [KBM DBManager] RESOLVED: Disk full on PG-1" in inbox.messages[0][2]
     finally:
         ctl.stop()
 

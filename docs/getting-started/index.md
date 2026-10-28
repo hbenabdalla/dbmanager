@@ -1,6 +1,6 @@
 # Introduction
 
-DBManager gives database administrators, platform teams and auditors one web application for a
+KBM DBManager gives database administrators, platform teams and auditors one web application for a
 heterogeneous database estate:
 
 * **Fleet inventory** — servers, clusters, databases, schemas, objects, users and grants, organized
@@ -16,7 +16,7 @@ heterogeneous database estate:
 * **Administration** — guarded actions (create user/role/schema/index, grant, revoke, cancel or
   terminate a session) only on servers explicitly registered as *Administration enabled*. Servers
   are registered as *Monitoring only* unless you choose otherwise.
-* **Backup and restore** — backups of DBManager's own configuration and of managed databases,
+* **Backup and restore** — backups of KBM DBManager's own configuration and of managed databases,
   verified after writing, with policies, retention and guided restores.
 * **Reports** — CSV and PDF reports, e-mailed on a schedule.
 * **Platform** — RBAC with scopes, local accounts, LDAP/Active Directory, OpenID Connect, MFA, API

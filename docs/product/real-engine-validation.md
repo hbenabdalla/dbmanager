@@ -1,6 +1,6 @@
 # Real-engine validation report
 
-What DBManager has been validated against: **real database servers from the vendors' official
+What KBM DBManager has been validated against: **real database servers from the vendors' official
 container images**, driven by the integration suite (`backend/tests/integration/`) through
 `scripts/integration-test.ps1` / `.sh`. Nothing here comes from mocks or the simulation. Results
 also ship in `backend/app/data/real_engine_validation.json` (shown on **Platform → Engine support**).
@@ -30,7 +30,7 @@ series, a MySQL restore with binary logging on and the Db2 backup as a SYSMAINT 
 
 ## Release 0.15.0: deployment work, no adapter changes
 
-0.15 changed no engine adapter. It changed how DBManager connects to its **own** databases (TLS
+0.15 changed no engine adapter. It changed how KBM DBManager connects to its **own** databases (TLS
 to the control-plane PostgreSQL and to VictoriaMetrics) and fixed LDAP StartTLS against servers
 addressed by IP. Runs made on 2026-10-20 in the cloud workspace on the 0.15.0 code:
 
@@ -222,7 +222,7 @@ Limitations:
 Limitations:
 
 - Backup validated as the SYSMAINT backup operator `DBMBK` (not SYSADM).
-- Restore EXTERNAL VALIDATION REQUIRED: a Db2 restore runs with the CLP on the Db2 host; DBManager generates the command (checked by the test) and does not execute it.
+- Restore EXTERNAL VALIDATION REQUIRED: a Db2 restore runs with the CLP on the Db2 host; KBM DBManager generates the command (checked by the test) and does not execute it.
 - TLS NOT TESTED: the container has no SSL listener.
 - Replication PARTIAL: HADR off (standalone).
 

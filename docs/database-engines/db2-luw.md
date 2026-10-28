@@ -92,12 +92,12 @@ GRANT WLMADM ON DATABASE TO USER DBMADM;        -- WLM_CANCEL_ACTIVITY (cancel a
 
 `ACCESSCTRL` grants and revokes object privileges and database authorities (except ACCESSCTRL,
 DATAACCESS, DBADM and SECADM). Creating roles and granting role membership need **SECADM** (or
-`WITH ADMIN OPTION` on the role); DBManager reports SQL0552N as a permission error if the admin
-account lacks it. Grant SECADM only if you want role management from DBManager.
+`WITH ADMIN OPTION` on the role); KBM DBManager reports SQL0552N as a permission error if the admin
+account lacks it. Grant SECADM only if you want role management from KBM DBManager.
 
 Forcing applications (`FORCE APPLICATION`) needs SYSMAINT (an OS group in the DBM configuration);
-leave it out unless you want DBManager to terminate sessions. REORG and RUNSTATS are only ever
-recommended by DBManager, so no authority for them is required.
+leave it out unless you want KBM DBManager to terminate sessions. REORG and RUNSTATS are only ever
+recommended by KBM DBManager, so no authority for them is required.
 
 See [Least-privilege accounts](permissions.md) for the rules that apply to every engine.
 
@@ -168,10 +168,10 @@ privileged accounts) also apply.
 Plus the 12 engine-independent performance rules `GEN-PERF-001` … `GEN-PERF-012` (connections,
 cache, blocking, deadlocks, replication lag, long transactions, expensive queries, spills, CPU,
 storage, query latency regressions and storage forecasts). Recommendations are advice with
-evidence; DBManager never executes them.
+evidence; KBM DBManager never executes them.
 
 **Rule count:** 16 engine-specific rules (7 security, 9 performance) plus the 14
-engine-independent rules, which apply to every engine. Across all engines DBManager ships 61
+engine-independent rules, which apply to every engine. Across all engines KBM DBManager ships 61
 performance and 55 security rules; the full catalog is served by `GET /api/v1/advisor/rules`.
 
 ## Troubleshooting

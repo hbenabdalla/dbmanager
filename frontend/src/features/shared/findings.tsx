@@ -73,7 +73,7 @@ function FindingDialog({ f, kind, onClose }: { f: Finding; kind: Kind; onClose: 
         {(f.guidance || f.remediation) && <section><h4 className="mb-1.5 font-semibold">Implementation guidance</h4><CodeBlock code={(f.remediation ?? f.guidance)!} /></section>}
         {f.validation && <ValidationDetail v={f.validation} />}
         <p className="rounded-md border border-border bg-surface-2 px-3 py-2 text-[12.5px] text-muted">
-          DBManager never applies recommendations automatically. Make the change through your change process, or on a server in administration mode through its Administration tab (statements previewed, confirmed and audited) or the SQL workspace (classified, confirmed and audited).
+          KBM DBManager never applies recommendations automatically. Make the change through your change process, or on a server in administration mode through its Administration tab (statements previewed, confirmed and audited) or the SQL workspace (classified, confirmed and audited).
         </p>
         <div className="flex flex-wrap gap-x-4 gap-y-1 text-[12px] text-muted">
           <span>First seen {dateTime(f.first_seen_at)}</span><span>Last evaluated {relTime(f.last_seen_at)}</span>

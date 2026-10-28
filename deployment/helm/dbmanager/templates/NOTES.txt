@@ -1,4 +1,4 @@
-DBManager {{ .Chart.AppVersion }} is deployed as release "{{ .Release.Name }}".
+KBM DBManager {{ .Chart.AppVersion }} is deployed as release "{{ .Release.Name }}".
 
 {{- if .Values.ingress.enabled }}
 Open: http{{ if .Values.ingress.tls.enabled }}s{{ end }}://{{ .Values.ingress.host }}

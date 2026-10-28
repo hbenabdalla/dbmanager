@@ -1,49 +1,49 @@
 # Brand assets
 
-This page describes the DBManager logo, the database engine marks shown in the product, where the
-files live, and the rules for changing them.
+This page describes the KBM logo and the KBM DBManager product lockup, the database engine marks
+shown in the product, where the files live, and the rules for changing them. The brand rules
+themselves are in the [KBM DBManager brand guidelines](../branding/kbm-dbmanager-brand-guidelines.md).
 
-## The DBManager logo
+## The KBM logo
 
-The logo (a database cylinder in a ring with three nodes, a cloud and a monitoring chart, above the
-word **DBManager**) is the project's own artwork. The authoritative file is
-`docs/assets/brand/dbmanager-logo-source.png` (1774 × 887 px, transparent background). Every other
-file below is derived from it **only by cropping and scaling**: none of them is redrawn, recoloured or
-reshaped.
+KBM DBManager is a product of Khorafi Business Machines (KBM). The KBM logo is used **exactly as
+KBM supplied it** — vector files, KBM blue `#1A4796` and white — and is only ever scaled with its
+aspect ratio kept. It is never redrawn, recoloured, stretched, outlined or given effects.
 
-| File | Size | Use |
+| File | Content | Used for |
 |---|---|---|
-| `docs/assets/brand/dbmanager-logo-source.png` | 1774 × 887 | source of truth; not shipped in the web bundle |
-| `frontend/src/assets/brand/dbmanager/dbmanager-logo.png` | 960 × 596 | full logo, large (About page) |
-| `frontend/src/assets/brand/dbmanager/dbmanager-logo-small.png` | 480 × 298 | full logo, small (sign-in, setup wizard, loading screen) |
-| `frontend/src/assets/brand/dbmanager/dbmanager-mark.png` | 337 × 256 | symbol only, without the lettering (sidebar, first-run screen) |
-| `frontend/public/favicon.ico`, `favicon-16.png`, `favicon-32.png` | 16–48 | browser tab |
-| `frontend/public/apple-touch-icon.png`, `icon-192.png`, `icon-512.png`, `site.webmanifest` | 180–512 | home-screen / app icon, web app manifest |
-| `backend/app/data/brand/dbmanager-logo.png` | 480 × 298 | header of server-side PDF reports |
-| `docs/assets/brand/dbmanager-logo.png`, `dbmanager-mark.png`, `favicon-32.png` | — | README and documentation site |
-| `docs/assets/brand/dbmanager-mark-plate.png` | 256 × 256 | documentation header logo (the mark on a white rounded plate) |
+| `docs/assets/brand/kbm/kbm-logo.svg` | full logo, KBM blue (letters, *Khorafi Business Machines (W.L.L.)*, Arabic name) | light backgrounds: login form side, documents |
+| `docs/assets/brand/kbm/kbm-logo-white.svg` | full logo, white | KBM-blue / navy backgrounds: login cover, About banner, video, banners |
+| `docs/assets/brand/kbm/kbm-mark.svg` | the KBM letters only, blue | product lockup on light surfaces, PDF footer |
+| `docs/assets/brand/kbm/kbm-mark-white.svg` | the KBM letters only, white | sidebar, documentation header, favicon |
+| `frontend/src/assets/brand/kbm/*.svg` | the same four files | the web application |
+| `backend/app/data/brand/kbm-logo.png`, `kbm-mark.png` | rendered from the SVGs (1200 / 600 px wide) | PDF report header and footer |
+| `frontend/public/favicon.svg`, `favicon.ico`, `favicon-16/32.png`, `icon-192/512.png`, `apple-touch-icon.png` | the white KBM mark centred on a KBM-blue tile | browser tab, app icons |
+| `docs/assets/brand/kbm/kbm-dbmanager-lockup.png`, `-white.png` | the product lockup (below) | README, slides, video |
+| `docs/assets/brand/kbm/kbm-dbmanager-banner.png` | KBM-blue cover banner | README, documentation home |
 
-### Light and dark backgrounds
+The *mark* files are the supplied artwork with the two company-name lines left out (the same
+variant KBM uses in its document footers); the remaining paths and their coordinates are unchanged,
+only the view box is tightened to them.
 
-The navy lettering and ring of the logo need a light background. On dark surfaces — the navigation
-sidebar (dark in both themes), the dark theme, the documentation header — the logo is shown **on a
-light plate** (a white rounded rectangle behind it) instead of being recoloured. The components that
-do this are `BrandLogo` and `BrandMark` in `frontend/src/components/brand.tsx`:
+### Product lockup
 
-- `BrandLogo plate="auto"` (default) adds the plate in the dark theme only;
-- `BrandMark plate` always sits on the plate (used in the sidebar, expanded and collapsed);
-- both use the product name **DBManager** as the text alternative, or are decorative
-  (`alt=""`) when the name is printed next to them.
+`[KBM mark] | DBManager` — the KBM letters, a thin vertical divider and the word **DBManager** in
+Plus Jakarta Sans Bold, reading as the official product name **KBM DBManager**. It is implemented
+once, as `BrandLogo` in `frontend/src/components/brand.tsx` (and rendered for documents by the same
+proportions): mark width 31 % of the lockup, word size 11 % of it. `KbmLogo` renders the KBM logo
+alone (`full` for the version with the company name), `BrandMark` the mark alone, `KbmCoverMotif`
+the decorative cover pattern. The text alternative is **KBM DBManager**, or the image is decorative
+when the name is printed next to it.
 
 Motion is limited to a short fade on the loading screen and a hover opacity change on the sidebar
-logo; both are disabled under `prefers-reduced-motion`. The logo is never animated continuously.
+lockup; both are disabled under `prefers-reduced-motion`. The logo is never animated continuously.
 
-### Regenerating the derived files
+### Retired artwork
 
-The derived files were produced from the source with Pillow: transparent pixels with alpha ≤ 12
-cleared (anti-aliasing noise), cropped to the content (full logo: box 305,90 – 1484,813; symbol:
-575,90 – 1238,594), scaled with Lanczos resampling and quantised to 256 colours. To change the logo,
-replace the source file and regenerate every file in the table; do not edit derived files by hand.
+The DBManager logo of 0.14 – 0.15 (database cylinder, ring and cloud) is retired: it is no longer
+shipped in the application, the documentation, PDF reports or icons. Release notes of those
+versions still mention it.
 
 ## Database engine marks
 
@@ -53,7 +53,7 @@ distribution (click to filter), topology nodes, global search, alerts, findings 
 recommendations, backup and restore, Engine support, Database drivers, notification-channel routing,
 reports. One component does this: `DatabaseEngineIcon` (`frontend/src/components/engine-icon.tsx`).
 
-**DBManager does not ship vendor logos.** The marks are DBManager's own design: a rounded tile in a
+**KBM DBManager does not ship vendor logos.** The marks are KBM DBManager's own design: a rounded tile in a
 per-engine colour with a two-letter monogram (`Pg`, `My`, `Ma`, `SS`, `Or`, `D2`, `Dz`). Db2 for z/OS
 has a band at the bottom of its tile so it is never confused with Db2 LUW, and unknown engines get a
 neutral database glyph. The marks are not modelled on, and must not imitate, any vendor logo
@@ -84,12 +84,12 @@ Rules the component enforces:
 - **No external resources.** Marks are inline SVG; no logo CDN or remote image is used.
 - **Not action icons.** Engine marks identify engines; they are never used for buttons or actions.
 - **No licensing implication.** Showing the Oracle mark says nothing about Oracle Diagnostics or
-  Tuning Packs; DBManager keeps those features off unless licensed and configured.
+  Tuning Packs; KBM DBManager keeps those features off unless licensed and configured.
 
 ### Operator-supplied licensed logos
 
 An organisation that is licensed to use a vendor's logo (for example under a partner agreement) can
-show it instead of the DBManager mark:
+show it instead of the KBM DBManager mark:
 
 1. Place the files in a directory readable by the backend, named exactly `<engine>.svg` or
    `<engine>.png` for the keys above (for example `oracle.svg`, `db2zos.png`). Files larger than
@@ -101,7 +101,7 @@ The UI asks `GET /api/v1/branding/engine-logos` which engines have a logo and lo
 neutral plate, scaled to fit without distortion, and never recoloured; the engine name stays the
 accessible name. SVG files are served with `Content-Security-Policy: default-src 'none'; sandbox`
 and `X-Content-Type-Options: nosniff`, so scripts in an SVG never run. If an image fails to load, the
-DBManager mark is shown.
+KBM DBManager mark is shown.
 
 Do not commit vendor logos to this repository, and do not add a licensed logo to the image you
 distribute unless your licence allows redistribution.
@@ -114,11 +114,10 @@ of MariaDB plc and/or its affiliates. Microsoft and SQL Server are trademarks of
 Db2 are trademarks of International Business Machines Corporation. Other names may be trademarks of
 their respective owners.
 
-DBManager is an independent project. It is not affiliated with, sponsored by or endorsed by any of
-these companies, and the engine marks used in DBManager are its own designs, not the vendors' logos.
-The product names are used only to say which database engines DBManager works with.
+KBM DBManager is not affiliated with, sponsored by or endorsed by any of these companies, and the engine marks used in KBM DBManager are its own designs, not the vendors' logos.
+The product names are used only to say which database engines KBM DBManager works with.
 
-Why DBManager does not bundle the vendors' logos: their trademark policies require permission for
+Why KBM DBManager does not bundle the vendors' logos: their trademark policies require permission for
 using the logo artwork in a product (PostgreSQL's policy reserves the logo for approved uses;
 Microsoft, IBM and Oracle/MySQL do not license their logos for third-party products without an
 agreement; the MariaDB sea lion logo belongs to the MariaDB company). The policies are published at

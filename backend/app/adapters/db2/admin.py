@@ -100,6 +100,6 @@ def build(action: str, p: dict[str, Any]) -> A.AdminStatement:
             [None],
             [sql],
             target_object=f"{schema}.{table}.{name}",
-            notes=["Run RUNSTATS on the table afterwards (DBManager recommends, it does not run it)."],
+            notes=["Run RUNSTATS on the table afterwards (KBM DBManager recommends, it does not run it)."],
         )
     raise AdapterNotSupported(Capability.ADMINISTRATION, f"{action} is not available for Db2")

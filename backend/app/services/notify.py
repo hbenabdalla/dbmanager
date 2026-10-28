@@ -169,7 +169,7 @@ def preset_payload(preset: str, event: str, alert: dict[str, Any] | None) -> dic
     """Body for the channel's preset. ``generic`` is the documented DBManager JSON payload."""
     if preset == "generic":
         return payload(event, alert)
-    subject = _subject(event, alert).removeprefix("[DBManager] ")
+    subject = _subject(event, alert).removeprefix("[KBM DBManager] ")
     text = _text(event, alert)
     url = (alert or {}).get("url")
     facts = []
@@ -194,7 +194,7 @@ def preset_payload(preset: str, event: str, alert: dict[str, Any] | None) -> dic
                 {
                     "type": "actions",
                     "elements": [
-                        {"type": "button", "text": {"type": "plain_text", "text": "Open in DBManager"}, "url": url}
+                        {"type": "button", "text": {"type": "plain_text", "text": "Open in KBM DBManager"}, "url": url}
                     ],
                 }
             )
@@ -213,7 +213,7 @@ def preset_payload(preset: str, event: str, alert: dict[str, Any] | None) -> dic
             "body": body,
         }
         if url:
-            card["actions"] = [{"type": "Action.OpenUrl", "title": "Open in DBManager", "url": url}]
+            card["actions"] = [{"type": "Action.OpenUrl", "title": "Open in KBM DBManager", "url": url}]
         return {
             "type": "message",
             "attachments": [{"contentType": "application/vnd.microsoft.card.adaptive", "content": card}],
@@ -223,15 +223,15 @@ def preset_payload(preset: str, event: str, alert: dict[str, Any] | None) -> dic
 
 def _subject(event: str, alert: dict[str, Any] | None) -> str:
     if not alert:
-        return "[DBManager] Test notification"
+        return "[KBM DBManager] Test notification"
     state = "RESOLVED" if event == "resolved" else alert.get("severity", "").upper()
     again = " (still firing)" if alert.get("renotify") else ""
-    return f"[DBManager] {state}: {alert.get('title')}{again}"
+    return f"[KBM DBManager] {state}: {alert.get('title')}{again}"
 
 
 def _text(event: str, alert: dict[str, Any] | None) -> str:
     if not alert:
-        return "This is a test notification from DBManager. The channel is configured correctly."
+        return "This is a test notification from KBM DBManager. The channel is configured correctly."
     lines = [
         alert.get("title", ""),
         "",

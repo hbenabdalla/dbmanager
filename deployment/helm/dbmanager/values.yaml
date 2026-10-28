@@ -1,4 +1,4 @@
-# DBManager Helm chart values. Documentation: docs/deployment/kubernetes-helm.md
+# KBM DBManager Helm chart values. Documentation: docs/deployment/kubernetes-helm.md
 #
 # Minimal evaluation install (bundled PostgreSQL and VictoriaMetrics):
 #   helm install dbm oci://ghcr.io/hbenabdalla/charts/dbmanager \

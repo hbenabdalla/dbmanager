@@ -9,7 +9,7 @@
 
 ## Objective
 
-Run DBManager on Kubernetes and OpenShift the way production platforms expect: installable with
+Run KBM DBManager on Kubernetes and OpenShift the way production platforms expect: installable with
 one Helm command from signed images, several API and worker replicas that coordinate safely and
 show who leads, encrypted connections to the control-plane databases, and every deployment
 artefact validated in CI — including a real install with a leader failover.

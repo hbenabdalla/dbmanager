@@ -43,7 +43,7 @@ A server is either **Monitoring only** or **Administration enabled** (Settings t
 through the API — are *Monitoring only*. Servers registered before version 0.14.0 were kept in
 administration mode by migration `0013`, because that was their behaviour before.
 
-On a *Monitoring only* server DBManager refuses every change action, whatever the stored
+On a *Monitoring only* server KBM DBManager refuses every change action, whatever the stored
 credential allows (`409 monitoring_only`): administration actions, session cancel and terminate,
 modifying statements in the SQL workspace, EXPLAIN ANALYZE of a modifying statement, and database
 restores into it. The Administration tab still previews statements but cannot execute them.

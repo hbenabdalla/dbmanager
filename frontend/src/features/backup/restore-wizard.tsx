@@ -106,7 +106,7 @@ function RestoreFlow({ backup }: { backup: Backup }) {
   const sameEngine = (servers.data ?? []).filter((s) => s.engine === backup.engine);
   return (
     <div>
-      <PageHeader title={`Restore ${platform ? "DBManager platform" : asset(backup)}`}
+      <PageHeader title={`Restore ${platform ? "KBM DBManager platform" : asset(backup)}`}
         crumbs={[{ label: "Platform" }, { label: "Backup & Restore", to: "/platform/backups?tab=history" }, { label: "Restore" }]}
         description={`Backup ${backup.id.slice(0, 8)} from ${dateTime(backup.created_at)}`} />
       <Card className="p-4">
@@ -136,7 +136,7 @@ function RestoreFlow({ backup }: { backup: Backup }) {
           {step === "manifest" && (pp ? (
             <KeyValue items={[
               ["Format", pp.manifest.format], ["Created", `${dateTime(pp.manifest.created_at)}${pp.manifest.created_by ? ` by ${pp.manifest.created_by}` : ""}`],
-              ["DBManager version", pp.manifest.dbm_version], ["Schema", pp.manifest.schema_version], ["Components", pp.manifest.components.join(", ")],
+              ["KBM DBManager version", pp.manifest.dbm_version], ["Schema", pp.manifest.schema_version], ["Components", pp.manifest.components.join(", ")],
             ]} />
           ) : dp ? (
             <KeyValue items={[["Engine", backup.engine ? <DatabaseEngineIcon engine={backup.engine} withLabel /> : "—"], ["Method", `${backup.method} (${backup.tool ?? ""})`], ["Source database", backup.database ?? "—"], ["Location", backup.location ?? "—"]]} />
@@ -149,7 +149,7 @@ function RestoreFlow({ backup }: { backup: Backup }) {
           {step === "compat" && (pp ? (
             <div className="space-y-2 text-[13px]">
               <div className="flex items-center gap-2">Compatibility <Badge tone={pp.compatibility.status === "compatible" ? "ok" : pp.compatibility.status === "migration_required" ? "warn" : "crit"}>{COMPAT_LABEL[pp.compatibility.status]}</Badge></div>
-              <p className="text-muted">Backup: DBManager {pp.compatibility.backup_version}, schema {pp.compatibility.backup_schema}. This installation: {pp.compatibility.current_version}, schema {pp.compatibility.current_schema}.</p>
+              <p className="text-muted">Backup: KBM DBManager {pp.compatibility.backup_version}, schema {pp.compatibility.backup_schema}. This installation: {pp.compatibility.current_version}, schema {pp.compatibility.current_schema}.</p>
               {pp.compatibility.notes.map((n) => <p key={n}>{n}</p>)}
               {pp.keys.missing.length > 0 && <p className="text-crit">Master keys not configured: {pp.keys.missing.join(", ")} (set DBM_PREVIOUS_MASTER_KEYS)</p>}
             </div>
@@ -196,7 +196,7 @@ function RestoreFlow({ backup }: { backup: Backup }) {
           {step === "confirm" && (
             <div className="space-y-3 text-[13px]">
               <p className="flex gap-2 rounded-md border border-crit/30 bg-crit-soft px-3 py-2 text-crit"><AlertTriangle className="mt-0.5 size-4 shrink-0" />
-                {platform ? "The selected components of DBManager's configuration are replaced by the backup. This is recorded in the audit log." : "A new database is created from the backup and recorded in the audit log."}</p>
+                {platform ? "The selected components of KBM DBManager's configuration are replaced by the backup. This is recorded in the audit log." : "A new database is created from the backup and recorded in the audit log."}</p>
               {platform && <label className="flex items-center gap-2"><input type="checkbox" checked={preBackup} onChange={(e) => setPreBackup(e.target.checked)} />Take a safety backup of the current platform first (recommended)</label>}
               {platform && !preBackup && <p className="text-[12.5px] text-muted">Restoring without a safety backup is refused unless an administrator turns on <span className="font-mono">backup.allow_restore_without_safety_backup</span> in Platform → Configuration → Settings.</p>}
               {pp?.compatibility.status === "migration_required" && <label className="flex items-center gap-2"><input type="checkbox" checked={acceptMigration} onChange={(e) => setAcceptMigration(e.target.checked)} />I accept that columns added since the backup take their default values</label>}

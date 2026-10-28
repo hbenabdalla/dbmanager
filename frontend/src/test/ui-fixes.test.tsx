@@ -306,7 +306,7 @@ describe("backup pin, jobs and engine support", () => {
   it("hides Pin without backup.policy.manage", async () => {
     stub((path) => (path === "/auth/me" ? { body: ME(["backup.view"], ["backup.view"]) } : path === "/backups" ? LIST([BACKUP(false)]) : undefined));
     providers(<AppRoutes />, "/platform/backups?tab=history");
-    expect(await screen.findByText("DBManager platform")).toBeInTheDocument();
+    expect(await screen.findByText("KBM DBManager platform")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Pin b1b2c3d4" })).not.toBeInTheDocument();
   });
 

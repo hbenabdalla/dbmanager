@@ -193,7 +193,7 @@ checked at discovery; registering a MariaDB server as MySQL is reported as a cap
 - One database per registration: workspace statements and EXPLAIN for another database are
   refused.
 - RUNSTATS / REORG: recommendations from catalog statistics (REORGCHK-style F1/F2/F3), the
-  REORG-pending state and stale statistics. **DBManager never runs them.**
+  REORG-pending state and stale statistics. **KBM DBManager never runs them.**
 - EXPLAIN needs the explain tables (`SYSPROC.SYSINSTALLOBJECTS`); actual row counts need an activity
   event monitor and are not supported.
 
@@ -225,7 +225,7 @@ A separate adapter on the SYSIBM catalog. Classification (z/OS vocabulary):
   **Oracle Diagnostics Pack** and **Oracle Tuning Pack** flags, **disabled by default**. The SQL
   workspace refuses statements that reference pack objects unless the matching flag is set
   ([Oracle](oracle.md#licensed-features-diagnostics-and-tuning-pack)); the collectors ignore the
-  flags. Active Data Guard (read-only open standby with apply) is a separate license; DBManager only
+  flags. Active Data Guard (read-only open standby with apply) is a separate license; KBM DBManager only
   reads `V$DATAGUARD_STATS`.
 * **SQL Server** — The ODBC driver is Microsoft's (msodbcsql18, installed in the backend image after
   accepting the Microsoft EULA; build with `INSTALL_MSODBC=false` to omit it, or

@@ -97,7 +97,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
     instances.heartbeat = instances.Heartbeat()
     instances.heartbeat.start()
-    log.info("DBManager started", extra={"version": __version__, "role": s.process_role, "env": s.env})
+    log.info("KBM DBManager started", extra={"version": __version__, "role": s.process_role, "env": s.env})
     try:
         yield
     finally:
@@ -115,7 +115,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 def create_app(*, with_lifespan: bool = True) -> FastAPI:
     s = get_settings()
     app = FastAPI(
-        title="DBManager API",
+        title="KBM DBManager API",
         version=__version__,
         description=(
             "Unified administration, monitoring, security and performance analysis for heterogeneous relational "

@@ -386,7 +386,7 @@ async def create_platform_backup(
             policy_id=policy_id,
             target_id=target.id,
             method="platform",
-            tool=f"DBManager {__version__}",
+            tool=f"KBM DBManager {__version__}",
             app_version=__version__,
             schema_version=schema,
             format_version=platform.FORMAT,
@@ -430,7 +430,7 @@ async def create_platform_backup(
             "files": files,
             "metrics": metrics_info,
             "key_ids": info["key_ids"],
-            "master_key_note": "Encrypted values in this archive need the DBManager master key(s) listed in "
+            "master_key_note": "Encrypted values in this archive need the KBM DBManager master key(s) listed in "
             "key_ids. The master key itself is not included.",
             "excluded": platform.EXCLUDED,
         }
@@ -686,7 +686,7 @@ async def create_database_backup(
                 size_bytes=outcome.size_bytes,
             )
             details["note"] = (
-                "Written on the database server; DBManager records and verifies it. Copy it to protected storage."
+                "Written on the database server; KBM DBManager records and verifies it. Copy it to protected storage."
             )
             await _save_backup(bid, **values)
         async with session_scope() as db:
@@ -912,7 +912,7 @@ async def _run_platform_backup(job: BackupJob) -> tuple[str, dict[str, Any]]:
             "step": "done",
             "total": 1,
             "done": 1,
-            "assets": [{"key": "platform", "name": "DBManager platform", "status": status, "backup_id": str(bid)}],
+            "assets": [{"key": "platform", "name": "KBM DBManager platform", "status": status, "backup_id": str(bid)}],
         },
     )
     if job.policy_id and status == "SUCCESS":
@@ -1584,7 +1584,7 @@ def _event(policy: BackupPolicy | None, title: str, message: str, severity: str)
         "severity": severity,
         "title": title,
         "message": message,
-        "server_name": "DBManager backup",
+        "server_name": "KBM DBManager backup",
         "engine": policy.kind if policy else "backup",
         "environment": None,
         "url": f"{base}/platform/backups",

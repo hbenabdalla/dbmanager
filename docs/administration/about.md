@@ -2,7 +2,7 @@
 
 ![About](../assets/screenshots/about.png)
 
-**Platform → Configuration → About** (also reachable from the **Help** menu in the top bar and the command palette, *About DBManager*) shows:
+**Platform → Configuration → About** (also reachable from the **Help** menu in the top bar and the command palette, *About KBM DBManager*) shows:
 
 - the application, backend and frontend versions, the build identifier, git commit and build date, and the database schema (Alembic) revision;
 - a warning when the frontend and backend versions differ (rebuild both images from the same release);
@@ -10,7 +10,7 @@
 - the deployment as counts: API processes, workers, stale processes and a mixed-versions warning ([high availability](../deployment/high-availability.md#the-instance-registry); the per-process list with host names is on **Platform → Collectors**, permission `collectors.view`);
 - the configured documentation, source code and roadmap links;
 - the support level of each database engine and the result of the real-engine validation suite shipped with the build;
-- the DBManager logo, the license (`Apache-2.0`), the current milestone and the trademark notice for the database engine names (see [brand assets](../development/brand-assets.md)).
+- the KBM DBManager logo, the license (`Apache-2.0`), the current milestone and the trademark notice for the database engine names (see [brand assets](../development/brand-assets.md)).
 
 Every signed-in user can open the page; it never shows host names, file paths or environment contents.
 

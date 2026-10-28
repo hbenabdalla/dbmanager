@@ -1,10 +1,10 @@
 # Engine support
 
 **Backup & Restore → Engine support** shows the same table live, including which client tools the
-DBManager host has. Statuses: `AVAILABLE`, `PARTIAL`, `TOOL_MISSING`, `REQUIRES_CONFIGURATION`,
+KBM DBManager host has. Statuses: `AVAILABLE`, `PARTIAL`, `TOOL_MISSING`, `REQUIRES_CONFIGURATION`,
 `EXTERNAL_TOOL_REQUIRED`, `NOT_SUPPORTED`.
 
-| Engine | Backup | Restore by DBManager | Physical | PITR |
+| Engine | Backup | Restore by KBM DBManager | Physical | PITR |
 |---|---|---|---|---|
 | [PostgreSQL](engines/postgresql.md) | logical, `pg_dump -Fc`, copied to the target | yes, `pg_restore` into a new database | no | no |
 | [MySQL](engines/mysql.md) | logical, `mysqldump --single-transaction` | yes, into a new database | no | no |
@@ -15,7 +15,7 @@ DBManager host has. Statuses: `AVAILABLE`, `PARTIAL`, `TOOL_MISSING`, `REQUIRES_
 | [Db2 for z/OS](engines/db2-zos.md) | external tool required | external tool required | — | — |
 
 Point-in-time recovery is not offered for any engine: logical dumps and copy-only backups do not
-form a log chain that DBManager manages. Use the engine's own backup solution for PITR.
+form a log chain that KBM DBManager manages. Use the engine's own backup solution for PITR.
 
 ## Client tools in the Docker image
 

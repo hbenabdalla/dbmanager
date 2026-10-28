@@ -25,8 +25,8 @@ the rule.
 
 ## Webhook
 
-The **payload format** (`preset`) is *DBManager JSON* (`generic`, below), *Slack* (`slack`, an
-incoming-webhook message with blocks and an *Open in DBManager* button) or *Microsoft Teams*
+The **payload format** (`preset`) is *KBM DBManager JSON* (`generic`, below), *Slack* (`slack`, an
+incoming-webhook message with blocks and an *Open in KBM DBManager* button) or *Microsoft Teams*
 (`teams`, a message with an Adaptive Card, for a Teams workflow "Post to a channel when a webhook
 request is received"). The generic format is a JSON `POST` to the configured URL:
 
@@ -72,9 +72,9 @@ Recipients are set per channel. SMTP settings come from the environment and can 
 | `DBM_REPORT_MAX_ATTACHMENT_MB` | `10` — largest report file a [scheduled report](../user-guide/reports.md#scheduled-reports) attaches |
 
 The server certificate is always verified (hostname and chain) for `starttls` and `tls`. The
-subject is `[DBManager] SEVERITY: title` (`(still firing)` is appended to re-notifications).
+subject is `[KBM DBManager] SEVERITY: title` (`(still firing)` is appended to re-notifications).
 E-mail channels also deliver [scheduled reports](../user-guide/reports.md#scheduled-reports) as
-attachments, with the subject `[DBManager] report title — schedule name`.
+attachments, with the subject `[KBM DBManager] report title — schedule name`.
 
 ## Retries
 

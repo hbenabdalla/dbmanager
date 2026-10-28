@@ -90,7 +90,7 @@ CATALOG: tuple[PermissionDef, ...] = (
     _P(
         "restore.platform",
         "Backup",
-        "Restore DBManager's own configuration from a platform backup",
+        "Restore KBM DBManager's own configuration from a platform backup",
         platform_only=True,
     ),
     _P("restore.database", "Backup", "Restore a managed database from its backup into a new database"),

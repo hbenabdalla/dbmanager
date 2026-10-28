@@ -16,6 +16,6 @@ Engine differences matter: PostgreSQL DDL is reconstructed from the catalog (PAR
 engine is in the [support matrix](../database-engines/index.md).
 
 These pages are read-only. Creating or dropping databases, schemas or indexes is done on the
-server's **Administration** tab, which the pages link to: DBManager generates the statements for
+server's **Administration** tab, which the pages link to: KBM DBManager generates the statements for
 review, executes them with the administration credential after confirmation, and audits them —
 see [Guarded administration](users-and-privileges.md#guarded-administration).
