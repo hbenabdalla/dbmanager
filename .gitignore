@@ -46,3 +46,4 @@ integration-results/
 .DS_Store
 Thumbs.db
 *.tsbuildinfo
+marketing/video/.fonts/

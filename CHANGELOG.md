@@ -5,6 +5,87 @@ All notable changes to DBManager are documented here. The format follows
 [Semantic Versioning](https://semver.org/). Pre-1.0 minor versions may contain breaking changes;
 they are listed under **Changed** with migration notes.
 
+## [0.16.0] — 2026-10-28
+
+**KBM DBManager.** The product is now officially **KBM DBManager**, a product of Khorafi Business
+Machines (KBM) — the workstream *KBM Corporate Rebranding & Visual Identity*. The application,
+documentation, PDF reports, screenshots and promotional videos carry KBM's identity. No API,
+configuration variable, database object, image, chart or volume was renamed: upgrading from
+0.15.x needs no action and no migration.
+
+### Added
+
+- KBM logo exactly as supplied by KBM (vector, blue and white), with the letters-only variant;
+  product lockup `[KBM] │ DBManager` (`BrandLogo`), `KbmLogo`, `BrandMark` and the KBM cover motif
+  (`frontend/src/components/brand.tsx`); KBM favicon (`favicon.svg`, `.ico`, PNG sizes) and app icons.
+- KBM design tokens in `frontend/src/index.css`: `--brand-primary` `#1A4796`, `--brand-secondary`
+  `#091450`, `--brand-accent`, KBM text, tint and border colours, `--heading`, `--shadow-card`, and
+  semantic aliases (`--background`, `--foreground`, `--card`, `--destructive`, `--success`, …).
+- Brand documentation: [KBM brand analysis](docs/branding/kbm-brand-analysis.md) and
+  [KBM DBManager brand guidelines](docs/branding/kbm-dbmanager-brand-guidelines.md).
+- Brand-consistency tests (`backend/tests/unit/test_brand_naming.py`): customer-facing UI and
+  documentation text, titles and manifest, no reference to retired artwork, KBM logo files unaltered.
+- Promotional video build (`marketing/video/build_videos.py`): storyboards, narration, subtitles,
+  thumbnails and descriptions for the product overview, the LinkedIn version and the teaser.
+
+### Changed
+
+- **Name**: *KBM DBManager* in the interface, browser title, web manifest, notifications, e-mail
+  subjects (`[KBM DBManager] …`), Slack and Teams buttons (*Open in KBM DBManager*), report e-mails
+  and PDF metadata, API documentation title, README, documentation and chart README.
+- **Design**: navigation rail in KBM blue (KBM navy in the dark theme); login page as a KBM cover;
+  About page with a KBM banner; page titles in KBM blue; cards with KBM's soft shadow; tooltips and
+  dialog scrim in KBM navy; charts use KBM theme accents. Status colours are unchanged.
+- **Typography**: Plus Jakarta Sans (KBM's slide typeface, SIL OFL) replaces IBM Plex Sans in the
+  interface; IBM Plex Mono stays for code.
+- **PDF reports** in KBM document style: KBM logo and product name header, KBM-blue title,
+  deep-blue table header row, footer with the KBM mark and a KBM-blue page number.
+- **Documentation**: *KBM DBManager Documentation* — KBM theme for MkDocs Material (custom palette,
+  logo, favicon, Plus Jakarta Sans headings, tables, callouts), KBM banner, renamed prose and
+  diagram labels; all 43 screenshots recaptured from the running application.
+- Default `DBM_MFA_ISSUER` is `KBM DBManager` (new enrolments only; existing authenticator entries
+  keep their label and keep working).
+- Chart and reference manifests: version and images `0.16.0`; chart description and maintainer name.
+
+### Removed
+
+- The DBManager logo artwork of 0.14 – 0.15 (application, documentation, PDF reports, icons).
+
+### Security
+
+- No security-relevant change. The About page still shows deployment counts only.
+
+### Database Compatibility
+
+- Unchanged from 0.15: the last full real-engine Docker run (2026-10-21) passed on PostgreSQL,
+  MySQL (TLS), MariaDB (TLS), SQL Server, Oracle and Db2 LUW; Db2 for z/OS requires external
+  validation. Engine marks are unchanged.
+
+### Testing / Reliability
+
+- Backend and frontend suites pass; tests that asserted the old product name in notification
+  subjects, the MFA issuer and Teams cards were updated to the new name. `GET /api/v1/version` keeps
+  `"product": "DBManager"` as its machine identifier (test unchanged).
+
+### User Interface
+
+- See *Changed*. Light and dark themes were reviewed on every page at 1440 × 900 and on the login,
+  dashboard and About pages at 1920 × 1080.
+
+### Documentation
+
+- New: brand analysis, brand guidelines, rewritten [brand assets](docs/development/brand-assets.md).
+- Updated: every page's product name, README, roadmap, capability matrix, gap analysis (G-59),
+  traceability, test validation (visual validation), release checklist.
+
+### Known Limitations
+
+- KBM supplied no written brand manual: clear space, minimum sizes and colour proportions are
+  inferred from KBM documents and should be confirmed by KBM. The company name follows the logo
+  (*Khorafi Business Machines*); the brief said *Kuwait Business Machines*.
+- Video narration is synthesised (Kokoro TTS); a recorded voice-over can replace it with the same
+  scripts.
+
 ## [0.15.3] — 2026-10-21
 
 Patch release. No application code changed; no migration (schema `0014`).

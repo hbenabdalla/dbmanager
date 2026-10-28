@@ -26,6 +26,8 @@ NAMING_RULES = {
 ALLOWED_PROSE = (
     "`DBManager`",  # inline code
     '"product": "DBManager"',
+    "former DBManager",  # history of the retired identity
+    "*DBManager*",  # the word of the lockup, quoted
 )
 
 

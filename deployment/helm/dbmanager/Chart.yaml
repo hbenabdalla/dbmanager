@@ -3,8 +3,8 @@ name: dbmanager
 description: KBM DBManager by Khorafi Business Machines — unified administration, monitoring, performance, security and backup for heterogeneous relational database fleets
 type: application
 # chart version follows the product version (released together)
-version: 0.15.3
-appVersion: "0.15.3"
+version: 0.16.0
+appVersion: "0.16.0"
 kubeVersion: ">=1.27.0-0"
 home: https://github.com/hbenabdalla/dbmanager
 icon: https://raw.githubusercontent.com/hbenabdalla/dbmanager/main/frontend/public/icon-512.png
@@ -32,9 +32,9 @@ annotations:
   # images Artifact Hub scans for vulnerabilities (keep in step with values.yaml and appVersion)
   artifacthub.io/images: |
     - name: dbmanager-backend
-      image: ghcr.io/hbenabdalla/dbmanager-backend:0.15.3
+      image: ghcr.io/hbenabdalla/dbmanager-backend:0.16.0
     - name: dbmanager-frontend
-      image: ghcr.io/hbenabdalla/dbmanager-frontend:0.15.3
+      image: ghcr.io/hbenabdalla/dbmanager-frontend:0.16.0
     - name: postgresql
       image: postgres:16-alpine
     - name: victoriametrics

@@ -25,7 +25,7 @@ PRODUCT = "KBM DBManager"
 #: scripts match it): unchanged by the rebrand
 PRODUCT_ID = "DBManager"
 #: the roadmap milestone this build belongs to (kept in step with ROADMAP.md)
-CURRENT_MILESTONE = {"version": "v0.15", "name": "Cloud-Native Deployment"}
+CURRENT_MILESTONE = {"version": "v0.16", "name": "KBM Corporate Rebranding & Visual Identity"}
 _SAFE = re.compile(r"[^0-9A-Za-z.+_:\-]")
 
 

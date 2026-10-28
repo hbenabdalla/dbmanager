@@ -64,7 +64,7 @@ export function AboutPage() {
       <PageHeader title={`About ${a.product}`} description={a.description} crumbs={[{ label: "Platform" }, { label: "About" }]} />
       <div className="grid gap-4 lg:grid-cols-2">
         <Card className="relative overflow-hidden border-0 bg-brand text-white lg:col-span-2 dark:bg-brand-navy">
-          <KbmCoverMotif className="opacity-70" />
+          <KbmCoverMotif className="opacity-70" dots={false} />
           <CardBody className="relative flex flex-wrap items-center gap-8 py-7">
             <KbmLogo full width={190} tone="white" label="KBM — Khorafi Business Machines" />
             <div className="min-w-0 max-w-xl space-y-1.5 text-[13px]">

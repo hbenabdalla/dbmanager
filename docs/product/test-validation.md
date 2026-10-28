@@ -1,5 +1,52 @@
 # Test validation
 
+The newest release section comes first; the 0.15 clean validation follows it.
+
+## Release 0.16.0: KBM rebrand
+
+Validation of the KBM corporate rebrand on the 0.16.0 code (cloud workspace, 2026-10-28).
+
+| Area | Total | Passed | Failed | Skipped | External | Status |
+|---|---|---|---|---|---|---|
+| Backend unit (incl. 5 brand-consistency tests) | 693 | 693 | 0 | 0 | — | PASS |
+| Backend API (control-plane TLS `verify-full`) | 164 | 164 | 0 | 0 | — | PASS |
+| Migrations | 8 | 8 | 0 | 0 | — | PASS |
+| Helm chart tests | 14 | 14 | 0 | 0 | — | PASS |
+| Frontend tests | 183 | 183 | 0 | 0 | — | PASS |
+| Frontend type check and production build | — | ✓ | — | — | — | PASS |
+| Documentation (`mkdocs build --strict`, KBM theme) | — | ✓ | — | — | — | PASS |
+| gitleaks (working tree), npm audit | — | clean | — | — | — | PASS |
+| UI pages (screenshot run, page errors and error states) | 43 | 43 | 0 | 0 | — | PASS |
+| Promotional videos (frames, audio, subtitles, claims) | 3 | 3 | 0 | 0 | — | PASS |
+| Real engines | — | — | — | — | not re-run: no adapter changed (last full Docker run 2026-10-21: 89 passed, 0 failed, 1 skipped) | — |
+
+Findings during the rebrand, all fixed before release:
+
+| # | Finding | Classification | Fix |
+|---|---|---|---|
+| 15 | Tests expected the old name in e-mail subjects, the MFA issuer and Teams cards | STALE TEST (intended rename) | expectations updated to *KBM DBManager*; the `/version` identifier test stays unchanged on purpose |
+| 16 | The first sidebar lockup overflowed the 232 px rail with the wider Plus Jakarta Sans | PRODUCT BUG (found in visual review) | lockup proportions fixed to fit its width |
+| 17 | The automated rename had changed historical statements (0.14 branding) to the new name | DOCUMENTATION | history phrased as *the former DBManager logo/branding*; the brand check allows exactly that phrase |
+| 18 | Charts on several pages showed *No samples* in the first screenshot run | ENVIRONMENT (simulated telemetry 8 days old) | simulated fleet regenerated before the final capture |
+
+### Visual validation
+
+| View | Light | Dark | Viewports | Result |
+|---|---|---|---|---|
+| Sign-in (KBM cover) | ✓ | ✓ | 1440 × 900, 1920 × 1080 | PASS |
+| Dashboard | ✓ | ✓ | 1440 × 900, 1920 × 1080 | PASS |
+| About (KBM banner) | ✓ | — | 1440 × 900, 1920 × 1080 | PASS |
+| All 43 documented pages and dialogs | ✓ | dashboard | 1440 × 900 | PASS: no page errors, no error states, status colours unchanged, engine marks unchanged |
+| PDF report (security findings) | ✓ | — | A4 landscape | PASS: KBM header, deep-blue table header, footer mark |
+| Documentation site (home, a table page) | ✓ | ✓ | 1440 × 900 | PASS: KBM header, navy dark scheme, tables and callouts |
+
+Not covered: a tablet layout review (the application targets desktop and laptop widths; the 1024 px
+layout of 0.14 was not changed) and an automated accessibility scan (planned in 1.0.3). Contrast of
+the new tokens was computed: body text 12.3 : 1, secondary text 5.4 : 1, KBM blue on white 8.8 : 1,
+rail text 6.9 : 1 on KBM blue, dark-theme accent 6.4 : 1.
+
+## Release 0.15: clean validation
+
 A clean validation of the whole repository, run before milestone 0.15 work started and again
 after it. Earlier reports were not reused: every number on this page comes from a run made for
 this release, and the environment each one ran in is named. Real-engine results per capability

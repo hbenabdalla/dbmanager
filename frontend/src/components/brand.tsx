@@ -108,13 +108,13 @@ export function BrandLoading({ label = `Loading ${PRODUCT_NAME}…` }: { label?:
  * KBM graphic motif from its covers: thin horizontal bands, a dot grid and ringed circles on KBM
  * blue. Decorative only; place inside a `relative` container with a brand background.
  */
-export function KbmCoverMotif({ className }: { className?: string }) {
+export function KbmCoverMotif({ className, dots = true }: { className?: string; dots?: boolean }) {
   return (
     <svg aria-hidden className={cn("pointer-events-none absolute inset-0 h-full w-full", className)} preserveAspectRatio="xMidYMid slice" viewBox="0 0 770 900">
       <g fill="#ffffff">
         <rect x="0" y="268" width="770" height="9" opacity=".06" />
         <rect x="0" y="372" width="770" height="6" opacity=".06" />
-        {Array.from({ length: 11 }, (_, i) => (
+        {dots && Array.from({ length: 11 }, (_, i) => (
           <circle key={i} cx={58 + (i % 4) * 34} cy={452 + Math.floor(i / 4) * 22} r="4" opacity=".2" />
         ))}
       </g>

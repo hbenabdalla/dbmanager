@@ -1,7 +1,7 @@
 # Roadmap
 
-KBM DBManager **0.15.3** is the current release (0.15.1 was the first published 0.15 release; the `v0.15.0` and `v0.15.2` tags published nothing). **0.14.0** is the latest published release,
-and **0.12.0** was the first. The roadmap is organised by milestone and promises no dates.
+KBM DBManager **0.16.0** is the release being prepared: the product's KBM corporate identity. **0.15.3** is the latest
+published release, and **0.12.0** was the first. The roadmap is organised by milestone and promises no dates.
 
 - [Full roadmap](docs/product/roadmap.md): sprints, acceptance criteria, Definition of Done.
 - [Roadmap audit](docs/product/roadmap-audit.md): every claim checked against code, tests and
@@ -27,8 +27,9 @@ present on only one side (UI or backend). All of them were fixed and verified ag
 | 0.11 | Enterprise integration: API tokens, rate limiting, LDAP/OIDC/Vault validation, SIEM forwarding, Vault, MFA | VERIFIED COMPLETE (reconciled); cloud secret stores PLANNED (0.11.7) |
 | 0.12 | Asset protection: backup and restore of the platform and of managed databases | VERIFIED COMPLETE (reconciled); native Azure/GCS (0.12.6) and PITR (0.12.7) PLANNED |
 | 0.13 | Performance intelligence: z-score rules, regressions, forecasts, comparisons, outcome validation | VERIFIED COMPLETE (reconciled) |
-| 0.14 | Reporting (definitions, preview, PDF, schedules) and KBM DBManager branding | VERIFIED COMPLETE (release 0.14.0, published) |
-| 0.15 | Cloud-native deployment: Helm chart, signed images with SBOM, manifest validation and kind install in CI, HA (concurrent start, instance registry, leader failover), internal TLS, dependency majors | VERIFIED COMPLETE (release 0.15.0) |
+| 0.14 | Reporting (definitions, preview, PDF, schedules) and the former DBManager branding (replaced by the KBM identity in 0.16) | VERIFIED COMPLETE (release 0.14.0, published) |
+| 0.15 | Cloud-native deployment: Helm chart, signed images with SBOM, manifest validation and kind install in CI, HA (concurrent start, instance registry, leader failover), internal TLS, dependency majors | VERIFIED COMPLETE (published as 0.15.1 – 0.15.3) |
+| 0.16 | **KBM Corporate Rebranding & Visual Identity**: official name KBM DBManager, KBM logo and design tokens, light and dark KBM themes, KBM-styled reports, documentation theme, recaptured screenshots, rebuilt videos, brand guidelines and checks | VERIFIED COMPLETE (release 0.16.0) |
 
 ## Remediation
 
@@ -38,10 +39,10 @@ present on only one side (UI or backend). All of them were fixed and verified ag
 
 ## Current
 
-**0.15.0 release**: cloud-native deployment, and the fixes of the clean validation that preceded
-it ([test validation](docs/product/test-validation.md)). The code is complete and tested. What
-remains is the publishing step: push, the full real-engine run on the Docker host, tag (the tag
-publishes images, chart and GitHub release; see [release checklist](docs/product/release-checklist.md)).
+**0.16.0 release**: the KBM corporate rebrand — the workstream *KBM Corporate Rebranding & Visual
+Identity* ([current milestone](docs/product/current-milestone.md),
+[brand guidelines](docs/branding/kbm-dbmanager-brand-guidelines.md)). No API, configuration or data
+changes. What remains is the publishing step: push and tag.
 
 ## Next
 
@@ -64,6 +65,6 @@ publishes images, chart and GitHub release; see [release checklist](docs/product
 | Oracle TCPS | A TCPS listener in the test environment | FUTURE |
 | Cloud secret stores (AWS, Azure, Google) | Cloud accounts to validate against | PLANNED (0.11.7) |
 
-**Versioning:** the product version follows the milestones. 0.15.0 is a minor version under
-semantic versioning (0.x). It adds new features and one additive migration (`0014`), and removes
-no endpoints. Changed behaviour is listed in the [changelog](CHANGELOG.md).
+**Versioning:** the product version follows the milestones. 0.16.0 is a minor version under
+semantic versioning (0.x): a customer-facing change of identity with visible text changes, no
+migration and no removed endpoints. Changed behaviour is listed in the [changelog](CHANGELOG.md).

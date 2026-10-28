@@ -89,6 +89,16 @@ the repository root; "—" means not yet created.
 | Internal TLS (PostgreSQL, VictoriaMetrics) | G-45 | 0.15.4 | `app/core/tlsclient.py`, `app/db/session.py`, `alembic/env.py`, `app/timeseries/victoriametrics.py`, `scripts/backup.sh` | `tests/unit/test_tlsclient.py`, `tests/api/test_control_plane_tls.py` (CI: `verify-full`) | [high availability](../deployment/high-availability.md#tls-to-the-control-plane-postgresql) | VERIFIED COMPLETE |
 | Dependency majors | — | 0.15.5 | `frontend/package.json`, `frontend/vite.config.ts`, `frontend/Dockerfile`, `docs/requirements.txt`, workflows | frontend suite, build on Node 22 and 24, `mkdocs build --strict` | [current milestone](current-milestone.md#decisions) | VERIFIED COMPLETE |
 
+## Milestone 0.16 — KBM Corporate Rebranding & Visual Identity (DONE)
+
+| Capability | Gap | Sprint | Implementation | Tests | Documentation | Status |
+|---|---|---|---|---|---|---|
+| KBM logo and lockup | G-59 | 0.16.2 | `docs/assets/brand/kbm/`, `frontend/src/assets/brand/kbm/`, `frontend/src/components/brand.tsx`, `frontend/public/favicon*` | `frontend/src/test/engine-icon.test.tsx`, `test_brand_naming.py::test_kbm_logo_files_are_the_supplied_artwork` | [brand assets](../development/brand-assets.md) | VERIFIED COMPLETE |
+| Design tokens and themes | G-59 | 0.16.2 | `frontend/src/index.css` | frontend suite; visual review light and dark | [guidelines](../branding/kbm-dbmanager-brand-guidelines.md) | VERIFIED COMPLETE |
+| Naming in UI, notifications, reports | G-59 | 0.16.3 | frontend strings, `app/services/notify.py`, `report_schedules.py`, `report_pdf.py`, `core/config.py` | `test_brand_naming.py`, `test_notify_delivery.py`, `test_mfa.py`, `test_report_pdf.py` | [current milestone](current-milestone.md) | VERIFIED COMPLETE |
+| Documentation theme and screenshots | G-59 | 0.16.4 | `mkdocs.yml`, `docs/assets/stylesheets/kbm.css`, `docs/assets/screenshots/` | `mkdocs build --strict`, `test_brand_naming.py` | [guidelines §12–13](../branding/kbm-dbmanager-brand-guidelines.md#12-documentation-theme) | VERIFIED COMPLETE |
+| Videos and marketing | G-59 | 0.16.5 | `marketing/video/build_videos.py`, `kbmgfx.py`, `storyboards.md`, `descriptions.md` | frame, audio and subtitle checks ([test validation](test-validation.md#release-0160-kbm-rebrand)) | [storyboards](https://github.com/hbenabdalla/dbmanager/blob/main/marketing/video/storyboards.md) | VERIFIED COMPLETE |
+
 ## Later milestones
 
 | Capability | Gap | Sprint | Status |

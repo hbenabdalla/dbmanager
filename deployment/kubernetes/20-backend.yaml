@@ -13,7 +13,7 @@ spec:
       securityContext: { runAsNonRoot: true, seccompProfile: { type: RuntimeDefault } }
       containers:
         - name: api
-          image: ghcr.io/hbenabdalla/dbmanager-backend:0.15.3
+          image: ghcr.io/hbenabdalla/dbmanager-backend:0.16.0
           env: [{ name: DBM_PROCESS_ROLE, value: api }]
           envFrom:
             - configMapRef: { name: dbmanager-config }
@@ -40,7 +40,7 @@ spec:
       securityContext: { runAsNonRoot: true, seccompProfile: { type: RuntimeDefault } }
       containers:
         - name: worker
-          image: ghcr.io/hbenabdalla/dbmanager-backend:0.15.3
+          image: ghcr.io/hbenabdalla/dbmanager-backend:0.16.0
           command: ["python", "-m", "app.worker"]
           env: [{ name: DBM_PROCESS_ROLE, value: worker }]
           envFrom:

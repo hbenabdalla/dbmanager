@@ -19,8 +19,8 @@ or a page of documentation exists. The task-level evidence is in the
 
 ## Where the product stands
 
-The current version is **0.15.0** (being released; **0.14.0** is the latest published release). It contains the baseline capability groups below (listed as the
-baseline, not as past releases) and milestones 0.9 – 0.15. **0.12.0** was the first public
+The current version is **0.16.0** (being released; **0.15.3** is the latest published release). It contains the baseline capability groups below (listed as the
+baseline, not as past releases) and milestones 0.9 – 0.16. **0.12.0** was the first public
 release. The milestone of this release is described in [Current milestone](current-milestone.md).
 
 !!! note "Roadmap reconciliation (0.14.0)"
@@ -34,7 +34,7 @@ release. The milestone of this release is described in [Current milestone](curre
 ### Versioning
 
 Milestone numbers double as version numbers. The product version is the highest milestone with
-completed work: **0.15.0** adds milestone 0.15 (cloud-native deployment) to **0.14.0**, which added milestone 0.14 (reporting, with the branding and engine-identity
+completed work: **0.16.0** adds milestone 0.16 (the KBM corporate rebrand) to **0.15**, which added milestone 0.15 (cloud-native deployment) to **0.14.0**, which added milestone 0.14 (reporting, with the branding and engine-identity
 work) to **0.13.0**, which added milestone 0.13 (performance intelligence) to **0.12.0**, which
 contained milestones 0.9 (release foundation), 0.10 (operations & alerting), 0.11 (enterprise
 integration) and 0.12 (asset protection — backup & restore). Versions 0.9, 0.10 and 0.11 were
@@ -210,7 +210,7 @@ recipient's owner may see.* Details: [reports](../user-guide/reports.md),
 | 0.14.1 Report coverage | Report definitions *Security findings* (statuses, minimum severity), *Query statistics* (window), *Query regressions*, *Capacity forecast*; parameters (environment, server, engine) for every report; preview; reports grouped by area in the UI | DONE |
 | 0.14.2 Scheduled reports | Daily/weekly/monthly schedules in a time zone, e-mailed as attachments through e-mail channels; runs with the owner's current access (disabled owner or lost access → failed run, nothing sent); attachment size limit; run history per channel; *Send now*; audit; RBAC `reports.schedule`; migration `0012` | DONE |
 | 0.14.3 PDF export | Server-side PDF (ReportLab): logo, scope, generated-for, repeated table header, landscape for wide tables, row cap with the CSV as complete export; CSV formula-injection guard | DONE |
-| 0.14.4 Branding & engine identity | KBM DBManager logo in the product, documentation, README, favicon and app icons; `DatabaseEngineIcon` with KBM DBManager's own engine marks (no vendor logos) everywhere engines are shown; optional operator-supplied licensed logos (`DBM_BRANDING_DIR`); trademark notice | DONE |
+| 0.14.4 Branding & engine identity | The former DBManager logo (retired in 0.16 by the KBM rebrand) in the product, documentation, README, favicon and app icons; `DatabaseEngineIcon` with KBM DBManager's own engine marks (no vendor logos) everywhere engines are shown; optional operator-supplied licensed logos (`DBM_BRANDING_DIR`); trademark notice | DONE |
 
 ## Remediation sprints R1 – R7 · DONE (0.14.0)
 
@@ -242,6 +242,22 @@ artefact validated in CI.* Details: [Kubernetes and OpenShift with Helm](../depl
 | 0.15.3 Manifest validation | kubeconform (1.29, 1.31), restricted Pod Security and OpenShift restricted-v2 policy check, chart tests; kind install with `helm test` and leader failover in CI | DONE — kind job runs on push |
 | 0.15.4 HA & TLS reference | Concurrent-start locks, instance registry (`0014`) with Deployment card and API, leader failover tests (processes and pods), control-plane PostgreSQL TLS modes, time-series CA, guides | DONE |
 | 0.15.5 Dependency majors | Vite 8, plugin-react 6, Vitest 5, jest-dom 7, Node 24 LTS, nginx-unprivileged 1.31, mkdocs-material 9.7.7, Actions majors; Python 3.14, Node 26, TypeScript 7, Recharts 3 and jsdom 30 declined with reasons ([decisions](current-milestone.md#decisions)) | DONE |
+
+## Milestone 0.16 — KBM Corporate Rebranding & Visual Identity · DONE (0.16.0)
+
+*Goal: the product is officially **KBM DBManager**, a Khorafi Business Machines (KBM) offering, in
+everything customers see, built on KBM's own logo and visual language, with no change to APIs,
+configuration, data or deployment names.* Details: [current milestone](current-milestone.md),
+[brand analysis](../branding/kbm-brand-analysis.md), [brand guidelines](../branding/kbm-dbmanager-brand-guidelines.md).
+Closes G-59.
+
+| Sprint | Scope | Status |
+|---|---|---|
+| 0.16.1 Brand extraction | KBM logo files, colours, fonts and graphic language from KBM material; brand analysis with verified and inferred rules | DONE |
+| 0.16.2 Design system | KBM tokens (light and navy dark theme), Plus Jakarta Sans, lockup, logo components, cover motif, favicon and icons | DONE |
+| 0.16.3 Application restyling and naming | navigation, login, About, cards and titles; *KBM DBManager* in UI, notifications, e-mails, PDF reports (KBM document style), MFA issuer default; brand-consistency tests | DONE |
+| 0.16.4 Documentation and screenshots | KBM DBManager Documentation theme, banner, prose and diagram labels, 43 screenshots recaptured, brand guidelines | DONE |
+| 0.16.5 Videos and marketing | product overview, LinkedIn version and teaser rebuilt from real screenshots with new narration, subtitles, thumbnails and descriptions (`marketing/video`) | DONE |
 
 ## Milestone 1.0 — Production Release · NEXT
 
@@ -275,6 +291,7 @@ artefact validated in CI.* Details: [Kubernetes and OpenShift with Helm](../depl
 - LDAP/AD were validated against OpenLDAP (no Active Directory server in the test environment); OIDC against Keycloak 26.
 - Scheduled reports are delivered by e-mail only (no webhook/file-share delivery); PDF reports list at most 5,000 rows (the CSV has all rows); no Excel format.
 - KBM DBManager shows its own engine marks, not vendor logos; licensed logos can be supplied by the operator (`DBM_BRANDING_DIR`).
+- Branding: the KBM brand rules are inferred from KBM documents (no written brand manual was supplied) and await confirmation by KBM; the company name follows the logo (*Khorafi Business Machines*).
 - Kubernetes: the Helm chart bundles a single-instance PostgreSQL and VictoriaMetrics for evaluation only; production needs a managed or operator-run PostgreSQL. No operator and no VictoriaMetrics cluster chart. The kind install and leader failover run in GitHub Actions, not on a production-size cluster.
 - Database backups: real-engine runs passed for all six engines ([validation report](real-engine-validation.md)). No point-in-time recovery; Db2 LUW restores and Oracle RMAN are external.
 - Backup storage targets: local / mounted / NFS directories and S3-compatible buckets; Azure Blob and GCS natively are planned.

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "database-manager-backend"
-version = "0.15.3"
+version = "0.16.0"
 description = "DBManager — unified administration, monitoring and security for heterogeneous relational databases"
 license = {text = "Apache-2.0"}
 requires-python = ">=3.12"

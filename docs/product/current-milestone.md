@@ -2,91 +2,68 @@
 
 | | |
 |---|---|
-| **Milestone** | 0.15 — Cloud-Native Deployment |
-| **Status** | DONE. Tag `v0.15.0` pushed but not published (release workflow failed before publishing); **0.15.1** fixed it and was the first published release; **0.15.3** adds the chart README (the `v0.15.2` tag was pushed before the version bump and published nothing) |
-| **Release target** | 0.15.0 (this release). Next: milestone 1.0 — Production Release (**NEXT, not started**) |
-| **Previous release** | 0.14.0 (published 2026-10-20) — reporting, branding, roadmap reconciliation |
+| **Milestone** | 0.16 — KBM Corporate Rebranding & Visual Identity |
+| **Status** | DONE. Release **0.16.0**; publishing (push, tag) remains |
+| **Release target** | 0.16.0 (this release). Next: milestone 1.0 — Production Release (**NEXT, not started**) |
+| **Previous release** | 0.15.3 (Cloud-Native Deployment; 0.15.1 was the first published 0.15 release) |
 
 ## Objective
 
-Run KBM DBManager on Kubernetes and OpenShift the way production platforms expect: installable with
-one Helm command from signed images, several API and worker replicas that coordinate safely and
-show who leads, encrypted connections to the control-plane databases, and every deployment
-artefact validated in CI — including a real install with a leader failover.
+Make the product officially **KBM DBManager**, an authentic Khorafi Business Machines (KBM)
+offering, in everything customers see — application, documentation, reports, screenshots, videos
+and marketing assets — using KBM's own logo and visual language, without changing any API, setting,
+database object or deployment name, so every existing installation upgrades unchanged.
 
-## Scope
+## Workstream: KBM Corporate Rebranding & Visual Identity
 
-In scope: Helm chart; published, signed images with SBOM and provenance; manifest validation
-(kubeconform, Pod Security, OpenShift restricted-v2, kind install); HA (multi-replica API, worker
-leader failover, concurrent start); internal TLS (control-plane PostgreSQL, time-series store);
-the deployment registry in the UI; dependency upgrades. Also in this release: the fixes of the
-clean validation that preceded it ([test validation](test-validation.md)).
-
-Out of scope (later milestones): an operator, a VictoriaMetrics cluster chart, cloud-provider
-specific charts, a PostgreSQL HA chart (use a managed service or an operator).
-
-## Carried over from the 0.14.0 validation
-
-Fixed before any 0.15 feature work, each with a regression test ([details](test-validation.md#failures-and-root-causes)):
-
-- the Compose restore drill (`scripts/backup.sh` used BusyBox `wget` options that do not exist);
-- the MySQL 8.4 TLS test (detection through the removed `have_ssl`);
-- TLS for MySQL and MariaDB in the Docker test environment (generated test CA);
-- LDAP StartTLS against a server addressed by IP (ldap3 IP SAN handling).
-
-## Sprints
-
-| Sprint | Scope | Status |
+| Track | Scope | Status |
 |---|---|---|
-| 0.15.1 Container images | `release.yml`: on a `vX.Y.Z` tag that matches the product and chart version and has release notes, images `ghcr.io/hbenabdalla/dbmanager-{backend,frontend}` tagged `X.Y.Z` and `X.Y`, OCI labels, SBOM and SLSA provenance attestations, keyless cosign signatures by digest, SPDX SBOM files on the GitHub release | DONE (runs on the tag) |
-| 0.15.2 Helm chart | `deployment/helm/dbmanager`: API, worker and frontend Deployments, bundled or external PostgreSQL and VictoriaMetrics, Secret or existing Secret (required values, kept on uninstall), migrations on start under a lock, Ingress or OpenShift Route, PDBs, optional HPA, topology spread, NetworkPolicies, `helm test`, values schema; published as a signed OCI chart | DONE |
-| 0.15.3 Manifest validation | `ci-kubernetes.yml`: `helm lint`, kubeconform (Kubernetes 1.29 and 1.31, strict), restricted Pod Security and OpenShift restricted-v2 checks (`scripts/k8s-policy-check.py`), chart tests, reference manifests; kind job: build images, install, `helm test`, sign-in through the frontend, delete the leader pod, another worker leads | DONE (kind job runs on push) |
-| 0.15.4 HA & TLS reference | Advisory locks for migrations and start-up work (concurrent start fixed); instance registry (migration `0014`), heartbeat, `GET /api/v1/platform/instances`, Deployment card on **Platform → Collectors**, About summary, command palette entry; leader failover test with killed processes; `DBM_DATABASE_TLS_MODE` / `DBM_DATABASE_TLS_CA_FILE`, `DBM_TIMESERIES_TLS_CA_FILE`; CI runs the API suite against PostgreSQL with `verify-full`; [Helm](../deployment/kubernetes-helm.md) and [high availability](../deployment/high-availability.md) guides | DONE |
-| 0.15.5 Dependency majors | Applied: Vite 8 (Rolldown) with plugin-react 6, Vitest 5, jest-dom 7, TanStack Query 5.104, lucide-react 0.577, Node 24 LTS for the build image and CI, nginx-unprivileged 1.31, mkdocs-material 9.7.7, GitHub Actions majors. Declined with reasons below | DONE |
+| Brand analysis | KBM logo (supplied SVGs), KBM Word and PowerPoint material: colours, fonts, graphic language, open questions ([analysis](../branding/kbm-brand-analysis.md)) | DONE |
+| Brand guidelines | name, logo, lockup, palettes, typography, tokens, components, engine marks, themes, documentation, screenshots, video, marketing, accessibility, do / don't ([guidelines](../branding/kbm-dbmanager-brand-guidelines.md)) | DONE |
+| Product naming | **KBM DBManager** in the UI, browser title, manifest, notifications, e-mails, PDF reports, MFA issuer default, API title, docs, README, chart README; technical identifiers unchanged | DONE |
+| Logo adoption | KBM logo files as supplied (blue, white; letters-only variant); lockup `[KBM] │ DBManager`; favicon and app icons; the former DBManager artwork retired | DONE |
+| Design tokens | KBM blue `#1A4796`, navy `#091450`, KBM text and tint colours, chart palette from the KBM theme, Plus Jakarta Sans; status colours unchanged; light and dark themes | DONE |
+| UI restyling | navigation rail, login cover, About banner, cards, page titles, tooltips, dialogs, loading and first-run screens; every page inherits the tokens | DONE |
+| PDF reports | KBM document style: logo header, deep-blue table header row, footer mark and blue page number | DONE |
+| Documentation branding | *KBM DBManager Documentation*: KBM theme for MkDocs Material, logo, favicon, tables, callouts, banner; prose renamed; diagrams relabelled | DONE |
+| Screenshot refresh | 43 documentation screenshots recaptured from the running application | DONE |
+| Video rebranding | product overview, LinkedIn version and teaser rebuilt with KBM branding, new narration, subtitles and thumbnails from a reproducible build script ([storyboards](https://github.com/hbenabdalla/dbmanager/blob/main/marketing/video/storyboards.md)) | DONE |
+| Marketing assets | README banner, video descriptions for YouTube and LinkedIn, thumbnails | DONE |
+| Testing | frontend, backend, documentation, brand-consistency checks, visual review in light and dark themes ([test validation](test-validation.md#release-0160-kbm-rebrand)) | DONE |
+| Release preparation | version 0.16.0, changelog, release notes with upgrade and compatibility notes | DONE |
 
 ## Decisions
 
-* **Migrations on start, under a lock**, instead of a Helm hook Job: a hook Job runs before the
-  Secret exists on the first install and blocks `--wait` installs; every replica starting with the
-  lock is safe and needs no extra RBAC. Operators who prefer a Job set
-  `DBM_RUN_MIGRATIONS_ON_START=false` and run `python -m app.cli migrate`.
-* **Bundled PostgreSQL is for evaluation.** Production uses a managed or operator-run PostgreSQL;
-  the chart does not try to be a PostgreSQL HA chart.
-* **About shows counts only.** It is open to every signed-in user; host names and process ids stay
-  on the Collectors page (`collectors.view`).
-* **Keyless signing** (Sigstore, GitHub OIDC): no signing key to store or rotate; verification
-  pins the release workflow identity.
-* **Declined upgrades:**
-    * Python 3.14 base image: the backend's binary dependencies (database drivers, ODBC, cryptography wheels) are validated on 3.12; revisit for 1.x.
-    * Node 26 build image: not an LTS line; Node 24 LTS is used.
-    * TypeScript 7: the native compiler is a new major whose project-reference build mode is not yet proven for this code base; stays on 5.9.
-    * Recharts 3: API changes in every chart need a visual review of all monitoring pages; planned with the 1.0 UI review.
-    * jsdom 30: its `Blob` is rejected by Node's `fetch` `Response` in tests ([#9](test-validation.md#failures-and-root-causes)); jsdom 26 stays.
-* **Version 0.15.0** (semantic versioning, minor): new features, one additive migration (`0014`),
-  no removed endpoints. The About response's `deployment` object is new.
-
-## Dependencies
-
-* Helm 3.8+ (OCI charts), Kubernetes 1.27+ or OpenShift 4.14+ (Kubernetes 1.27).
-* GitHub Container Registry and Sigstore for publishing (release workflow only).
-* PostgreSQL advisory locks (any supported PostgreSQL 15+).
+* **Company name** as on the logo: *Khorafi Business Machines (W.L.L.)*, short *KBM*. The brief's
+  *Kuwait Business Machines* is flagged in the brand analysis for KBM to confirm.
+* **No new product logo.** The product mark is a lockup of the unmodified KBM letters and the word
+  *DBManager*, so the KBM logo is never altered.
+* **Technical identifiers stay**: repository, images (`dbmanager-backend`, `dbmanager-frontend`),
+  Helm chart `dbmanager`, `DBM_*` variables, database, tables, API paths, Docker volumes, and the
+  machine identifier `"product": "DBManager"` of `GET /api/v1/version` (load-balancer checks and
+  scripts match it). No migration.
+* **Visible behaviour changes** that operators may notice: notification and report e-mail subjects
+  start with `[KBM DBManager]`; Slack/Teams buttons say *Open in KBM DBManager*; the default MFA
+  issuer for **new** enrolments is *KBM DBManager* (existing authenticator entries keep working).
+* **Plus Jakarta Sans** (open licence, used in KBM's slides) replaces IBM Plex Sans in the
+  interface; Calibri and Arial from KBM's Office documents cannot be shipped.
+* **Engine marks unchanged**: they identify technologies, KBM identifies the platform.
+* **Version 0.16.0** (minor): a customer-facing change of identity with new visible behaviour and
+  no breaking change.
 
 ## Acceptance criteria
 
 | Criterion | Evidence |
 |---|---|
-| The chart renders for default, production and OpenShift values, passes lint, Kubernetes schemas (1.29, 1.31) and restricted Pod Security; OpenShift mode pins no UID | `tests/deploy/test_helm_chart.py::test_lint_and_restricted_pod_security`, `test_openshift_mode_leaves_uids_to_the_scc_and_adds_a_route`, `ci-kubernetes.yml` manifests job |
-| Default install bundles the stores and migrates on start; production values use the external database with `verify-full`, an existing Secret and the HPA | `test_default_install_bundles_stores_and_migrates_on_start`, `test_production_values_external_tls_existing_secret_hpa` |
-| Missing secrets are refused at render time | `test_incomplete_settings_are_refused` |
-| Chart, reference manifests and product carry one version | `test_chart_version_follows_the_product`, `tests/unit/test_version_consistency.py` |
-| Three replicas starting at once on an empty database migrate and bootstrap once | `tests/migrations/test_concurrent_start.py` |
-| Killing the leader process moves the scheduler leadership to another worker | `tests/api/test_leader_failover.py`; on Kubernetes `scripts/k8s-failover-check.py` in the kind job |
-| Every process is listed with role, version and heartbeat; crashed ones turn stale and are pruned; the list needs `collectors.view`; About shows no host names | `tests/api/test_instances.py` |
-| The API suite runs against PostgreSQL with TLS `verify-full`; a wrong CA is refused | `tests/api/test_control_plane_tls.py`, `tests/unit/test_tlsclient.py` |
-| Deployment card and About row in the UI | `frontend/src/test/deployment.test.tsx` |
-| Upgrade from 0.14.0 keeps all data | `tests/migrations/test_migrations.py::test_existing_installation_upgrades_to_head_with_its_data[0.14.0]` |
+| Customer-facing UI and documentation say *KBM DBManager*; titles and manifest are branded | `backend/tests/unit/test_brand_naming.py` (UI strings, documentation prose, titles) |
+| The retired artwork is referenced nowhere; the KBM files are the supplied single-colour artwork, identical in app and docs | `test_brand_naming.py::test_retired_artwork_is_not_referenced`, `test_kbm_logo_files_are_the_supplied_artwork` |
+| The lockup and logos render the supplied files with their aspect ratio and accessible names | `frontend/src/test/engine-icon.test.tsx` (*KBM DBManager brand*) |
+| Notifications, MFA and Teams/Slack payloads use the new name | `tests/unit/test_notify_delivery.py`, `test_mfa.py`, `test_alerting_completion.py` |
+| `/version` keeps its machine identifier | `tests/unit/test_about_links.py`, `tests/api/test_alerting.py` |
+| Every page renders without errors in the KBM theme | screenshot run of 43 pages ([visual validation](test-validation.md#visual-validation)) |
+| Documentation builds strictly with the KBM theme | `mkdocs build --strict` |
+| Videos contain no unsupported claims | narration checked against the [capability matrix](capability-matrix.md) |
 
 ## Next
 
-Milestone **1.0 — Production Release** is NEXT and has not started: scale and security testing,
-accessibility, upgrade drill from every 0.x schema, release candidate. See the [roadmap](roadmap.md).
+Milestone **1.0 — Production Release** is NEXT and has not started. See the [roadmap](roadmap.md).

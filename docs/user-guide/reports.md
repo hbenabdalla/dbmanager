@@ -41,7 +41,7 @@ total, **CSV** and **PDF** download the whole report with the same parameters.
 
 - **CSV** has every row and full timestamps. Text values that a spreadsheet would read as a formula
   (starting with `=`, `+`, `-`, `@`, tab or carriage return) are prefixed with an apostrophe.
-- **PDF** is rendered on the server: KBM DBManager logo, title, description, who it was generated for,
+- **PDF** is rendered on the server in KBM document style: KBM logo and product name, title, description, who it was generated for,
   when, the scope and the row count, then the table with its header repeated on every page
   (landscape when the table is wide). It lists at most 5,000 rows and cuts cells after 400
   characters; the CSV has everything. Every page footer says that the file contains data visible to

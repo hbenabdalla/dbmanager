@@ -29,7 +29,7 @@ The tables below keep each gap as originally assessed. Progress since the audit:
 | G-01 Git repository | Closed — published at [hbenabdalla/dbmanager](https://github.com/hbenabdalla/dbmanager) | sprint 0.9.1 |
 | G-02 License | Closed — the owner chose Apache-2.0; `LICENSE` added | sprint 0.9.1 |
 | G-03 CI | Closed — workflows run on GitHub; first-run failures (Compose health, gitleaks) fixed | sprint 0.9.2 |
-| G-04 Version metadata | Closed — `0.15.0`, `/api/v1/version`, `/api/v1/about`, Platform → About | sprint 0.9.4 |
+| G-04 Version metadata | Closed — `0.16.0`, `/api/v1/version`, `/api/v1/about`, Platform → About | sprint 0.9.4 |
 | G-05 Policies | Closed — CONTRIBUTING, SECURITY, CODE_OF_CONDUCT, issue forms, PR template | sprint 0.9.1 |
 | G-06 Publishable documentation | Closed — published on Read the Docs ([https://db-manager.readthedocs.io/en/latest/](https://db-manager.readthedocs.io/en/latest/)) | sprint 0.9.3 |
 | G-07 Secret scan / ignore rules | Closed — tree scanned (only documented development/test placeholders), `.gitignore` hardened, gitleaks in CI | sprint 0.9.1 |
@@ -64,6 +64,7 @@ The tables below keep each gap as originally assessed. Progress since the audit:
 | G-44 HA reference | Closed — multi-replica API and workers, concurrent-start locks, instance registry and Deployment card, leader failover tests ([high availability](../deployment/high-availability.md)) | sprint 0.15.4 |
 | G-45 Internal TLS | Closed — `DBM_DATABASE_TLS_MODE` / `_CA_FILE` (tested with `verify-full` in CI), `DBM_TIMESERIES_TLS_CA_FILE`; edge TLS in the [reverse proxy guide](../deployment/reverse-proxy-tls.md) | sprint 0.15.4 |
 | Published, signed images | Closed — GHCR images with SBOM, provenance and cosign signatures from `release.yml` | sprint 0.15.1 |
+| G-59 Corporate identity | Closed — KBM DBManager name, KBM logo and tokens, themes, reports, documentation, screenshots, videos, brand guidelines and checks | milestone 0.16 |
 | G-26 Anomaly detection | Open (P3) — z-score rules are the first building block; no automatic anomaly detection | Future |
 
 ## Release blockers (P0)
@@ -131,6 +132,7 @@ The tables below keep each gap as originally assessed. Progress since the audit:
 | G-56 | Db2 for z/OS real validation and thread/lock monitoring | Yes, partial support is honest today | P3 | M | M | L | M | L | **BLOCKED**: a z/OS subsystem + Db2 Connect | — |
 | G-57 | Database logs (alert log, error log) | Yes | P3 | M | M | L | M | M | Engine-specific access paths | — |
 | G-58 | Load / scale testing (1,000+ servers) | Yes before 1.0 | P2 | M | H | L | H | M | Simulation profiles (exist) | Unknown limits |
+| G-59 | Corporate identity: the product presented as a KBM offering (name, logo, design system, documentation, reports, videos) | Yes | P1 | H | L | L | L | M | KBM brand material | Product not recognisable as KBM's |
 
 ## Already covered (no gap)
 

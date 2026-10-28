@@ -46,7 +46,7 @@ Paths are relative to the repository root (`backend/app/...`, `frontend/src/...`
 | Logging | COMPLETE | Structured JSON logging `backend/app/core/logging.py`, request IDs in `backend/app/core/middleware.py`, secrets masked (`clean_message`) |
 | Observability (self-metrics) | COMPLETE | Prometheus `GET /metrics` (`backend/app/core/metrics.py`: HTTP, collectors, scheduler leader, pipeline counters) |
 | Diagnostics | COMPLETE | Collectors page, monitoring-storage page, driver health and a redacted per-server diagnostic bundle (`GET /servers/{id}/diagnostics`, `app/services/diagnostics.py`, `tests/api/test_diagnostics.py`, `tests/unit/test_redact.py`) |
-| Version / build metadata | COMPLETE | `0.15.0` in `backend/app/__init__.py`, `pyproject.toml`, `frontend/package.json`; build args `DBM_BUILD_VERSION/DBM_GIT_COMMIT/DBM_BUILD_DATE`; `GET /api/v1/version` (exact keys tested), `GET /api/v1/about`; Platform → About |
+| Version / build metadata | COMPLETE | `0.16.0` in `backend/app/__init__.py`, `pyproject.toml`, `frontend/package.json`; build args `DBM_BUILD_VERSION/DBM_GIT_COMMIT/DBM_BUILD_DATE`; `GET /api/v1/version` (exact keys tested), `GET /api/v1/about`; Platform → About |
 
 ## Identity
 
@@ -261,6 +261,7 @@ Paths are relative to the repository root (`backend/app/...`, `frontend/src/...`
 | License | COMPLETE | Apache-2.0 — `LICENSE`, README, `backend/pyproject.toml`, `frontend/package.json`, About page |
 | CI | COMPLETE | `.github/workflows/` backend (lint, unit, API, migrations, PostgreSQL real engine, control-plane TLS), frontend, Kubernetes (manifests, chart tests, kind install and failover), docs (`mkdocs build --strict`), Docker images + Compose health + restore drill, security (gitleaks, pip-audit, npm audit); required checks run on every pull request (no path filters) |
 | Contribution / security policy | COMPLETE | `CONTRIBUTING.md`, `SECURITY.md` (private advisories), `CODE_OF_CONDUCT.md`, issue forms, PR template |
-| Changelog / versioning | COMPLETE | `CHANGELOG.md` (Keep a Changelog, SemVer); version `0.15.0` (published tags: v0.12.0, v0.13.0, v0.14.0) |
+| Changelog / versioning | COMPLETE | `CHANGELOG.md` (Keep a Changelog, SemVer); version `0.16.0` (published releases: 0.12.0, 0.13.0, 0.14.0, 0.15.1 – 0.15.3) |
+| Corporate identity (KBM) | COMPLETE | Official name KBM DBManager; KBM logo as supplied, lockup, design tokens, light and navy dark themes, KBM-styled PDF reports, documentation theme, screenshots, videos (`marketing/video`); [brand guidelines](../branding/kbm-dbmanager-brand-guidelines.md); `tests/unit/test_brand_naming.py` |
 | Release artefacts | COMPLETE (runs on the tag) | `.github/workflows/release.yml`: GHCR images with SBOM and SLSA provenance, keyless cosign signatures, signed OCI Helm chart, SPDX SBOMs and notes on the GitHub release |
 | Published documentation | COMPLETE | Read the Docs project `db-manager`: [https://db-manager.readthedocs.io/en/latest/](https://db-manager.readthedocs.io/en/latest/), built from `.readthedocs.yaml` with `mkdocs build --strict`; linked from the app's Help menu and About page |
