@@ -152,8 +152,8 @@ OVERVIEW = [
         label="Enterprise platform",
         title="Secure, auditable, cloud native",
         say="Scoped roles, LDAP and OIDC sign-in, multi-factor authentication and a full audit trail are built in. KBM DBManager runs on Docker Compose or Kubernetes, with signed images and a Helm chart.",
-        pan=(0.0, 0.0, 0.15, 0.05),
-        zoom=(1.08, 1.22),
+        pan=(0.0, 0.0, 0.04, 0.06),
+        zoom=(1.78, 1.88),
     ),
     Scene(
         "tagline", say="Monitor, manage, secure and optimise. Every database, one platform.", sub=TAGLINE, min_dur=5.0
@@ -203,8 +203,8 @@ LINKEDIN = [
         label="Enterprise platform",
         title="Kubernetes ready, audited end to end",
         say="Role-based access, audit, and a Helm chart for Kubernetes are built in.",
-        pan=(0.0, 0.0, 0.15, 0.05),
-        zoom=(1.08, 1.22),
+        pan=(0.0, 0.0, 0.04, 0.06),
+        zoom=(1.78, 1.88),
     ),
     Scene("tagline", say="Monitor. Manage. Secure. Optimize.", sub=TAGLINE, min_dur=4.0),
     Scene("closing", say="KBM DBManager, by K B M.", sub="KBM DBManager, by KBM.", min_dur=5.0),
