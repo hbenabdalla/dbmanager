@@ -16,17 +16,17 @@ Server, Oracle and Db2 together in one platform, with partial support for Db2 fo
 
 In this overview:
 0:00 KBM DBManager
-0:10 Seven engine families, one platform
-0:22 Fleet dashboard
-0:33 Fleet views and topology
-0:44 Monitoring with VictoriaMetrics
+0:12 Seven engine families, one platform
+0:25 Fleet dashboard
+0:35 Fleet views and topology
+0:45 Monitoring with VictoriaMetrics
 0:55 Sessions, locks and blocking
-1:06 Query performance
-1:15 Security posture
-1:24 116 evidence-based recommendation rules
-1:35 Backup and restore
-1:44 Guided, least-privilege onboarding
-1:56 Roles, sign-in, audit, Docker Compose and Kubernetes
+1:04 Query performance
+1:11 Security posture
+1:19 116 evidence-based recommendation rules
+1:29 Backup and restore
+1:38 Guided, least-privilege onboarding
+1:48 Roles, sign-in, audit, Docker Compose and Kubernetes
 
 Servers are monitoring-only by default; nothing is changed on a database until someone with the
 right role confirms it. The application in this video runs a clearly labelled simulated fleet.
