@@ -20,7 +20,7 @@ jobs:
       packages: write
     steps:
       - uses: actions/checkout@v7
-      - uses: oras-project/setup-oras@v1
+      - uses: oras-project/setup-oras@v2
       - name: Push the metadata to ghcr.io/${{ github.repository_owner }}/charts/dbmanager:artifacthub.io
         working-directory: deployment/helm
         run: |
